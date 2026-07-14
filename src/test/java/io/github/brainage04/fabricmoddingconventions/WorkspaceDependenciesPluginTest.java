@@ -1,0 +1,199 @@
+package io.github.brainage04.fabricmoddingconventions;
+
+import org.gradle.testkit.runner.BuildResult;
+import org.gradle.testkit.runner.GradleRunner;
+import org.gradle.testkit.runner.TaskOutcome;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.jar.JarOutputStream;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class WorkspaceDependenciesPluginTest {
+    private static final String PLUGIN_ID = "io.github.brainage04.workspace-dependencies";
+
+    @TempDir
+    Path temporaryDirectory;
+
+    Path projectDirectory;
+
+    @BeforeEach
+    void createProjectDirectory() throws IOException {
+        projectDirectory = Files.createDirectory(temporaryDirectory.resolve("consumer"));
+        Files.writeString(projectDirectory.resolve("settings.gradle"), "rootProject.name = 'workspace-fixture'\n");
+    }
+
+    @Test
+    void resolvesDeclaredModuleFromNamedLocalRepositoryBeforeCentral() throws IOException {
+        writeMavenModule("FixtureLibrary", "example.fixture", "fixture-library", "1.0.0");
+        writeBuildFile("""
+                workspaceDependencies {
+                    siblingMaven('FixtureLibrary') {
+                        coordinate.set('example.fixture:fixture-library:1.0.0')
+                    }
+                }
+
+                configurations { probe }
+                dependencies { probe 'example.fixture:fixture-library:1.0.0' }
+
+                tasks.register('verifyLocalResolution') {
+                    doLast {
+                        def repositories = project.repositories.toList()
+                        assert repositories.first().name == 'WorkspaceFixtureLibraryLocal'
+                        assert repositories.first().url == file('../FixtureLibrary/build/local-repo').toURI()
+                        assert repositories.findIndexOf { it.name == 'WorkspaceFixtureLibraryLocal' } <
+                                repositories.findIndexOf { it.hasProperty('url') && it.url.toString().contains('repo.maven.apache.org/maven2') }
+                        assert configurations.probe.singleFile.name == 'fixture-library-1.0.0.jar'
+                    }
+                }
+                """);
+
+        BuildResult result = runGradle("verifyLocalResolution");
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":verifyLocalResolution").getOutcome());
+    }
+
+    @Test
+    void resolvesMissingLocalPublicationFromMavenCentral() throws IOException {
+        writeBuildFile("""
+                workspaceDependencies {
+                    siblingMaven('MissingCommonsLang') {
+                        coordinate.set('org.apache.commons:commons-lang3:3.17.0')
+                    }
+                }
+
+                configurations { probe }
+                dependencies { probe 'org.apache.commons:commons-lang3:3.17.0' }
+
+                tasks.register('verifyCentralFallback') {
+                    doLast {
+                        assert configurations.probe.singleFile.name == 'commons-lang3-3.17.0.jar'
+                    }
+                }
+                """);
+
+        BuildResult result = runGradle("verifyCentralFallback");
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":verifyCentralFallback").getOutcome());
+    }
+
+    @Test
+    void failsWhenPublicationIsAbsentLocallyAndFromCentral() throws IOException {
+        String coordinate = "org.apache.commons:commons-lang3:0.0.0-workspace-fixture-missing";
+        writeBuildFile("""
+                workspaceDependencies {
+                    siblingMaven('MissingCommonsLang') {
+                        coordinate.set('%s')
+                    }
+                }
+
+                configurations { probe }
+                dependencies { probe '%s' }
+
+                tasks.register('resolveProbe') {
+                    doLast {
+                        configurations.probe.files
+                    }
+                }
+                """.formatted(coordinate, coordinate));
+
+        BuildResult result = runGradleAndFail("resolveProbe");
+
+        assertTrue(result.getOutput().contains("Could not find " + coordinate));
+    }
+
+
+    @Test
+    void declarationsSharingARepositoryReuseItAndRetainBothModuleFilters() throws IOException {
+        writeMavenModule("Shared", "example.fixture", "first-library", "1.0.0");
+        writeMavenModule("Shared", "example.fixture", "second-library", "2.0.0");
+        writeBuildFile("""
+                workspaceDependencies {
+                    siblingMaven('First') {
+                        coordinate.set('example.fixture:first-library:1.0.0')
+                        siblingDirectory.set(layout.projectDirectory.dir('../Shared'))
+                    }
+                    siblingMaven('Second') {
+                        coordinate.set('example.fixture:second-library:2.0.0')
+                        siblingDirectory.set(layout.projectDirectory.dir('../Shared'))
+                    }
+                }
+
+                configurations { probe }
+                dependencies {
+                    probe 'example.fixture:first-library:1.0.0'
+                    probe 'example.fixture:second-library:2.0.0'
+                }
+
+                tasks.register('verifySharedRepository') {
+                    doLast {
+                        def sharedUrl = file('../Shared/build/local-repo').toURI()
+                        assert project.repositories.findAll { it.hasProperty('url') && it.url == sharedUrl }.size() == 1
+                        assert configurations.probe.files*.name.toSet() == [
+                                'first-library-1.0.0.jar',
+                                'second-library-2.0.0.jar'
+                        ] as Set
+                    }
+                }
+                """);
+
+        BuildResult result = runGradle("verifySharedRepository");
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":verifySharedRepository").getOutcome());
+    }
+
+
+    private void writeBuildFile(String configuration) throws IOException {
+        Files.writeString(projectDirectory.resolve("build.gradle"), """
+                plugins {
+                    id '%s'
+                }
+
+                %s
+                """.formatted(PLUGIN_ID, configuration));
+    }
+
+    private void writeMavenModule(String sibling, String group, String artifact, String version) throws IOException {
+        Path moduleDirectory = temporaryDirectory.resolve(sibling)
+                .resolve("build/local-repo")
+                .resolve(group.replace('.', '/'))
+                .resolve(artifact)
+                .resolve(version);
+        Files.createDirectories(moduleDirectory);
+        Files.writeString(moduleDirectory.resolve(artifact + "-" + version + ".pom"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project xmlns="http://maven.apache.org/POM/4.0.0">
+                    <modelVersion>4.0.0</modelVersion>
+                    <groupId>%s</groupId>
+                    <artifactId>%s</artifactId>
+                    <version>%s</version>
+                </project>
+                """.formatted(group, artifact, version));
+        try (var output = new JarOutputStream(Files.newOutputStream(
+                moduleDirectory.resolve(artifact + "-" + version + ".jar")
+        ))) {
+            output.finish();
+        }
+    }
+
+    private BuildResult runGradle(String... arguments) {
+        return runner(arguments).build();
+    }
+
+    private BuildResult runGradleAndFail(String... arguments) {
+        return runner(arguments).buildAndFail();
+    }
+
+    private GradleRunner runner(String... arguments) {
+        return GradleRunner.create()
+                .withProjectDir(projectDirectory.toFile())
+                .withPluginClasspath()
+                .withArguments(arguments);
+    }
+}

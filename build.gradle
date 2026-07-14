@@ -1,26 +1,24 @@
-import java.nio.charset.StandardCharsets
 
 plugins {
 	id 'net.fabricmc.fabric-loom' version "${loom_version}"
-	id 'maven-publish'
-	id 'signing'
+	id 'io.github.brainage04.maven-central-publishing' version "${maven_central_publishing_version}"
+	id 'java-gradle-plugin'
 }
 
 version = project.mod_version
 group = project.maven_group
 
-def githubRepositoryUrl = "https://github.com/brainage04/GameTestRecorderLib"
-def centralPortalUsername = providers.environmentVariable("CENTRAL_PORTAL_USERNAME")
-def centralPortalPassword = providers.environmentVariable("CENTRAL_PORTAL_PASSWORD")
-def signingKey = providers.environmentVariable("SIGNING_KEY")
-def signingPassword = providers.environmentVariable("SIGNING_PASSWORD")
-def centralNamespace = providers.gradleProperty("centralNamespace")
-		.orElse(project.group.toString())
-def centralPublishingType = providers.gradleProperty("centralPublishingType")
-		.orElse("user_managed")
+def githubRepositoryUrl = "https://github.com/brainage04/FabricModdingConventions"
+def pomDescription = "Reusable Fabric modding conventions, client GameTest recording, and production GameTest helpers for Minecraft mods."
 
 base {
 	archivesName = project.archives_base_name
+}
+
+mavenCentralPublishing {
+	repository.set("brainage04/FabricModdingConventions")
+	publicationName.set(project.mod_name)
+	description.set(pomDescription)
 }
 
 repositories {
@@ -42,6 +40,7 @@ dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+	implementation "net.fabricmc:fabric-loom:${project.loom_version}"
 	testImplementation "net.fabricmc:fabric-loader-junit:${project.loader_version}"
 	testImplementation gradleTestKit()
 }
@@ -51,15 +50,17 @@ processResources {
 	inputs.property "mod_version", project.version
 	inputs.property "mod_name", project.properties.mod_name
 	inputs.property "loader_version", project.properties.loader_version
+	inputs.property "minecraft_version", project.properties.minecraft_version
 	inputs.property "java_version", project.properties.java_version
 
 	filesMatching("fabric.mod.json") {
 		expand([
-				"mod_id"       : inputs.properties.mod_id,
-				"mod_version"  : inputs.properties.mod_version,
-				"mod_name"     : inputs.properties.mod_name,
-				"loader_version": inputs.properties.loader_version,
-				"java_version"  : inputs.properties.java_version,
+				"mod_id"           : inputs.properties.mod_id,
+				"mod_version"      : inputs.properties.mod_version,
+				"mod_name"         : inputs.properties.mod_name,
+				"loader_version"   : inputs.properties.loader_version,
+				"minecraft_version": inputs.properties.minecraft_version,
+				"java_version"     : inputs.properties.java_version,
 		])
 	}
 }
@@ -73,6 +74,43 @@ java {
 
 	sourceCompatibility = JavaVersion.toVersion(project.java_version)
 	targetCompatibility = JavaVersion.toVersion(project.java_version)
+}
+
+gradlePlugin {
+	website = githubRepositoryUrl
+	vcsUrl = "${githubRepositoryUrl}.git"
+	plugins {
+		fabricModConventions {
+			id = "io.github.brainage04.fabric-mod-conventions"
+			implementationClass = "io.github.brainage04.fabricmoddingconventions.gradle.FabricModConventionsPlugin"
+			displayName = "Fabric mod conventions Gradle plugin"
+			description = "Applies Fabric Loom as the shared foundation for Fabric modding convention components."
+		}
+		clientGameTestRecorder {
+			id = "io.github.brainage04.client-gametest-recorder"
+			implementationClass = "io.github.brainage04.fabricmoddingconventions.gradle.ClientGameTestRecorderPlugin"
+			displayName = "Client GameTest recorder Gradle plugin"
+			description = "Configures client GameTest preparation and recording tasks for Fabric mods."
+		}
+		productionGameTests {
+			id = "io.github.brainage04.production-gametests"
+			implementationClass = "io.github.brainage04.fabricmoddingconventions.gradle.ProductionGameTestsPlugin"
+			displayName = "Production GameTests Gradle plugin"
+			description = "Configures opt-in Fabric Loom production GameTest tasks."
+		}
+		workspaceDependencies {
+			id = "io.github.brainage04.workspace-dependencies"
+			implementationClass = "io.github.brainage04.fabricmoddingconventions.gradle.WorkspaceDependenciesPlugin"
+			displayName = "Workspace dependencies Gradle plugin"
+			description = "Configures local-first sibling Maven repositories with Maven Central fallback."
+		}
+		mavenCentralPublishing {
+			id = "io.github.brainage04.maven-central-publishing"
+			implementationClass = "io.github.brainage04.fabricmoddingconventions.gradle.MavenCentralPublishingPlugin"
+			displayName = "Maven Central publishing Gradle plugin"
+			description = "Configures Maven publication metadata, signing, and Sonatype Central Portal uploads."
+		}
+	}
 }
 
 tasks.register("javadocJar", Jar) {
@@ -90,120 +128,18 @@ jar {
 
 publishing {
 	publications {
-		create("mavenJava", MavenPublication) {
-			artifactId = project.archives_base_name
-			from components.java
-			artifact tasks.named("javadocJar")
 
-			pom {
-				name = project.properties.mod_name
-				description = "A reusable Fabric client GameTest recording helper for Minecraft mods."
-				url = githubRepositoryUrl
-
-				licenses {
-					license {
-						name = "MIT License"
-						url = "https://opensource.org/license/mit"
-						distribution = "repo"
-					}
-				}
-
-				developers {
-					developer {
-						id = "brainage04"
-						name = "brainage04"
-						url = "https://github.com/brainage04"
-					}
-				}
-
-				scm {
-					connection = "scm:git:${githubRepositoryUrl}.git"
-					developerConnection = "scm:git:ssh://git@github.com/brainage04/GameTestRecorderLib.git"
-					url = githubRepositoryUrl
-				}
+		withType(MavenPublication).configureEach {
+			if (name == "pluginMaven") {
+				artifactId = project.archives_base_name
+				artifact tasks.named("javadocJar")
 			}
+
 		}
 	}
 
-	repositories {
-		maven {
-			name = "local"
-			url = uri(layout.buildDirectory.dir("local-repo"))
-		}
-
-		maven {
-			name = "central"
-			url = "https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/"
-			credentials {
-				username = centralPortalUsername.getOrNull()
-				password = centralPortalPassword.getOrNull()
-			}
-		}
-	}
 }
 
-signing {
-	required {
-		gradle.taskGraph.allTasks.any {
-			it.name == "publishToMavenCentral" || it.name == "publishMavenJavaPublicationToCentralRepository"
-		}
-	}
-	if (signingKey.present && signingPassword.present) {
-		useInMemoryPgpKeys(signingKey.get(), signingPassword.get())
-	}
-	sign publishing.publications.mavenJava
-}
-
-tasks.withType(Sign).configureEach {
-	doFirst {
-		if (signing.required && (!signingKey.present || !signingPassword.present)) {
-			throw new GradleException("Set SIGNING_KEY and SIGNING_PASSWORD to publish signed artifacts to Maven Central.")
-		}
-	}
-}
-
-tasks.register("publishToMavenCentral") {
-	group = "publishing"
-	description = "Publishes artifacts to Sonatype Central and uploads the staged deployment to the Central Portal."
-	dependsOn(tasks.named("publishMavenJavaPublicationToCentralRepository"))
-
-	doLast {
-		if (!centralPortalUsername.present || !centralPortalPassword.present) {
-			throw new GradleException("Set CENTRAL_PORTAL_USERNAME and CENTRAL_PORTAL_PASSWORD before publishing to Maven Central.")
-		}
-
-		def publishingType = centralPublishingType.get()
-		if (!(publishingType in ["user_managed", "automatic", "portal_api"])) {
-			throw new GradleException("Unsupported centralPublishingType '${publishingType}'. Use one of: user_managed, automatic, portal_api.")
-		}
-
-		def namespace = centralNamespace.get()
-		def bearerToken = Base64.encoder.encodeToString(
-				"${centralPortalUsername.get()}:${centralPortalPassword.get()}".getBytes(StandardCharsets.UTF_8)
-		)
-		def uploadUrl = new URL(
-				"https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/${namespace}" +
-						"?publishing_type=${URLEncoder.encode(publishingType, StandardCharsets.UTF_8)}"
-		)
-		def connection = (HttpURLConnection) uploadUrl.openConnection()
-
-		connection.requestMethod = "POST"
-		connection.doOutput = true
-		connection.setRequestProperty("Authorization", "Bearer ${bearerToken}")
-		connection.setRequestProperty("Accept", "application/json")
-
-		def responseCode = connection.responseCode
-		def responseText = (responseCode >= 200 && responseCode < 300
-				? connection.inputStream
-				: connection.errorStream)?.getText(StandardCharsets.UTF_8.name()) ?: ""
-
-		if (responseCode < 200 || responseCode >= 300) {
-			throw new GradleException("Central upload request failed with HTTP ${responseCode}: ${responseText}")
-		}
-
-		logger.lifecycle("Central deployment uploaded for namespace '${namespace}'. Response: ${responseText ?: responseCode}")
-	}
-}
 
 test {
 	useJUnitPlatform()

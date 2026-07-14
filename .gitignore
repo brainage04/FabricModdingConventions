@@ -1,7 +1,48 @@
+# gradle
+
 .gradle/
-.fabric/
 build/
-run/
+out/
+classes/
+
+# eclipse
+
+*.launch
+
+# idea
+
 .idea/
 *.iml
+*.ipr
+*.iws
+
+# vscode
+
+.settings/
+.vscode/
+bin/
+.classpath
+.project
+
+# macos
+
+*.DS_Store
+
+# fabric
+
+.fabric/
+mods/
+run/*
+!run/options.txt
 logs/
+
+# java
+
+hs_err_*.log
+replay_*.log
+*.hprof
+*.jfr
+
+.env
+
+.codex

@@ -1,4 +1,4 @@
-package io.github.brainage04.gametestrecorderlib;
+package io.github.brainage04.fabricmoddingconventions;
 
 import org.junit.jupiter.api.Test;
 
@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;

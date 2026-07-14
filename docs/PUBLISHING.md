@@ -4,39 +4,51 @@ Publishing is configured for Sonatype Central via the OSSRH Staging API compatib
 
 Before publishing, create a Sonatype Central account, verify the `io.github.brainage04` namespace, generate a Central Portal user token, and create a GPG key for signing releases.
 
-Export the required secrets like so:
+## Secret handling
 
-On Linux/macOS, append these commands to the end of `~/.bashrc`:
+Never store publishing secrets in `~/.bashrc`, `$PROFILE`, project files, Gradle command-line arguments, or a repository `.env` file.
 
-```bash
-export CENTRAL_PORTAL_USERNAME='<central_portal_token_username>'
-export CENTRAL_PORTAL_PASSWORD='<central_portal_token_password>'
-export SIGNING_KEY="$(cat << 'EOF'
-paste output of `gpg --armor --export-secret-keys <your_key_id>` here
-EOF
-)"
-export SIGNING_PASSWORD='<gpg_key_password>'
+### Local workstation
+
+Store the Central Portal token in a password manager. Keep the signing private key in the local GnuPG keyring and let `gpg-agent` provide its passphrase.
+
+Configure only the non-secret GPG selector in `~/.gradle/gradle.properties`:
+
+```properties
+signing.gnupg.executable=gpg
+signing.gnupg.keyName=<long-signing-key-id>
 ```
 
-On Windows, append these commands to the end of `$PROFILE`:
+The owner workstation provides `unlock-central-publishing`, `with-central-publishing`, and `lock-central-publishing` helpers. Unlock once to create a mode-`0600` Bitwarden CLI session under `$XDG_RUNTIME_DIR`; each `with-central-publishing` invocation retrieves the Portal token, exposes it only to the child command, and leaves that session available for subsequent publishing commands. Run `lock-central-publishing` when the publishing session is finished.
 
-```powershell
-$env:CENTRAL_PORTAL_USERNAME = "<central_portal_token_username>"
-$env:CENTRAL_PORTAL_PASSWORD = "<central_portal_token_password>"
-$env:SIGNING_KEY = @"
-paste output of `gpg --armor --export-secret-keys <your_key_id>` here
-"@
-$env:SIGNING_PASSWORD = "<gpg_key_password>"
-```
+### CI
 
-Then publish with:
+CI may continue using secret-store-provided environment variables:
+
+- `CENTRAL_PORTAL_USERNAME`
+- `CENTRAL_PORTAL_PASSWORD`
+- `SIGNING_KEY`
+- `SIGNING_PASSWORD`
+
+The build uses in-memory PGP signing when the signing environment variables are present and GPG-agent signing when `useGpgAgentSigning=true`.
+
+## Publish
+
+On the owner workstation, unlock once and then run as many publishing commands as needed:
 
 ```bash
-./gradlew publishToMavenCentral
+unlock-central-publishing
+with-central-publishing ./gradlew --no-daemon publishToMavenCentral
 ```
 
 By default, the staged deployment is uploaded to the Central Portal for manual review (`user_managed` mode). To ask Sonatype to release automatically after validation, run:
 
 ```bash
-./gradlew publishToMavenCentral -PcentralPublishingType=automatic
+with-central-publishing ./gradlew --no-daemon publishToMavenCentral -PcentralPublishingType=automatic
+```
+
+Lock the reusable vault session explicitly when publishing is complete:
+
+```bash
+lock-central-publishing
 ```

@@ -1,4 +1,4 @@
-package io.github.brainage04.gametestrecorderlib;
+package io.github.brainage04.fabricmoddingconventions;
 
 import java.util.Arrays;
 import java.util.Collection;

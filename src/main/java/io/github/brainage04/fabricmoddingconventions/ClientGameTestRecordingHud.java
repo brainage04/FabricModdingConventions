@@ -1,4 +1,4 @@
-package io.github.brainage04.gametestrecorderlib;
+package io.github.brainage04.fabricmoddingconventions;
 
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Locale;
 
 public final class ClientGameTestRecordingHud {
-    private static final Identifier HUD_ID = Identifier.fromNamespaceAndPath(GameTestRecorderLib.MOD_ID, "gametest_recording_feedback");
+    private static final Identifier HUD_ID = Identifier.fromNamespaceAndPath(FabricModdingConventions.MOD_ID, "gametest_recording_feedback");
     private static final float RECORDING_SCALE = 1.5F;
     private static final int X = 5;
     private static final int Y = 10;

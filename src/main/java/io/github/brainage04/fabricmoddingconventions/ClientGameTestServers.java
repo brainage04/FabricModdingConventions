@@ -1,4 +1,4 @@
-package io.github.brainage04.gametestrecorderlib;
+package io.github.brainage04.fabricmoddingconventions;
 
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestDedicatedServerContext;
@@ -132,26 +132,25 @@ public final class ClientGameTestServers {
         context.waitTicks(2);
         context.setScreen(TitleScreen::new);
     }
+
     private static Screen currentScreen(Minecraft client) {
         try {
-            Object screen = client.gui.getClass().getMethod("screen").invoke(client.gui);
-            if (screen instanceof Screen typedScreen) {
-                return typedScreen;
-            }
-        } catch (ReflectiveOperationException ignored) {
+            return (Screen) Minecraft.class.getField("screen").get(client);
+        } catch (NoSuchFieldException ignored) {
+            return currentGuiScreen(client);
+        } catch (IllegalAccessException exception) {
+            throw new AssertionError("Expected to read Minecraft.screen for the client GameTest.", exception);
         }
-
-        try {
-            Object screen = Minecraft.class.getField("screen").get(client);
-            if (screen instanceof Screen typedScreen) {
-                return typedScreen;
-            }
-        } catch (ReflectiveOperationException ignored) {
-        }
-
-        return null;
     }
 
+    private static Screen currentGuiScreen(Minecraft client) {
+        try {
+            Object gui = Minecraft.class.getField("gui").get(client);
+            return (Screen) gui.getClass().getMethod("screen").invoke(gui);
+        } catch (ReflectiveOperationException exception) {
+            throw new AssertionError("Expected to read Minecraft GUI screen for the client GameTest.", exception);
+        }
+    }
 
     private static boolean isServerResourcePackPrompt(Screen screen) {
         if (!(screen instanceof ConfirmScreen)) {
