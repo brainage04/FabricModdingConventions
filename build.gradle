@@ -2,7 +2,6 @@
 plugins {
 	id 'net.fabricmc.fabric-loom' version "${loom_version}"
 	id 'io.github.brainage04.maven-central-publishing' version "${maven_central_publishing_version}"
-	id 'java-gradle-plugin'
 }
 
 version = project.mod_version
@@ -23,6 +22,7 @@ mavenCentralPublishing {
 
 repositories {
 	mavenCentral()
+	maven { url "https://plugins.gradle.org/m2/" }
 	mavenLocal()
 	maven { url "https://libraries.minecraft.net" }
 	maven { url "https://maven.fabricmc.net/" }
@@ -40,9 +40,7 @@ dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-	implementation "net.fabricmc:fabric-loom:${project.loom_version}"
 	testImplementation "net.fabricmc:fabric-loader-junit:${project.loader_version}"
-	testImplementation gradleTestKit()
 }
 
 processResources {
@@ -76,42 +74,6 @@ java {
 	targetCompatibility = JavaVersion.toVersion(project.java_version)
 }
 
-gradlePlugin {
-	website = githubRepositoryUrl
-	vcsUrl = "${githubRepositoryUrl}.git"
-	plugins {
-		fabricModConventions {
-			id = "io.github.brainage04.fabric-mod-conventions"
-			implementationClass = "io.github.brainage04.fabricmoddingconventions.gradle.FabricModConventionsPlugin"
-			displayName = "Fabric mod conventions Gradle plugin"
-			description = "Applies Fabric Loom as the shared foundation for Fabric modding convention components."
-		}
-		clientGameTestRecorder {
-			id = "io.github.brainage04.client-gametest-recorder"
-			implementationClass = "io.github.brainage04.fabricmoddingconventions.gradle.ClientGameTestRecorderPlugin"
-			displayName = "Client GameTest recorder Gradle plugin"
-			description = "Configures client GameTest preparation and recording tasks for Fabric mods."
-		}
-		productionGameTests {
-			id = "io.github.brainage04.production-gametests"
-			implementationClass = "io.github.brainage04.fabricmoddingconventions.gradle.ProductionGameTestsPlugin"
-			displayName = "Production GameTests Gradle plugin"
-			description = "Configures opt-in Fabric Loom production GameTest tasks."
-		}
-		workspaceDependencies {
-			id = "io.github.brainage04.workspace-dependencies"
-			implementationClass = "io.github.brainage04.fabricmoddingconventions.gradle.WorkspaceDependenciesPlugin"
-			displayName = "Workspace dependencies Gradle plugin"
-			description = "Configures local-first sibling Maven repositories with Maven Central fallback."
-		}
-		mavenCentralPublishing {
-			id = "io.github.brainage04.maven-central-publishing"
-			implementationClass = "io.github.brainage04.fabricmoddingconventions.gradle.MavenCentralPublishingPlugin"
-			displayName = "Maven Central publishing Gradle plugin"
-			description = "Configures Maven publication metadata, signing, and Sonatype Central Portal uploads."
-		}
-	}
-}
 
 tasks.register("javadocJar", Jar) {
 	archiveClassifier = "javadoc"
@@ -128,16 +90,12 @@ jar {
 
 publishing {
 	publications {
-
-		withType(MavenPublication).configureEach {
-			if (name == "pluginMaven") {
-				artifactId = project.archives_base_name
-				artifact tasks.named("javadocJar")
-			}
-
+		mavenJava(MavenPublication) {
+			artifactId = project.archives_base_name
+			from components.java
+			artifact tasks.named("javadocJar")
 		}
 	}
-
 }
 
 

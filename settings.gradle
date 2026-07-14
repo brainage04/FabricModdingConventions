@@ -11,3 +11,6 @@ pluginManagement {
 		gradlePluginPortal()
 	}
 }
+
+rootProject.name = "FabricModdingConventions"
+include("gradle-plugin")

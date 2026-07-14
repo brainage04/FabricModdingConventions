@@ -136,3 +136,24 @@ The opt-in `io.github.brainage04.maven-central-publishing` component now owns sh
 HudRendererLib `1.0.4` is published to Maven Central. TwitchPlaysMinecraft uses the same `io.github.brainage04:hudrendererlib:1.0.4` coordinate for local and released resolution, contains no GitHub Release/Ivy fallback or coordinate switch, and passes production GameTests with the sibling HudRendererLib repository removed. Its CI now resolves the released artifact from Maven Central instead of cloning and locally publishing HudRendererLib.
 
 The workspace dependency component provides one typed local-first declaration: each module-filtered sibling Maven repository precedes Maven Central, so the same coordinate resolves locally when published and falls back to Central otherwise. Template, FortniteInMinecraft, and TwitchPlaysMinecraft use it instead of declaring sibling project repositories manually. The Baritone fork uses the owned `io.github.brainage04:baritone-fabric` coordinate so it cannot be confused with an upstream `baritone` group artifact.
+
+## Upstream mod publisher capability spike
+
+`me.modmuss50.mod-publish-plugin:2.1.1` is the publishing engine for the planned generic component. A TestKit fixture applies the upstream plugin on Java 25, selects one exact task-produced JAR while a decoy JAR exists, exercises dry-run publication for GitHub, Modrinth, and CurseForge, and reuses Gradle's configuration cache. Local HTTP fixtures also verify each platform's real request path and payload without contacting a production service.
+
+Capabilities to reuse:
+
+- Typed, independently runnable GitHub, Modrinth, and CurseForge tasks plus the aggregate `publishMods` task.
+- Lazy primary-artifact and additional-file providers.
+- Stable/beta/alpha release mapping, explicit dependency declarations, dry-run output, and configurable API endpoints.
+- GitHub's safe draft-create, asset-upload, then publish sequence.
+- Modrinth and CurseForge multipart uploads, plus bounded retries for their API operations.
+
+Required convention-layer behavior:
+
+- Derive and validate the exact Fabric release JAR, tag, version, display name, changelog, loader, Minecraft versions, and side metadata. The upstream plugin does not infer these repository contracts.
+- Resolve annotated-tag notes and GitHub-generated release-note fallback before invoking platform tasks; the upstream GitHub publisher only accepts an already-resolved changelog body.
+- Preserve `.modrinth/project.json` project creation/update policy, icon synchronization, and `fabric.mod.json` dependency inference/overrides. The upstream plugin publishes versions and can patch a description, but does not own those repository synchronization flows.
+- Add explicit existing-version preflight and idempotency. Upstream Modrinth publication posts a new version directly, and GitHub publication creates a release unless a parent publication result is supplied.
+- Keep destination tasks independently retryable in GitHub Actions. A multi-platform aggregate can partially publish, GitHub calls are not wrapped in the upstream retry helper, and cross-platform publication is not transactional.
+- Keep tokens lazy and task-scoped, and ensure ordinary `build` and `check` execution never contacts publication endpoints.

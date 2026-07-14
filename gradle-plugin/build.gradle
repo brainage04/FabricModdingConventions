@@ -1,0 +1,122 @@
+plugins {
+	id 'java-gradle-plugin'
+	id 'io.github.brainage04.maven-central-publishing' version "${maven_central_publishing_version}"
+}
+
+version = rootProject.version
+group = rootProject.group
+
+base {
+	archivesName = "${rootProject.archives_base_name}-gradle"
+}
+
+mavenCentralPublishing {
+	repository.set("brainage04/FabricModdingConventions")
+	publicationName.set("${rootProject.mod_name} Gradle plugins")
+	description.set("Gradle plugin implementations for reusable Fabric modding conventions.")
+	localRepository.set(rootProject.layout.buildDirectory.dir("local-repo"))
+}
+
+repositories {
+	mavenCentral()
+	gradlePluginPortal()
+	mavenLocal()
+	maven { url "https://libraries.minecraft.net" }
+	maven { url "https://maven.fabricmc.net/" }
+}
+
+dependencies {
+	implementation project(":")
+	implementation "net.fabricmc:fabric-loom:${rootProject.loom_version}"
+	implementation "me.modmuss50:mod-publish-plugin:2.1.1"
+	implementation "com.google.code.gson:gson:2.13.2"
+	testImplementation "org.junit.jupiter:junit-jupiter:5.10.0"
+	testImplementation gradleTestKit()
+	testRuntimeOnly "org.junit.platform:junit-platform-launcher:1.10.0"
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = rootProject.java_version.toInteger()
+}
+
+java {
+	withSourcesJar()
+
+	sourceCompatibility = JavaVersion.toVersion(rootProject.java_version)
+	targetCompatibility = JavaVersion.toVersion(rootProject.java_version)
+}
+
+gradlePlugin {
+	website = "https://github.com/brainage04/FabricModdingConventions"
+	vcsUrl = "https://github.com/brainage04/FabricModdingConventions.git"
+	plugins {
+		fabricModConventions {
+			id = "io.github.brainage04.fabric-mod-conventions"
+			implementationClass = "io.github.brainage04.fabricmoddingconventions.gradle.FabricModConventionsPlugin"
+			displayName = "Fabric mod conventions Gradle plugin"
+			description = "Applies Fabric Loom as the shared foundation for Fabric modding convention components."
+		}
+		clientGameTestRecorder {
+			id = "io.github.brainage04.client-gametest-recorder"
+			implementationClass = "io.github.brainage04.fabricmoddingconventions.gradle.ClientGameTestRecorderPlugin"
+			displayName = "Client GameTest recorder Gradle plugin"
+			description = "Configures client GameTest preparation and recording tasks for Fabric mods."
+		}
+		productionGameTests {
+			id = "io.github.brainage04.production-gametests"
+			implementationClass = "io.github.brainage04.fabricmoddingconventions.gradle.ProductionGameTestsPlugin"
+			displayName = "Production GameTests Gradle plugin"
+			description = "Configures opt-in Fabric Loom production GameTest tasks."
+		}
+		workspaceDependencies {
+			id = "io.github.brainage04.workspace-dependencies"
+			implementationClass = "io.github.brainage04.fabricmoddingconventions.gradle.WorkspaceDependenciesPlugin"
+			displayName = "Workspace dependencies Gradle plugin"
+			description = "Configures local-first sibling Maven repositories with Maven Central fallback."
+		}
+		mavenCentralPublishing {
+			id = "io.github.brainage04.maven-central-publishing"
+			implementationClass = "io.github.brainage04.fabricmoddingconventions.gradle.MavenCentralPublishingPlugin"
+			displayName = "Maven Central publishing Gradle plugin"
+			description = "Configures Maven publication metadata, signing, and Sonatype Central Portal uploads."
+		}
+		modPublishing {
+			id = "io.github.brainage04.mod-publishing"
+			implementationClass = "io.github.brainage04.fabricmoddingconventions.gradle.ModPublishingPlugin"
+			displayName = "Fabric mod distribution publishing Gradle plugin"
+			description = "Publishes one validated Fabric mod artifact to GitHub, Modrinth, and CurseForge."
+		}
+	}
+}
+
+tasks.register("javadocJar", Jar) {
+	archiveClassifier = "javadoc"
+	from(rootProject.file("README.md"))
+}
+
+tasks.named("jar", Jar) {
+	inputs.property "archivesName", project.base.archivesName
+
+	from(rootProject.file("LICENSE")) {
+		rename { "${it}_${inputs.properties.archivesName}" }
+	}
+}
+
+publishing {
+	publications {
+		withType(MavenPublication).configureEach {
+			if (name == "pluginMaven") {
+				artifactId = project.base.archivesName.get()
+				artifact tasks.named("javadocJar")
+			}
+		}
+	}
+}
+
+test {
+	useJUnitPlatform()
+	dependsOn rootProject.tasks.named("publishAllPublicationsToLocalRepository")
+	dependsOn tasks.named("publishAllPublicationsToLocalRepository")
+	systemProperty "fabricConventionsTestRepository",
+			rootProject.layout.buildDirectory.dir("local-repo").get().asFile.absolutePath
+}

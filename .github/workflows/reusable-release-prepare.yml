@@ -1,0 +1,102 @@
+name: reusable release preparation
+
+on:
+  workflow_call:
+    inputs:
+      java_version:
+        description: JDK version used by the Fabric build
+        required: false
+        default: '25'
+        type: string
+    secrets:
+      github_token:
+        description: GitHub token used only when generated release notes are required
+        required: true
+    outputs:
+      artifact_file:
+        description: Exact release JAR file name
+        value: ${{ jobs.prepare.outputs.artifact_file }}
+      release_body:
+        description: Annotated-tag or GitHub-generated release notes
+        value: ${{ jobs.prepare.outputs.release_body }}
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    outputs:
+      artifact_file: ${{ steps.artifact.outputs.file }}
+      release_body: ${{ steps.notes.outputs.body }}
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_name }}
+
+      - name: validate gradle wrapper
+        uses: gradle/actions/wrapper-validation@v5
+
+      - name: setup jdk
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ inputs.java_version }}
+          distribution: microsoft
+
+      - name: setup gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: verify tag matches mod version
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          VERSION="$(grep '^mod_version=' gradle.properties | cut -d= -f2)"
+          if [ "v${VERSION}" != "${TAG_NAME}" ]; then
+            echo "Expected tag v${VERSION}, got ${TAG_NAME}"
+            exit 1
+          fi
+
+      - name: build
+        run: ./gradlew clean build
+
+      - name: collect exact release artifact
+        id: artifact
+        run: |
+          VERSION="$(grep '^mod_version=' gradle.properties | cut -d= -f2)"
+          ARCHIVES_NAME="$(grep '^archives_base_name=' gradle.properties | cut -d= -f2)"
+          ARTIFACT_FILE="${ARCHIVES_NAME}-${VERSION}.jar"
+          test -f "build/libs/${ARTIFACT_FILE}"
+          mkdir -p release-artifacts
+          cp "build/libs/${ARTIFACT_FILE}" "release-artifacts/${ARTIFACT_FILE}"
+          echo "file=${ARTIFACT_FILE}" >> "$GITHUB_OUTPUT"
+
+      - name: upload exact release artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-artifact
+          path: release-artifacts/${{ steps.artifact.outputs.file }}
+          if-no-files-found: error
+
+      - name: resolve release notes
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.github_token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: ./gradlew resolveModReleaseNotes
+
+      - name: export release notes
+        id: notes
+        run: |
+          DELIMITER="RELEASE_NOTES_$(date +%s%N)"
+          {
+            echo "body<<${DELIMITER}"
+            cat build/mod-publishing/release-notes.md
+            echo "${DELIMITER}"
+          } >> "$GITHUB_OUTPUT"

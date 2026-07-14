@@ -1,0 +1,106 @@
+name: reusable Modrinth publication
+
+on:
+  workflow_call:
+    inputs:
+      artifact_file:
+        description: Exact release JAR file name from release preparation
+        required: true
+        type: string
+      release_body:
+        description: Release notes shared across destinations
+        required: true
+        type: string
+      java_version:
+        description: JDK version used by the Fabric build
+        required: false
+        default: '25'
+        type: string
+      project_id:
+        description: Existing Modrinth project id; project synchronization resolves it when omitted
+        required: false
+        default: ''
+        type: string
+    secrets:
+      modrinth_token:
+        description: Modrinth personal access token
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: check Modrinth token
+        id: config
+        env:
+          MODRINTH_TOKEN: ${{ secrets.modrinth_token }}
+        run: |
+          if [ -z "${MODRINTH_TOKEN}" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping Modrinth publication because its token is not configured."
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: checkout repository
+        if: steps.config.outputs.enabled == 'true'
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_name }}
+
+      - name: validate gradle wrapper
+        if: steps.config.outputs.enabled == 'true'
+        uses: gradle/actions/wrapper-validation@v5
+
+      - name: setup jdk
+        if: steps.config.outputs.enabled == 'true'
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ inputs.java_version }}
+          distribution: microsoft
+
+      - name: setup gradle
+        if: steps.config.outputs.enabled == 'true'
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: make gradle wrapper executable
+        if: steps.config.outputs.enabled == 'true'
+        run: chmod +x ./gradlew
+
+      - name: download exact release artifact
+        if: steps.config.outputs.enabled == 'true'
+        uses: actions/download-artifact@v7
+        with:
+          name: release-artifact
+          path: release-artifacts
+
+      - name: synchronize Modrinth project and icon
+        id: modrinth_sync
+        if: steps.config.outputs.enabled == 'true'
+        continue-on-error: true
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REPOSITORY_DESCRIPTION: ${{ github.event.repository.description }}
+          MODRINTH_PROJECT_ID: ${{ inputs.project_id }}
+          MODRINTH_TOKEN: ${{ secrets.modrinth_token }}
+        run: ./gradlew syncModrinthIcon -PpublishModrinth=true
+
+      - name: publish Modrinth version
+        if: steps.config.outputs.enabled == 'true'
+        env:
+          MOD_PUBLISHING_RELEASE_JAR: release-artifacts/${{ inputs.artifact_file }}
+          MODRINTH_TOKEN: ${{ secrets.modrinth_token }}
+          RELEASE_BODY: ${{ inputs.release_body }}
+          RELEASE_PRERELEASE: ${{ contains(github.ref_name, '-') }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: ./gradlew publishModrinth -PpublishModrinth=true
+
+      - name: fail if Modrinth synchronization failed
+        if: always() && steps.config.outputs.enabled == 'true' && steps.modrinth_sync.outcome == 'failure'
+        run: |
+          echo "Modrinth project or icon synchronization failed before version publication."
+          exit 1

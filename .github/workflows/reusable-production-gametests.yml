@@ -1,0 +1,81 @@
+name: reusable production GameTests
+
+on:
+  workflow_call:
+    inputs:
+      java_version:
+        description: JDK version used by the Fabric build
+        required: false
+        default: '25'
+        type: string
+      gradle_task:
+        description: Production GameTest aggregate task
+        required: false
+        default: runAllProductionGameTests
+        type: string
+      client_gametest_profile:
+        description: Optional client GameTest profile exposed to production runs
+        required: false
+        default: ''
+        type: string
+      prepare_baritone:
+        description: Build the required local Baritone fork before the consumer
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  production-gametests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v5
+
+      - name: validate gradle wrapper
+        uses: gradle/actions/wrapper-validation@v5
+
+      - name: setup jdk
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ inputs.java_version }}
+          distribution: microsoft
+
+      - name: setup gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: prepare required local Baritone fork
+        if: inputs.prepare_baritone
+        run: |
+          MINECRAFT_VERSION="$(grep '^minecraft_version=' gradle.properties | cut -d= -f2)"
+          git clone --depth 1 --branch "minecraft-${MINECRAFT_VERSION}" https://github.com/brainage04/baritone.git ../baritone
+          chmod +x ../baritone/gradlew
+          ../baritone/gradlew \
+            --no-daemon \
+            -Pmaven_group=io.github.brainage04 \
+            :fabric:publishMavenFabricPublicationToLocalBaritoneRepository
+
+      - name: run production GameTests
+        env:
+          REQUESTED_CLIENT_GAMETEST_PROFILE: ${{ inputs.client_gametest_profile }}
+        run: |
+          if [ -n "${REQUESTED_CLIENT_GAMETEST_PROFILE}" ]; then
+            export CLIENT_GAMETEST_PROFILE="${REQUESTED_CLIENT_GAMETEST_PROFILE}"
+          fi
+          ./gradlew --no-daemon ${{ inputs.gradle_task }}
+
+      - name: store production GameTest reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: production-gametest-reports
+          path: |
+            **/build/reports/
+            **/build/test-results/
+            **/build/run/*/logs/
