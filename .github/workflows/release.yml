@@ -13,6 +13,8 @@ jobs:
     permissions:
       contents: write
     uses: brainage04/FabricModdingConventions/.github/workflows/reusable-release-prepare.yml@v2.1.0
+    with:
+      resolve_release_notes_with_gradle: false
     secrets:
       release_token: ${{ secrets.GITHUB_TOKEN }}
 

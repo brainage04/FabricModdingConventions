@@ -8,6 +8,11 @@ on:
         required: false
         default: '25'
         type: string
+      resolve_release_notes_with_gradle:
+        description: Resolve release notes through the mod-publishing Gradle task
+        required: false
+        default: true
+        type: boolean
     secrets:
       release_token:
         description: GitHub token used only when generated release notes are required
@@ -85,11 +90,31 @@ jobs:
           if-no-files-found: error
 
       - name: resolve release notes
+        if: inputs.resolve_release_notes_with_gradle
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_TOKEN: ${{ secrets.release_token }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: ./gradlew resolveModReleaseNotes
+
+      - name: resolve bootstrap release notes
+        if: ${{ !inputs.resolve_release_notes_with_gradle }}
+        env:
+          GH_TOKEN: ${{ secrets.release_token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          git fetch --force origin "refs/tags/${RELEASE_TAG}:refs/tags/${RELEASE_TAG}"
+          NOTES="$(git for-each-ref "refs/tags/${RELEASE_TAG}" --format='%(contents)')"
+          if [ -z "${NOTES}" ]; then
+            NOTES="$(gh api \
+              --method POST \
+              "repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
+              -f "tag_name=${RELEASE_TAG}" \
+              -f "target_commitish=${GITHUB_SHA}" \
+              --jq '.body')"
+          fi
+          mkdir -p build/mod-publishing
+          printf '%s\n' "${NOTES}" > build/mod-publishing/release-notes.md
 
       - name: export release notes
         id: notes
