@@ -1,0 +1,38 @@
+package io.github.brainage04.fabricmoddingconventions.gradle.production;
+
+import org.gradle.api.DefaultTask;
+import org.gradle.api.file.RegularFileProperty;
+import org.gradle.api.tasks.CacheableTask;
+import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.TaskAction;
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+/** Writes the EULA files required by production server and embedded client GameTest servers. */
+@CacheableTask
+public abstract class PrepareProductionGameTestRunsTask extends DefaultTask {
+    @OutputFile
+    public abstract RegularFileProperty getClientEulaFile();
+
+    @OutputFile
+    public abstract RegularFileProperty getServerEulaFile();
+
+    @TaskAction
+    public void prepare() {
+        writeEula(getClientEulaFile().get().getAsFile().toPath());
+        writeEula(getServerEulaFile().get().getAsFile().toPath());
+    }
+
+    private static void writeEula(Path path) {
+        try {
+            Files.createDirectories(path.getParent());
+            Files.writeString(path, "eula=true\n", StandardCharsets.UTF_8);
+        } catch (IOException exception) {
+            throw new UncheckedIOException("Failed to write production GameTest EULA: " + path, exception);
+        }
+    }
+}

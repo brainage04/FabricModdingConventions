@@ -146,10 +146,12 @@ productionGameTests {
 }
 ```
 
-The plugin adds Fabric API to Loom's `productionRuntimeMods` configuration from `fabric_api_version` by default. Consumers with extra runtime mod dependencies must add those coordinates to `runtimeModDependencies`, because Loom production tasks only load the main mod jar plus `productionRuntimeMods`. The plugin then registers:
+The plugin adds Fabric API to Loom's `productionRuntimeMods` configuration from `fabric_api_version` by default. It packages `sourceSets.gametest.output` into a dedicated mod jar, adds that jar to both production runs, and writes `eula=true` in their isolated run directories. Consumers must declare extra Fabric mods through `runtimeModDependencies` and ordinary JVM libraries through `runtimeLibraryDependencies`; Loom's production tasks do not inherit the development runtime classpath. The plugin registers:
 
-- `runProductionClientGameTest` — Loom `ClientProductionRunTask` with `-Dfabric.client.gametest`, `-Dfabric.client.gametest.disableNetworkSynchronizer=true`, Xvfb enabled by default, and `build/run/productionClientGameTest` as the run directory.
-- `runProductionServerGameTest` — Loom `ServerProductionRunTask` with `-Dfabric-api.gametest` and `build/run/productionServerGameTest` as the run directory.
+- `productionGameTestJar` — packages the processed `gametest` source-set classes and resources as `*-production-gametest.jar`.
+- `prepareProductionGameTestRuns` — writes the client embedded-server and standalone-server EULA files.
+- `runProductionClientGameTest` — runs the packaged GameTest mod through Loom's production client with `-Dfabric.client.gametest`, `-Dfabric.client.gametest.disableNetworkSynchronizer=true`, Xvfb enabled by default, and `build/run/productionClientGameTest` as the run directory.
+- `runProductionServerGameTest` — runs the packaged GameTest mod through Loom's production server with `-Dfabric-api.gametest` and `build/run/productionServerGameTest` as the run directory.
 - `runAllProductionGameTests` — aggregate task depending on the enabled production tasks.
 
 Useful switches:
@@ -161,6 +163,7 @@ productionGameTests {
     includeServer = false
     clientUseXvfb = true
     runtimeModDependencies.add("me.fzzyhmstrs:fzzy_config:${project.fzzy_config_version}")
+    runtimeLibraryDependencies.add("com.github.twitch4j:twitch4j:${project.twitch4j_version}")
     clientJvmArgs.add("-Dmy.flag=true")
     serverProgramArgs.add("nogui")
 }

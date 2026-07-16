@@ -1,13 +1,15 @@
 package io.github.brainage04.fabricmoddingconventions.gradle.production;
 
 import io.github.brainage04.fabricmoddingconventions.gradle.fabric.FabricModConventionsPlugin;
-import net.fabricmc.loom.task.prod.ClientProductionRunTask;
-import net.fabricmc.loom.task.prod.ServerProductionRunTask;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
+import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.plugins.JavaPluginExtension;
+import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskProvider;
+import org.gradle.api.tasks.bundling.Jar;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +17,7 @@ import java.util.List;
 /** Configures opt-in Fabric Loom production GameTest tasks. */
 public final class ProductionGameTestsPlugin implements Plugin<Project> {
     public static final String PLUGIN_ID = "io.github.brainage04.production-gametests";
+    private static final String RUNTIME_LIBRARIES_CONFIGURATION = "productionGameTestRuntimeLibraries";
 
     @Override
     public void apply(Project project) {
@@ -34,12 +37,28 @@ public final class ProductionGameTestsPlugin implements Plugin<Project> {
         }
 
         addProductionFabricApiDependency(project, extension);
+        Configuration runtimeLibraries = createProductionRuntimeLibraries(project, extension);
+        TaskProvider<Jar> gameTestJar = registerProductionGameTestJar(project);
+        TaskProvider<PrepareProductionGameTestRunsTask> prepareRuns =
+                registerPrepareProductionGameTestRuns(project, extension);
         List<TaskProvider<? extends Task>> productionTasks = new ArrayList<>();
         if (extension.getIncludeServer().get()) {
-            productionTasks.add(registerServerProductionGameTest(project, extension));
+            productionTasks.add(registerServerProductionGameTest(
+                    project,
+                    extension,
+                    gameTestJar,
+                    prepareRuns,
+                    runtimeLibraries
+            ));
         }
         if (extension.getIncludeClient().get()) {
-            productionTasks.add(registerClientProductionGameTest(project, extension));
+            productionTasks.add(registerClientProductionGameTest(
+                    project,
+                    extension,
+                    gameTestJar,
+                    prepareRuns,
+                    runtimeLibraries
+            ));
         }
 
         project.getTasks().register("runAllProductionGameTests", task -> {
@@ -51,36 +70,112 @@ public final class ProductionGameTestsPlugin implements Plugin<Project> {
 
     private static TaskProvider<? extends Task> registerClientProductionGameTest(
             Project project,
-            ProductionGameTestExtension productionExtension
+            ProductionGameTestExtension productionExtension,
+            TaskProvider<Jar> gameTestJar,
+            TaskProvider<PrepareProductionGameTestRunsTask> prepareRuns,
+            Configuration runtimeLibraries
     ) {
-        return project.getTasks().register("runProductionClientGameTest", ClientProductionRunTask.class, task -> {
-            task.setGroup("verification");
-            task.setDescription("Runs Fabric client GameTests in Loom's production client environment.");
-            task.getRunDir().convention(productionExtension.getClientRunDir());
-            task.getUseXVFB().convention(productionExtension.getClientUseXvfb());
-            task.getJvmArgs().add("-Dfabric.client.gametest");
-            if (productionExtension.getDisableClientNetworkSynchronizer().get()) {
-                task.getJvmArgs().add("-Dfabric.client.gametest.disableNetworkSynchronizer=true");
-            }
-            task.getJvmArgs().add("-D" + FabricModConventionsPlugin.CLIENT_GAMETEST_ENABLED_PROPERTY + "=true");
-            task.getJvmArgs().addAll(productionExtension.getClientJvmArgs());
-            task.getProgramArgs().addAll(productionExtension.getClientProgramArgs());
+        return project.getTasks().register(
+                "runProductionClientGameTest",
+                ClientGameTestProductionRunTask.class,
+                task -> {
+                    task.setGroup("verification");
+                    task.setDescription("Runs Fabric client GameTests in Loom's production client environment.");
+                    task.getRunDir().convention(productionExtension.getClientRunDir());
+                    task.dependsOn(gameTestJar);
+                    task.dependsOn(prepareRuns);
+                    task.getMods().from(gameTestJar.flatMap(Jar::getArchiveFile));
+                    task.getRuntimeLibraries().from(runtimeLibraries);
+                    task.getUseXVFB().convention(productionExtension.getClientUseXvfb());
+                    task.getJvmArgs().add("-Dfabric.client.gametest");
+                    if (productionExtension.getDisableClientNetworkSynchronizer().get()) {
+                        task.getJvmArgs().add("-Dfabric.client.gametest.disableNetworkSynchronizer=true");
+                    }
+                    task.getJvmArgs().add(
+                            "-D" + FabricModConventionsPlugin.CLIENT_GAMETEST_ENABLED_PROPERTY + "=true"
+                    );
+                    task.getJvmArgs().addAll(productionExtension.getClientJvmArgs());
+                    task.getProgramArgs().addAll(productionExtension.getClientProgramArgs());
+                }
+        );
+    }
+
+    private static TaskProvider<? extends Task> registerServerProductionGameTest(
+            Project project,
+            ProductionGameTestExtension extension,
+            TaskProvider<Jar> gameTestJar,
+            TaskProvider<PrepareProductionGameTestRunsTask> prepareRuns,
+            Configuration runtimeLibraries
+    ) {
+        return project.getTasks().register(
+                "runProductionServerGameTest",
+                ServerGameTestProductionRunTask.class,
+                task -> {
+                    task.setGroup("verification");
+                    task.setDescription("Runs Fabric server GameTests in Loom's production server environment.");
+                    task.getRunDir().convention(extension.getServerRunDir());
+                    task.dependsOn(gameTestJar);
+                    task.dependsOn(prepareRuns);
+                    task.getMods().from(gameTestJar.flatMap(Jar::getArchiveFile));
+                    task.getRuntimeLibraries().from(runtimeLibraries);
+                    task.getJvmArgs().add("-Dfabric-api.gametest");
+                    task.getJvmArgs().addAll(extension.getServerJvmArgs());
+                    task.getProgramArgs().addAll(extension.getServerProgramArgs());
+                    if (extension.getServerInstallerVersion().isPresent()) {
+                        task.getInstallerVersion().set(extension.getServerInstallerVersion().get());
+                    }
+                }
+        );
+    }
+
+    private static TaskProvider<Jar> registerProductionGameTestJar(Project project) {
+        SourceSet gameTestSourceSet = project.getExtensions()
+                .getByType(JavaPluginExtension.class)
+                .getSourceSets()
+                .findByName("gametest");
+        if (gameTestSourceSet == null) {
+            throw new GradleException(
+                    "productionGameTests requires the 'gametest' source set. "
+                            + "Configure Fabric API GameTests before the project is evaluated."
+            );
+        }
+        return project.getTasks().register("productionGameTestJar", Jar.class, task -> {
+            task.setGroup("build");
+            task.setDescription("Packages the consumer GameTest source set for production runs.");
+            task.getArchiveClassifier().set("production-gametest");
+            task.from(gameTestSourceSet.getOutput());
         });
     }
 
+    private static TaskProvider<PrepareProductionGameTestRunsTask> registerPrepareProductionGameTestRuns(
+            Project project,
+            ProductionGameTestExtension extension
+    ) {
+        return project.getTasks().register(
+                "prepareProductionGameTestRuns",
+                PrepareProductionGameTestRunsTask.class,
+                task -> {
+                    task.setGroup("verification");
+                    task.setDescription("Accepts the EULA for production GameTest server processes.");
+                    task.getClientEulaFile().convention(extension.getClientRunDir().file("eula.txt"));
+                    task.getServerEulaFile().convention(extension.getServerRunDir().file("eula.txt"));
+                }
+        );
+    }
 
-    private static TaskProvider<? extends Task> registerServerProductionGameTest(Project project, ProductionGameTestExtension extension) {
-        return project.getTasks().register("runProductionServerGameTest", ServerProductionRunTask.class, task -> {
-            task.setGroup("verification");
-            task.setDescription("Runs Fabric server GameTests in Loom's production server environment.");
-            task.getRunDir().convention(extension.getServerRunDir());
-            task.getJvmArgs().add("-Dfabric-api.gametest");
-            task.getJvmArgs().addAll(extension.getServerJvmArgs());
-            task.getProgramArgs().addAll(extension.getServerProgramArgs());
-            if (extension.getServerInstallerVersion().isPresent()) {
-                task.getInstallerVersion().set(extension.getServerInstallerVersion().get());
-            }
-        });
+    private static Configuration createProductionRuntimeLibraries(
+            Project project,
+            ProductionGameTestExtension extension
+    ) {
+        Configuration runtimeLibraries = project.getConfigurations().maybeCreate(RUNTIME_LIBRARIES_CONFIGURATION);
+        runtimeLibraries.setDescription("Non-mod libraries required by production GameTest runs.");
+        runtimeLibraries.setCanBeConsumed(false);
+        runtimeLibraries.setCanBeResolved(true);
+        extension.getRuntimeLibraryDependencies().get().stream()
+                .filter(dependency -> dependency != null && !dependency.isBlank())
+                .map(String::strip)
+                .forEach(dependency -> project.getDependencies().add(runtimeLibraries.getName(), dependency));
+        return runtimeLibraries;
     }
 
     private static void addProductionFabricApiDependency(Project project, ProductionGameTestExtension extension) {

@@ -7,8 +7,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.jar.JarFile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -63,9 +65,14 @@ class PluginComponentIsolationTest {
     @Test
     void productionPluginIsStandaloneAndRegistersEnabledTasks() throws IOException {
         writeLoomFixture(PRODUCTION_PLUGIN_ID, """
+                sourceSets {
+                    gametest
+                }
+
                 productionGameTests {
                     enabled = true
                     includeFabricApiDependency = false
+                    runtimeLibraryDependencies.add("example:runtime-library:1.0")
                 }
 
                 tasks.register('verifyProductionIsolation') {
@@ -76,15 +83,57 @@ class PluginComponentIsolationTest {
                         assert project.tasks.findByName('runProductionClientGameTest') != null
                         assert project.tasks.findByName('runProductionServerGameTest') != null
                         assert project.tasks.findByName('runAllProductionGameTests') != null
+                        assert project.tasks.findByName('productionGameTestJar') instanceof org.gradle.jvm.tasks.Jar
+                        assert project.tasks.findByName('prepareProductionGameTestRuns') instanceof io.github.brainage04.fabricmoddingconventions.gradle.production.PrepareProductionGameTestRunsTask
+                        assert project.configurations.productionGameTestRuntimeLibraries.dependencies.any {
+                            it.group == 'example' && it.name == 'runtime-library' && it.version == '1.0'
+                        }
+                        assert project.tasks.named('runProductionClientGameTest').get().mods.files.any {
+                            it.name.endsWith('-production-gametest.jar')
+                        }
+                        assert project.tasks.named('runProductionServerGameTest').get().mods.files.any {
+                            it.name.endsWith('-production-gametest.jar')
+                        }
                         assert project.tasks.named('runProductionClientGameTest').get().jvmArgs.get()
                                 .contains('-Dfabricmoddingconventions.clientGameTest=true')
                     }
                 }
                 """);
 
-        var result = runGradle("verifyProductionIsolation");
+        Path gameTestDescriptor = projectDir.resolve("src/gametest/resources/fabric.mod.json");
+        Files.createDirectories(gameTestDescriptor.getParent());
+        Files.writeString(gameTestDescriptor, "production GameTest descriptor");
+
+        var result = runGradle(
+                "prepareProductionGameTestRuns",
+                "productionGameTestJar",
+                "verifyProductionIsolation"
+        );
 
         assertEquals(TaskOutcome.SUCCESS, result.task(":verifyProductionIsolation").getOutcome());
+        assertEquals(
+                "eula=true\n",
+                Files.readString(projectDir.resolve("build/run/productionClientGameTest/eula.txt"))
+        );
+        assertEquals(
+                "eula=true\n",
+                Files.readString(projectDir.resolve("build/run/productionServerGameTest/eula.txt"))
+        );
+        try (var files = Files.list(projectDir.resolve("build/libs"))) {
+            Path gameTestJar = files
+                    .filter(path -> path.getFileName().toString().endsWith("-production-gametest.jar"))
+                    .findFirst()
+                    .orElseThrow();
+            try (var jar = new JarFile(gameTestJar.toFile())) {
+                assertEquals(
+                        "production GameTest descriptor",
+                        new String(
+                                jar.getInputStream(jar.getJarEntry("fabric.mod.json")).readAllBytes(),
+                                StandardCharsets.UTF_8
+                        )
+                );
+            }
+        }
     }
 
 

@@ -16,6 +16,7 @@ public abstract class ProductionGameTestExtension {
     private final Property<Boolean> includeFabricApiDependency;
     private final Property<String> fabricApiVersionProperty;
     private final ListProperty<String> runtimeModDependencies;
+    private final ListProperty<String> runtimeLibraryDependencies;
     private final DirectoryProperty clientRunDir;
     private final DirectoryProperty serverRunDir;
     private final Property<Boolean> clientUseXvfb;
@@ -33,6 +34,7 @@ public abstract class ProductionGameTestExtension {
         includeServer = objects.property(Boolean.class).convention(true);
         includeFabricApiDependency = objects.property(Boolean.class).convention(true);
         runtimeModDependencies = objects.listProperty(String.class).convention(List.of());
+        runtimeLibraryDependencies = objects.listProperty(String.class).convention(List.of());
         fabricApiVersionProperty = objects.property(String.class).convention("fabric_api_version");
         clientRunDir = objects.directoryProperty().convention(layout.getBuildDirectory().dir("run/productionClientGameTest"));
         serverRunDir = objects.directoryProperty().convention(layout.getBuildDirectory().dir("run/productionServerGameTest"));
@@ -69,10 +71,14 @@ public abstract class ProductionGameTestExtension {
         return clientRunDir;
     }
 
-
     public ListProperty<String> getRuntimeModDependencies() {
         return runtimeModDependencies;
     }
+
+    public ListProperty<String> getRuntimeLibraryDependencies() {
+        return runtimeLibraryDependencies;
+    }
+
     public DirectoryProperty getServerRunDir() {
         return serverRunDir;
     }

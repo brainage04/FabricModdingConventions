@@ -1,27 +1,22 @@
 # FabricModdingConventions todo
 
-The project owns the shared recorder/runtime API plus six independently applicable Gradle plugin components. Consumers apply only the leaf capabilities they need; there is no aggregate compatibility plugin.
+No active feature work is queued. New work must satisfy one of the concrete triggers below.
 
-## 2.2.0 release state
+## 2.2.1 release follow-up
 
-The signed `2.2.0` runtime, all six plugin markers, and all six dedicated implementation modules are published on Maven Central. A clean consumer with an isolated Gradle user home resolved and applied every component directly from Central.
+- [ ] Publish and tag the reviewed production GameTest correctness changes as `v2.2.1`.
+- [ ] Update Template, FortniteInMinecraft, and TwitchPlaysMinecraft to `2.2.1`; move Twitch4J from Loom's native client-test library configuration to `runtimeLibraryDependencies`; then verify all production GameTests in CI.
 
-The build now resolves the released `2.2.0` Central publishing plugin, exposes each component's independently runnable finalizer, and uses the qualified root `:publishToMavenCentral` task for the single combined Portal deployment. Release names are derived from the pushed tag.
+## Trigger-gated work
 
-All reusable workflow consumers now reference the released `v2.2.0` tag.
+These are not active tasks:
 
-The tagged Conventions build and the Template, FortniteInMinecraft, TwitchPlaysMinecraft, and HudRendererLib consumer builds passed in GitHub Actions. The three mod consumers resolved `2.2.0` through Central and passed their client, production-client, and production-server GameTest jobs through the released reusable workflows. Publishing destinations remain separate workflow jobs, and ordinary build paths do not invoke publication tasks.
+- Add Architectury or other multi-loader conventions only when a real multi-loader mod can define and verify the contract.
+- Extract a generalized recorder session/process abstraction only when a second recorder backend or production-client recording creates a real second execution path.
+- Add more Loom production-run options only when an active consumer needs one.
+- Keep access-widener paths and split-environment source sets in Loom's native DSL unless consumers develop shared behavior or validation beyond their current one-line declarations.
 
-## Deferred until a concrete consumer exists
-
-Do not implement these speculatively:
-
-- Recorded production-client GameTests. First run a focused dev-client versus production-client recording experiment and require an observable benefit.
-- Architectury or other multi-loader conventions. A real multi-loader mod must define and verify the contract.
-- More Loom production-run options, access-widener helpers, or split-environment source-set helpers. Add only the option required by an active consumer.
-- A generalized recorder session/process abstraction. Extract one only if a second recorder backend or production-client recording creates a real second execution path.
-
-## Dependency policy
+## Guardrails, not tasks
 
 - Prefer a module-filtered local sibling Maven repository during active multi-repository development, then Maven Central for released artifacts.
 - Do not add GitHub Packages or GitHub release/Ivy repositories as dependency fallbacks.
