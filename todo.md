@@ -8,13 +8,11 @@ The signed `2.2.0` runtime, all six plugin markers, and all six dedicated implem
 
 The build now resolves the released `2.2.0` Central publishing plugin, exposes each component's independently runnable finalizer, and uses the qualified root `:publishToMavenCentral` task for the single combined Portal deployment. Release names are derived from the pushed tag.
 
-Remaining release work:
-
-1. After the `v2.2.0` tag is available, update reusable-workflow references from `v2.1.0`—and TwitchPlaysMinecraft's temporary commit pin—to `v2.2.0`.
+All reusable workflow consumers now reference the released `v2.2.0` tag.
 
 ## CI verification
 
-After the `v2.2.0` tag exists, run the real consumer workflows and confirm:
+Run the real consumer workflows and confirm:
 
 - Template, FortniteInMinecraft, and TwitchPlaysMinecraft resolve the component markers from Central without a sibling conventions repository.
 - Their production client and server GameTests pass through `reusable-production-gametests.yml`.
