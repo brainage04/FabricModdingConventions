@@ -1,0 +1,14 @@
+plugins {
+	id 'java-gradle-plugin'
+	id 'io.github.brainage04.maven-central-publishing' version "${maven_central_publishing_version}"
+}
+
+ext {
+	componentArchivesName = "workspace-dependencies-gradle"
+	componentPluginId = "io.github.brainage04.workspace-dependencies"
+	componentImplementationClass = "io.github.brainage04.fabricmoddingconventions.gradle.workspace.WorkspaceDependenciesPlugin"
+	componentDisplayName = "Workspace dependencies Gradle plugin"
+	componentDescription = "Configures local-first sibling Maven repositories with Maven Central fallback."
+}
+
+apply from: rootProject.file("gradle/plugin-component.gradle")

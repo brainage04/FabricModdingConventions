@@ -13,4 +13,12 @@ pluginManagement {
 }
 
 rootProject.name = "FabricModdingConventions"
-include("gradle-plugin")
+include(
+		"gradle-plugin:integration-tests",
+		"gradle-plugin:fabric-mod-conventions",
+		"gradle-plugin:client-gametest-recorder",
+		"gradle-plugin:production-gametests",
+		"gradle-plugin:workspace-dependencies",
+		"gradle-plugin:maven-central-publishing",
+		"gradle-plugin:mod-publishing",
+)

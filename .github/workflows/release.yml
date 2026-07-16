@@ -27,7 +27,7 @@ jobs:
       artifact_file: ${{ needs.prepare.outputs.artifact_file }}
       release_body: ${{ needs.prepare.outputs.release_body }}
       publish_with_gradle: false
-      release_name: FabricModdingConventions 2.1.0
+      release_name: ${{ format('FabricModdingConventions {0}', github.ref_name) }}
     secrets:
       release_token: ${{ secrets.GITHUB_TOKEN }}
 

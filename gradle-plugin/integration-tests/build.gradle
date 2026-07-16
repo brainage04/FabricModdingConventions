@@ -1,0 +1,45 @@
+plugins {
+	id 'java-gradle-plugin'
+}
+
+version = rootProject.version
+group = rootProject.group
+
+repositories {
+	mavenCentral()
+	gradlePluginPortal()
+	mavenLocal()
+	maven { url "https://libraries.minecraft.net" }
+	maven { url "https://maven.fabricmc.net/" }
+}
+
+dependencies {
+	implementation project(":gradle-plugin:fabric-mod-conventions")
+	implementation project(":gradle-plugin:client-gametest-recorder")
+	implementation project(":gradle-plugin:production-gametests")
+	implementation project(":gradle-plugin:workspace-dependencies")
+
+	testImplementation "org.junit.jupiter:junit-jupiter:5.10.0"
+	testImplementation gradleTestKit()
+	testRuntimeOnly "org.junit.platform:junit-platform-launcher:1.10.0"
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = rootProject.java_version.toInteger()
+}
+
+test {
+	useJUnitPlatform()
+	dependsOn rootProject.tasks.named("publishAllPublicationsToLocalRepository")
+	dependsOn(
+			":gradle-plugin:fabric-mod-conventions:publishAllPublicationsToLocalRepository",
+			":gradle-plugin:client-gametest-recorder:publishAllPublicationsToLocalRepository",
+			":gradle-plugin:production-gametests:publishAllPublicationsToLocalRepository",
+			":gradle-plugin:workspace-dependencies:publishAllPublicationsToLocalRepository",
+			":gradle-plugin:maven-central-publishing:publishAllPublicationsToLocalRepository",
+			":gradle-plugin:mod-publishing:publishAllPublicationsToLocalRepository",
+	)
+	systemProperty "pluginTestRepository",
+			rootProject.layout.buildDirectory.dir("local-repo").get().asFile.absolutePath
+	systemProperty "pluginTestVersion", rootProject.version.toString()
+}

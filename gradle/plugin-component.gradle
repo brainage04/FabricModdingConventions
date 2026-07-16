@@ -1,0 +1,74 @@
+version = rootProject.version
+group = rootProject.group
+
+base {
+	archivesName = componentArchivesName
+}
+
+mavenCentralPublishing {
+	repository.set("brainage04/FabricModdingConventions")
+	publicationName.set(componentDisplayName)
+	description.set(componentDescription)
+	localRepository.set(rootProject.layout.buildDirectory.dir("local-repo"))
+}
+
+repositories {
+	mavenCentral()
+	gradlePluginPortal()
+	mavenLocal()
+}
+
+dependencies {
+	testImplementation "org.junit.jupiter:junit-jupiter:5.10.0"
+	testRuntimeOnly "org.junit.platform:junit-platform-launcher:1.10.0"
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = rootProject.java_version.toInteger()
+}
+
+java {
+	withSourcesJar()
+	sourceCompatibility = JavaVersion.toVersion(rootProject.java_version)
+	targetCompatibility = JavaVersion.toVersion(rootProject.java_version)
+}
+
+tasks.named("test") {
+	useJUnitPlatform()
+}
+
+gradlePlugin {
+	website = "https://github.com/brainage04/FabricModdingConventions"
+	vcsUrl = "https://github.com/brainage04/FabricModdingConventions.git"
+	plugins {
+		component {
+			id = componentPluginId
+			implementationClass = componentImplementationClass
+			displayName = componentDisplayName
+			description = componentDescription
+		}
+	}
+}
+
+tasks.register("javadocJar", Jar) {
+	archiveClassifier = "javadoc"
+	from(rootProject.file("README.md"))
+}
+
+tasks.named("jar", Jar) {
+	inputs.property "archivesName", project.base.archivesName
+	from(rootProject.file("LICENSE")) {
+		rename { "${it}_${inputs.properties.archivesName}" }
+	}
+}
+
+publishing {
+	publications {
+		withType(MavenPublication).configureEach {
+			if (name == "pluginMaven") {
+				artifactId = project.base.archivesName.get()
+				artifact tasks.named("javadocJar")
+			}
+		}
+	}
+}

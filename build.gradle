@@ -99,7 +99,14 @@ publishing {
 }
 
 tasks.named("publishToMavenCentral") {
-	dependsOn(":gradle-plugin:publishAllPublicationsToCentralRepository")
+	dependsOn(
+			":gradle-plugin:fabric-mod-conventions:publishAllPublicationsToCentralRepository",
+			":gradle-plugin:client-gametest-recorder:publishAllPublicationsToCentralRepository",
+			":gradle-plugin:production-gametests:publishAllPublicationsToCentralRepository",
+			":gradle-plugin:workspace-dependencies:publishAllPublicationsToCentralRepository",
+			":gradle-plugin:maven-central-publishing:publishAllPublicationsToCentralRepository",
+			":gradle-plugin:mod-publishing:publishAllPublicationsToCentralRepository",
+	)
 }
 
 

@@ -35,8 +35,6 @@ Consumers in this workspace are configured to prefer `../FabricModdingConvention
 
 ## Gradle plugin components
 
-`io.github.brainage04.fabric-conventions:1.0.0` is the retired compatibility aggregate. Version `2.0.0` publishes no marker for that ID; consumers must apply the component plugins they use.
-
 Available components:
 
 - `io.github.brainage04.fabric-mod-conventions` — applies Fabric Loom and owns the standard Fabric/Minecraft repositories, Java release/toolchain defaults, sources JAR generation, typed `fabric.mod.json` expansion, and license inclusion.
@@ -44,8 +42,9 @@ Available components:
 - `io.github.brainage04.production-gametests` — applies the base plugin and owns the opt-in `productionGameTests` extension and production run tasks without forcing the recorder component.
 - `io.github.brainage04.workspace-dependencies` — declares module-filtered sibling Maven repositories before Maven Central so local publications are preferred without requiring them.
 - `io.github.brainage04.maven-central-publishing` — configures shared POM metadata, local and Central publication repositories, GPG-agent or in-memory signing, and Central Portal upload orchestration.
+- `io.github.brainage04.mod-publishing` — configures validated, opt-in GitHub, Modrinth, and CurseForge distribution tasks around the upstream Mod Publish Plugin.
 
-The recorder and production GameTest components apply the base plugin internally. Neither workspace dependency policy nor Maven Central publishing is applied transitively; both remain explicit consumer opt-ins.
+The recorder and production GameTest components apply the base plugin internally, so consumers should apply the leaf capabilities they need rather than redundantly declaring the base. Workspace dependency policy and both publishing plugins remain explicit consumer opt-ins.
 
 ```gradle
 plugins {
@@ -82,6 +81,30 @@ mavenCentralPublishing {
 
 It adds `build/local-repo` as the `local` publication repository and the Sonatype staging API as `central`. `publishToMavenCentral` validates metadata, Portal credentials, signing configuration, and `centralPublishingType` before uploading. Local publication needs no Central credentials. Local releases use `-PuseGpgAgentSigning=true`; CI uses `CENTRAL_PORTAL_USERNAME`, `CENTRAL_PORTAL_PASSWORD`, `SIGNING_KEY`, and `SIGNING_PASSWORD`. The release mode defaults to `user_managed` and also accepts `automatic` or `portal_api`.
 
+### Mod distribution publishing
+
+The distribution component derives common release metadata from the existing Fabric build, but every destination remains disabled until its DSL block is configured:
+
+```gradle
+plugins {
+    id "io.github.brainage04.mod-publishing" version "<version>"
+}
+
+modPublishing {
+    github {
+        repository.set("brainage04/example-mod")
+    }
+    modrinth {
+        projectId.set("example-project")
+    }
+    curseforge {
+        projectId.set("123456")
+    }
+}
+```
+
+`publishGithub`, `publishModrinth`, and `publishCurseforge` are independently retryable; `publishMods` runs every enabled destination. Validation rejects malformed booleans, negative retry counts, missing release artifacts, and inconsistent release metadata before network access. Modrinth project metadata and icons are synchronized through typed tasks. Ordinary `build` and `check` execution do not contact publishing endpoints.
+
 The base plugin reads `java_version`, `mod_id`, `mod_version`, `mod_name`, `loader_version`, and `minecraft_version` from Gradle properties. Its defaults can be narrowed per consumer:
 
 ```gradle
@@ -103,7 +126,6 @@ Apply the base and recorder components, then run the shared task directly:
 
 ```gradle
 plugins {
-    id "io.github.brainage04.fabric-mod-conventions" version "<version>"
     id "io.github.brainage04.client-gametest-recorder" version "<version>"
 }
 ```

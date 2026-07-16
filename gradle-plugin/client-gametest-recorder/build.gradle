@@ -1,0 +1,24 @@
+plugins {
+	id 'java-gradle-plugin'
+	id 'io.github.brainage04.maven-central-publishing' version "${maven_central_publishing_version}"
+}
+
+ext {
+	componentArchivesName = "client-gametest-recorder-gradle"
+	componentPluginId = "io.github.brainage04.client-gametest-recorder"
+	componentImplementationClass = "io.github.brainage04.fabricmoddingconventions.gradle.recorder.ClientGameTestRecorderPlugin"
+	componentDisplayName = "Client GameTest recorder Gradle plugin"
+	componentDescription = "Configures client GameTest preparation and recording tasks for Fabric mods."
+}
+
+apply from: rootProject.file("gradle/plugin-component.gradle")
+
+repositories {
+	maven { url "https://libraries.minecraft.net" }
+	maven { url "https://maven.fabricmc.net/" }
+}
+
+dependencies {
+	implementation project(":gradle-plugin:fabric-mod-conventions")
+	compileOnly "net.fabricmc:fabric-loom:${rootProject.loom_version}"
+}

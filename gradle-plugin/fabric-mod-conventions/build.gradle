@@ -1,0 +1,23 @@
+plugins {
+	id 'java-gradle-plugin'
+	id 'io.github.brainage04.maven-central-publishing' version "${maven_central_publishing_version}"
+}
+
+ext {
+	componentArchivesName = "fabric-mod-conventions-gradle"
+	componentPluginId = "io.github.brainage04.fabric-mod-conventions"
+	componentImplementationClass = "io.github.brainage04.fabricmoddingconventions.gradle.fabric.FabricModConventionsPlugin"
+	componentDisplayName = "Fabric mod conventions Gradle plugin"
+	componentDescription = "Applies Fabric Loom as the shared foundation for Fabric modding convention components."
+}
+
+apply from: rootProject.file("gradle/plugin-component.gradle")
+
+repositories {
+	maven { url "https://libraries.minecraft.net" }
+	maven { url "https://maven.fabricmc.net/" }
+}
+
+dependencies {
+	implementation "net.fabricmc:fabric-loom:${rootProject.loom_version}"
+}

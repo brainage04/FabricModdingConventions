@@ -89,6 +89,17 @@ jobs:
           MODRINTH_TOKEN: ${{ secrets.modrinth_token }}
         run: ./gradlew syncModrinthIcon -PpublishModrinth=true
 
+      - name: export synchronized Modrinth project state
+        if: steps.config.outputs.enabled == 'true' && steps.modrinth_sync.outcome == 'success'
+        run: |
+          state_file='build/mod-publishing/modrinth-project-state.json'
+          project_id="$(jq -er '.id | select(type == "string" and length > 0)' "$state_file")"
+          project_created="$(jq -er '.created | tostring' "$state_file")"
+          {
+            echo "MODRINTH_PROJECT_ID=$project_id"
+            echo "MODRINTH_PROJECT_CREATED=$project_created"
+          } >> "$GITHUB_ENV"
+
       - name: publish Modrinth version
         if: steps.config.outputs.enabled == 'true'
         env:
