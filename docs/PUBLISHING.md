@@ -53,7 +53,13 @@ unlock-central-publishing
 with-central-publishing ./gradlew --no-daemon :publishToMavenCentral
 ```
 
-The root task stages the runtime artifact plus all six component plugin markers and implementation modules, then performs one Central Portal deployment finalization.
+The root task stages and signs three distinct Central release concerns in one deployment:
+
+1. the `io.github.brainage04:fabricmoddingconventions` runtime artifact used by mod and GameTest code;
+2. one Gradle plugin marker artifact for each published plugin ID;
+3. the matching implementation module for each plugin marker.
+
+All three are required. A marker-only release resolves the plugin ID but not its implementation; an implementation-only release cannot satisfy the Gradle plugins DSL; omitting the runtime artifact breaks recorder/GameTest helper dependencies.
 
 By default, the staged deployment is uploaded to the Central Portal for manual review (`user_managed` mode). To ask Sonatype to release automatically after validation, run:
 

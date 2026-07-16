@@ -1,5 +1,7 @@
 package io.github.brainage04.fabricmoddingconventions.gradle.fabric;
 
+import net.fabricmc.loom.api.LoomGradleExtensionAPI;
+
 import org.gradle.api.GradleException;
 import org.gradle.api.JavaVersion;
 import org.gradle.api.Plugin;
@@ -7,12 +9,16 @@ import org.gradle.api.Project;
 import org.gradle.api.artifacts.ArtifactRepositoryContainer;
 import org.gradle.api.artifacts.dsl.RepositoryHandler;
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository;
+import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.plugins.BasePluginExtension;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.JavaCompile;
+import org.gradle.api.tasks.SourceSet;
+import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.language.jvm.tasks.ProcessResources;
+import org.gradle.api.tasks.testing.Test;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -26,6 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class FabricModConventionsPlugin implements Plugin<Project> {
     public static final String PLUGIN_ID = "io.github.brainage04.fabric-mod-conventions";
     public static final String CLIENT_GAMETEST_ENABLED_PROPERTY = "fabricmoddingconventions.clientGameTest";
+    public static final String MOD_SIDE_PROPERTY = "mod_side";
 
     private static final URI MINECRAFT_LIBRARIES = URI.create("https://libraries.minecraft.net");
     private static final URI FABRIC_MAVEN = URI.create("https://maven.fabricmc.net/");
@@ -40,8 +47,65 @@ public final class FabricModConventionsPlugin implements Plugin<Project> {
                 project.getLayout()
         );
 
+        ModSide modSide = ModSide.from(project);
+        configureProjectIdentity(project);
+        configureStandardDependencies(project);
+        configureSourceLayout(project, modSide);
+        configureUnitTests(project, modSide);
+
         configureRepositoriesBeforeResolution(project, extension);
         project.afterEvaluate(_ -> configureConventions(project, extension));
+    }
+
+
+    private static void configureProjectIdentity(Project project) {
+        project.setVersion(requiredProperty(project, "mod_version"));
+        project.setGroup(requiredProperty(project, "maven_group"));
+        project.getExtensions()
+                .getByType(BasePluginExtension.class)
+                .getArchivesName()
+                .set(requiredProperty(project, "archives_base_name"));
+    }
+
+    private static void configureStandardDependencies(Project project) {
+        DependencyHandler dependencies = project.getDependencies();
+        dependencies.add("minecraft", "com.mojang:minecraft:" + requiredProperty(project, "minecraft_version"));
+        dependencies.add("implementation", "net.fabricmc:fabric-loader:" + requiredProperty(project, "loader_version"));
+        dependencies.add(
+                "implementation",
+                "net.fabricmc.fabric-api:fabric-api:" + requiredProperty(project, "fabric_api_version")
+        );
+        dependencies.add(
+                "testImplementation",
+                "net.fabricmc:fabric-loader-junit:" + requiredProperty(project, "loader_version")
+        );
+    }
+
+    private static void configureSourceLayout(Project project, ModSide modSide) {
+        LoomGradleExtensionAPI loom = project.getExtensions().getByType(LoomGradleExtensionAPI.class);
+        String modId = requiredProperty(project, "mod_id");
+        if (modSide == ModSide.BOTH) {
+            loom.splitEnvironmentSourceSets();
+            SourceSetContainer sourceSets = project.getExtensions().getByType(SourceSetContainer.class);
+            SourceSet main = sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME);
+            SourceSet client = sourceSets.getByName("client");
+            loom.getMods().register(modId, mod -> {
+                mod.sourceSet(main);
+                mod.sourceSet(client);
+            });
+        }
+
+        var accessWidener = project.file("src/main/resources/" + modId + ".accesswidener");
+        if (accessWidener.isFile()) {
+            loom.getAccessWidenerPath().fileValue(accessWidener);
+        }
+    }
+
+    private static void configureUnitTests(Project project, ModSide modSide) {
+        project.getTasks().withType(Test.class).configureEach(task -> {
+            task.useJUnitPlatform();
+            task.systemProperty("fabric.side", modSide == ModSide.CLIENT ? "client" : "server");
+        });
     }
 
     private static void configureConventions(Project project, FabricModConventionsExtension extension) {
@@ -95,19 +159,27 @@ public final class FabricModConventionsPlugin implements Plugin<Project> {
         JavaPluginExtension java = project.getExtensions().getByType(JavaPluginExtension.class);
         java.setSourceCompatibility(javaVersion);
         java.setTargetCompatibility(javaVersion);
-        project.getTasks().withType(JavaCompile.class).configureEach(task -> task.getOptions().getRelease().set(release));
+        project.getTasks().withType(JavaCompile.class).configureEach(task -> {
+            task.getOptions().getRelease().set(release);
+            task.getOptions().setEncoding("UTF-8");
+        });
     }
 
     private static int requiredJavaVersion(Project project) {
-        Object value = project.findProperty("java_version");
-        if (value == null || value.toString().isBlank()) {
-            throw new GradleException(PLUGIN_ID + " requires project property 'java_version'.");
-        }
+        String value = requiredProperty(project, "java_version");
         try {
-            return Integer.parseInt(value.toString());
+            return Integer.parseInt(value);
         } catch (NumberFormatException exception) {
             throw new GradleException("Project property 'java_version' must be an integer, but was '" + value + "'.", exception);
         }
+    }
+
+    private static String requiredProperty(Project project, String name) {
+        Object value = project.findProperty(name);
+        if (value == null || value.toString().isBlank()) {
+            throw new GradleException(PLUGIN_ID + " requires project property '" + name + "'.");
+        }
+        return value.toString().strip();
     }
 
     private static void configureResourceExpansion(Project project, FabricModConventionsExtension extension) {
@@ -116,7 +188,7 @@ public final class FabricModConventionsPlugin implements Plugin<Project> {
             propertyNames.addAll(extension.getAdditionalFabricModJsonProperties().get());
             return resourceExpansion(project, propertyNames);
         });
-        project.getTasks().named("processResources", ProcessResources.class).configure(task -> {
+        project.getTasks().withType(ProcessResources.class).configureEach(task -> {
             task.getInputs().property("fabricModConventions.fabricModJsonExpansion", expansion);
             task.filesMatching("fabric.mod.json", details -> details.expand(expansion.get()));
         });

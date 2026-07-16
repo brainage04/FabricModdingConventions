@@ -1,0 +1,137 @@
+name: reusable client GameTests
+
+on:
+  workflow_call:
+    inputs:
+      java_version:
+        description: JDK version used by the Fabric build
+        required: false
+        default: '25'
+        type: string
+      run_client_gametests:
+        description: Run the non-recorded client GameTest suite
+        required: false
+        default: true
+        type: boolean
+      client_gametest_profile:
+        description: Optional profile exposed to the non-recorded client run
+        required: false
+        default: ''
+        type: string
+      record_client_gametests:
+        description: Record a client GameTest profile
+        required: false
+        default: false
+        type: boolean
+      recording_profile:
+        description: Optional profile exposed to the recorded client run
+        required: false
+        default: ''
+        type: string
+      recording_trace:
+        description: Request trace metadata during the recorded run
+        required: false
+        default: false
+        type: boolean
+      prepare_baritone:
+        description: Build the required local Baritone fork before the consumer
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  client-gametests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v5
+
+      - name: detect client test support
+        id: client-test-support
+        shell: bash
+        run: |
+          MOD_SIDE="$(sed -n 's/^mod_side=//p' gradle.properties)"
+          if [ "$MOD_SIDE" != 'server' ]; then
+            echo 'present=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'present=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: install client test tools
+        if: steps.client-test-support.outputs.present == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb ffmpeg pipewire-bin x11-utils mesa-utils libflite1 libgl1-mesa-dri libglx-mesa0 libxi6 libxrandr2 libxrender1 libxtst6 libxinerama1 libxcursor1 libxxf86vm1
+
+      - name: validate gradle wrapper
+        if: steps.client-test-support.outputs.present == 'true'
+        uses: gradle/actions/wrapper-validation@v5
+
+      - name: setup jdk
+        if: steps.client-test-support.outputs.present == 'true'
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ inputs.java_version }}
+          distribution: microsoft
+
+      - name: setup gradle
+        if: steps.client-test-support.outputs.present == 'true'
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: prepare required local Baritone fork
+        if: steps.client-test-support.outputs.present == 'true' && inputs.prepare_baritone
+        run: |
+          MINECRAFT_VERSION="$(sed -n 's/^minecraft_version=//p' gradle.properties)"
+          git clone --depth 1 --branch "minecraft-${MINECRAFT_VERSION}" https://github.com/brainage04/baritone.git ../baritone
+          chmod +x ../baritone/gradlew
+          ../baritone/gradlew -p ../baritone \
+            --no-daemon \
+            -Pmaven_group=io.github.brainage04 \
+            :fabric:publishMavenFabricPublicationToLocalBaritoneRepository
+
+      - name: make gradle wrapper executable
+        if: steps.client-test-support.outputs.present == 'true'
+        run: chmod +x ./gradlew
+
+      - name: run client GameTests
+        if: steps.client-test-support.outputs.present == 'true' && inputs.run_client_gametests
+        env:
+          ALSOFT_DRIVERS: 'null'
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          REQUESTED_CLIENT_GAMETEST_PROFILE: ${{ inputs.client_gametest_profile }}
+        run: |
+          if [ -n "$REQUESTED_CLIENT_GAMETEST_PROFILE" ]; then
+            export CLIENT_GAMETEST_PROFILE="$REQUESTED_CLIENT_GAMETEST_PROFILE"
+          fi
+          xvfb-run -a --server-args="-screen 0 1280x720x24" ./gradlew --no-daemon runClientGameTest
+
+      - name: record client GameTests
+        if: steps.client-test-support.outputs.present == 'true' && inputs.record_client_gametests
+        env:
+          ALSOFT_DRIVERS: 'null'
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          GTR_RECORDING_NAME: ${{ inputs.recording_profile || 'client-gametest' }}
+          GTR_RECORDING_PROFILE: ${{ inputs.recording_profile }}
+          GTR_RECORDING_TRACE: ${{ inputs.recording_trace && 'true' || 'false' }}
+        run: ./gradlew --no-daemon recordClientGameTest
+
+      - name: store client GameTest recordings
+        if: always() && steps.client-test-support.outputs.present == 'true' && inputs.record_client_gametests
+        uses: actions/upload-artifact@v7
+        with:
+          name: client-gametest-recordings
+          path: build/recordings/
+
+      - name: store client GameTest reports
+        if: failure() && steps.client-test-support.outputs.present == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: client-gametest-reports
+          path: |
+            **/build/reports/
+            **/build/test-results/
+            **/build/run/clientGameTest/logs/

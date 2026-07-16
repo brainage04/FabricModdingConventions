@@ -22,16 +22,11 @@ class FabricModConventionsPluginTest {
 
     @Test
     void appliesSharedDefaultsAndAdditionalResourceProperties() throws IOException {
-        writeFixture("25", """
+        writeFixture("25", true, """
                 plugins {
                     id '%s'
                 }
 
-                version = '1.2.3'
-
-                base {
-                    archivesName = 'fixturemod'
-                }
 
                 repositories {
                     maven {
@@ -40,10 +35,6 @@ class FabricModConventionsPluginTest {
                     }
                 }
 
-                dependencies {
-                    minecraft 'com.mojang:minecraft:26.1.2'
-                    implementation 'net.fabricmc:fabric-loader:0.19.2'
-                }
 
                 fabricModConventions {
                     additionalFabricModJsonProperties.add('fixture_dependency_version')
@@ -61,9 +52,30 @@ class FabricModConventionsPluginTest {
                         assert repositoryUrls.contains('https://repo.maven.apache.org/maven2/')
                         assert repositoryUrls.contains('https://libraries.minecraft.net')
                         assert repositoryUrls.contains('https://maven.fabricmc.net/')
+                        assert project.version == '1.2.3'
+                        assert project.group == 'io.github.brainage04.fixturemod'
+                        assert base.archivesName.get() == 'fixturemod'
+                        assert loom.areEnvironmentSourceSetsSplit()
+                        assert sourceSets.findByName('client') != null
+                        assert loom.mods.findByName('fixturemod') != null
+                        assert loom.accessWidenerPath.get().asFile.name == 'fixturemod.accesswidener'
+                        assert configurations.minecraft.dependencies.any {
+                            it.group == 'com.mojang' && it.name == 'minecraft' && it.version == '26.1.2'
+                        }
+                        assert configurations.implementation.dependencies.any {
+                            it.group == 'net.fabricmc' && it.name == 'fabric-loader' && it.version == '0.19.2'
+                        }
+                        assert configurations.implementation.dependencies.any {
+                            it.group == 'net.fabricmc.fabric-api' && it.name == 'fabric-api' && it.version == '0.146.1+26.1.2'
+                        }
+                        assert configurations.testImplementation.dependencies.any {
+                            it.group == 'net.fabricmc' && it.name == 'fabric-loader-junit' && it.version == '0.19.2'
+                        }
+                        assert tasks.named('test').get().systemProperties['fabric.side'] == 'server'
                         assert java.sourceCompatibility == JavaVersion.VERSION_25
                         assert java.targetCompatibility == JavaVersion.VERSION_25
                         assert tasks.named('compileJava').get().options.release.get() == 25
+                        assert tasks.named('compileJava').get().options.encoding == 'UTF-8'
 
                         def jarFile = tasks.named('jar').get().archiveFile.get().asFile
                         assert zipTree(jarFile).matching { include 'LICENSE_fixturemod' }.files.size() == 1
@@ -83,7 +95,7 @@ class FabricModConventionsPluginTest {
 
     @Test
     void featureOptOutsPreserveConsumerConfiguration() throws IOException {
-        writeFixture("24", """
+        writeFixture("24", false, """
                 plugins {
                     id '%s'
                 }
@@ -153,6 +165,27 @@ class FabricModConventionsPluginTest {
         assertTrue(metadata.contains("${fixture_dependency_version}"));
     }
 
+    @Test
+    void rejectsUnknownModSide() throws IOException {
+        writeFixture("25", false, """
+                plugins {
+                    id '%s'
+                }
+                """.formatted(BASE_PLUGIN_ID));
+        Path properties = projectDir.resolve("gradle.properties");
+        Files.writeString(properties, Files.readString(properties).replace("mod_side=both", "mod_side=desktop"));
+
+        BuildResult result = GradleRunner.create()
+                .withProjectDir(projectDir.toFile())
+                .withPluginClasspath()
+                .withArguments("help")
+                .buildAndFail();
+
+        assertTrue(result.getOutput().contains(
+                "Project property 'mod_side' must be one of both, client, or server, but was 'desktop'."
+        ));
+    }
+
     private BuildResult runGradle(String... arguments) {
         return GradleRunner.create()
                 .withProjectDir(projectDir.toFile())
@@ -161,18 +194,28 @@ class FabricModConventionsPluginTest {
                 .build();
     }
 
-    private void writeFixture(String javaVersion, String buildScript) throws IOException {
+    private void writeFixture(String javaVersion, boolean canonical, String buildScript) throws IOException {
         Files.writeString(projectDir.resolve("settings.gradle"), "rootProject.name = 'fabric-mod-conventions-fixture'\n");
         Files.writeString(projectDir.resolve("gradle.properties"), """
+                mod_side=both
                 mod_id=fixturemod
                 mod_name=Fixture Mod
+                mod_version=1.2.3
+                maven_group=io.github.brainage04.fixturemod
+                archives_base_name=fixturemod
                 loader_version=0.19.2
                 minecraft_version=26.1.2
+                fabric_api_version=0.146.1+26.1.2
                 java_version=%s
                 fixture_dependency_version=9.8.7
                 """.formatted(javaVersion));
         Files.writeString(projectDir.resolve("build.gradle"), buildScript);
         Files.writeString(projectDir.resolve("LICENSE"), "Fixture license\n");
+        if (canonical) {
+            Path accessWidener = projectDir.resolve("src/main/resources/fixturemod.accesswidener");
+            Files.createDirectories(accessWidener.getParent());
+            Files.writeString(accessWidener, "accessWidener v2 official\n");
+        }
 
         Path javaSource = projectDir.resolve("src/main/java/example/Fixture.java");
         Files.createDirectories(javaSource.getParent());

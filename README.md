@@ -37,14 +37,24 @@ Consumers in this workspace are configured to prefer `../FabricModdingConvention
 
 Available components:
 
-- `io.github.brainage04.fabric-mod-conventions` — applies Fabric Loom and owns the standard Fabric/Minecraft repositories, Java release/toolchain defaults, sources JAR generation, typed `fabric.mod.json` expansion, and license inclusion.
-- `io.github.brainage04.client-gametest-recorder` — applies the base plugin and owns `clientGameTestRecorder`, `prepareClientGameTestRun`, and `recordClientGameTest`.
-- `io.github.brainage04.production-gametests` — applies the base plugin and owns the opt-in `productionGameTests` extension and production run tasks without forcing the recorder component.
+- `io.github.brainage04.fabric-mod-conventions` — applies Fabric Loom and owns project identity, standard Minecraft/Fabric dependencies and repositories, Java compile/test conventions, side-aware Loom source layout, access-widener discovery, sources JAR generation, typed `fabric.mod.json` expansion, and license inclusion.
+- `io.github.brainage04.client-gametest-recorder` — applies the base plugin, owns `clientGameTestRecorder`, `prepareClientGameTestRun`, and `recordClientGameTest`, and wires the runtime helper into GameTest compilation and production runs when the production component is present.
+- `io.github.brainage04.production-gametests` — applies the base plugin, creates and registers the `gametest` source set from `mod_id`, configures Loom's development GameTest runs from `mod_side`, and owns the `productionGameTests` extension and production run tasks without forcing the recorder component.
 - `io.github.brainage04.workspace-dependencies` — declares module-filtered sibling Maven repositories before Maven Central so local publications are preferred without requiring them.
 - `io.github.brainage04.maven-central-publishing` — configures shared POM metadata, local and Central publication repositories, GPG-agent or in-memory signing, and Central Portal upload orchestration.
 - `io.github.brainage04.mod-publishing` — configures validated, opt-in GitHub, Modrinth, and CurseForge distribution tasks around the upstream Mod Publish Plugin.
 
-The recorder and production GameTest components apply the base plugin internally, so consumers should apply the leaf capabilities they need rather than redundantly declaring the base. Workspace dependency policy and both publishing plugins remain explicit consumer opt-ins.
+The recorder and production GameTest components apply the base plugin internally, so consumers apply only the leaf capabilities they need. Workspace dependency policy and both publishing plugins remain explicit consumer opt-ins.
+
+`mod_side` is the stable environment model:
+
+| Value | Main source layout | Development client GameTests | Development server GameTests |
+| --- | --- | --- | --- |
+| `both` | `src/main` plus split `src/client` | enabled | enabled |
+| `client` | client-only code in `src/main` | enabled | disabled |
+| `server` | server/common code in `src/main` | disabled | enabled |
+
+The reusable workflows `reusable-mod-build.yml`, `reusable-client-gametests.yml`, and `reusable-production-gametests.yml` own standard build, client GameTest/recording, and production GameTest orchestration. Consumer workflows provide only trigger policy, profiles, and optional Baritone or template-smoke inputs.
 
 ```gradle
 plugins {
@@ -105,7 +115,7 @@ modPublishing {
 
 `publishGithub`, `publishModrinth`, and `publishCurseforge` are independently retryable; `publishMods` runs every enabled destination. Validation rejects malformed booleans, negative retry counts, missing release artifacts, and inconsistent release metadata before network access. Modrinth project metadata and icons are synchronized through typed tasks. Ordinary `build` and `check` execution do not contact publishing endpoints.
 
-The base plugin reads `java_version`, `mod_id`, `mod_version`, `mod_name`, `loader_version`, and `minecraft_version` from Gradle properties. Its defaults can be narrowed per consumer:
+The base plugin requires `mod_side`, `java_version`, `mod_id`, `mod_version`, `mod_name`, `maven_group`, `archives_base_name`, `loader_version`, `minecraft_version`, and `fabric_api_version` in Gradle properties. Its optional behaviors can be narrowed per consumer:
 
 ```gradle
 fabricModConventions {
@@ -118,7 +128,7 @@ fabricModConventions {
 }
 ```
 
-`additionalFabricModJsonProperties` extends the required resource-expansion property set without replacing it. Missing or blank properties fail with a configuration error when `fabric.mod.json` is processed. `licenseFile` defaults to the root project's `LICENSE`.
+`additionalFabricModJsonProperties` extends the required resource-expansion property set without replacing it. Expansion applies to every `ProcessResources` task, including the plugin-owned GameTest source set. Missing or blank properties fail when metadata is processed. `licenseFile` defaults to the root project's `LICENSE`.
 
 ## Recording task
 
@@ -138,15 +148,16 @@ The Java-side helpers live under `io.github.brainage04.fabricmoddingconventions`
 
 ## Production GameTest tasks
 
-Production GameTest support is opt-in. It keeps Loom's normal development GameTest tasks unchanged and registers separate production tasks when enabled:
+Applying `io.github.brainage04.production-gametests` creates the `gametest` source set and configures Loom's development GameTest runs from `mod_side`. It also registers production tasks for the applicable sides; consumers only configure genuine runtime differences:
 
 ```gradle
 productionGameTests {
-    enabled = true
+    runtimeModDependencies.add("me.fzzyhmstrs:fzzy_config:${project.fzzy_config_version}")
+    runtimeLibraryDependencies.add("com.github.twitch4j:twitch4j:${project.twitch4j_version}")
 }
 ```
 
-The plugin adds Fabric API to Loom's `productionRuntimeMods` configuration from `fabric_api_version` by default. It packages `sourceSets.gametest.output` into a dedicated mod jar, adds that jar to both production runs, and writes `eula=true` in their isolated run directories. Consumers must declare extra Fabric mods through `runtimeModDependencies` and ordinary JVM libraries through `runtimeLibraryDependencies`; Loom's production tasks do not inherit the development runtime classpath. The plugin registers:
+The plugin adds Fabric API to Loom's `productionRuntimeMods` configuration from `fabric_api_version` by default. It packages `sourceSets.gametest.output` into a dedicated mod jar, adds that jar to the enabled production runs, and writes `eula=true` in their isolated run directories. Consumers declare extra Fabric mods through `runtimeModDependencies` and ordinary JVM libraries through `runtimeLibraryDependencies`; Loom's production tasks do not inherit the development runtime classpath. The plugin registers:
 
 - `productionGameTestJar` — packages the processed `gametest` source-set classes and resources as `*-production-gametest.jar`.
 - `prepareProductionGameTestRuns` — writes the client embedded-server and standalone-server EULA files.
@@ -158,7 +169,7 @@ Useful switches:
 
 ```gradle
 productionGameTests {
-    enabled = true
+    // Override the mod_side-derived production task selection only when needed.
     includeClient = true
     includeServer = false
     clientUseXvfb = true

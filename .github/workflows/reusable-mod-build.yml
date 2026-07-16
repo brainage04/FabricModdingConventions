@@ -1,0 +1,123 @@
+name: reusable Fabric mod build
+
+on:
+  workflow_call:
+    inputs:
+      java_version:
+        description: JDK version used by the Fabric build
+        required: false
+        default: '25'
+        type: string
+      check_scripts:
+        description: Run shellcheck and shfmt against template scripts
+        required: false
+        default: false
+        type: boolean
+      run_template_smoke:
+        description: Run the generated-template smoke matrix
+        required: false
+        default: false
+        type: boolean
+      prepare_baritone:
+        description: Build the required local Baritone fork before the consumer
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v5
+
+      - name: install workflow tools
+        if: inputs.check_scripts || inputs.run_template_smoke
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl jq ripgrep shellcheck shfmt tar
+
+      - name: install actionlint
+        if: inputs.check_scripts
+        env:
+          ACTIONLINT_VERSION: '1.7.12'
+        run: |
+          curl -sSLo /tmp/actionlint.tar.gz "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          tar -xzf /tmp/actionlint.tar.gz -C /tmp actionlint
+          sudo install -m 0755 /tmp/actionlint /usr/local/bin/actionlint
+
+      - name: check scripts and workflows
+        if: inputs.check_scripts
+        shell: bash
+        run: |
+          shopt -s nullglob
+          scripts=(.github/scripts/*.sh)
+          if [ -f init.sh ]; then
+            scripts+=(init.sh)
+          fi
+          if [ "${#scripts[@]}" -gt 0 ]; then
+            shellcheck "${scripts[@]}"
+            shfmt -d -i 2 -ci "${scripts[@]}"
+          fi
+          actionlint
+
+      - name: validate gradle wrapper
+        uses: gradle/actions/wrapper-validation@v5
+
+      - name: setup jdk
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ inputs.java_version }}
+          distribution: microsoft
+
+      - name: setup gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: prepare required local Baritone fork
+        if: inputs.prepare_baritone
+        run: |
+          MINECRAFT_VERSION="$(sed -n 's/^minecraft_version=//p' gradle.properties)"
+          git clone --depth 1 --branch "minecraft-${MINECRAFT_VERSION}" https://github.com/brainage04/baritone.git ../baritone
+          chmod +x ../baritone/gradlew
+          ../baritone/gradlew -p ../baritone \
+            --no-daemon \
+            -Pmaven_group=io.github.brainage04 \
+            :fabric:publishMavenFabricPublicationToLocalBaritoneRepository
+
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: build
+        run: ./gradlew --no-daemon build
+
+      - name: prepare template smoke dependencies
+        if: inputs.run_template_smoke
+        run: |
+          git clone --depth 1 https://github.com/brainage04/FabricModdingConventions.git ../FabricModdingConventions
+          chmod +x ../FabricModdingConventions/gradlew
+          ../FabricModdingConventions/gradlew -p ../FabricModdingConventions \
+            --no-daemon \
+            publishAllPublicationsToLocalRepository
+
+      - name: smoke test generated templates
+        if: inputs.run_template_smoke
+        run: bash .github/scripts/smoke_template_generation.sh
+
+      - name: store reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: reports
+          path: |
+            **/build/reports/
+            **/build/test-results/
+
+      - name: capture build artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: Artifacts
+          path: build/libs/

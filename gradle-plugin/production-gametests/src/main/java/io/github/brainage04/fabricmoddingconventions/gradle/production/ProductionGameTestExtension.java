@@ -10,7 +10,6 @@ import javax.inject.Inject;
 import java.util.List;
 
 public abstract class ProductionGameTestExtension {
-    private final Property<Boolean> enabled;
     private final Property<Boolean> includeClient;
     private final Property<Boolean> includeServer;
     private final Property<Boolean> includeFabricApiDependency;
@@ -29,7 +28,6 @@ public abstract class ProductionGameTestExtension {
 
     @Inject
     public ProductionGameTestExtension(ObjectFactory objects, ProjectLayout layout) {
-        enabled = objects.property(Boolean.class).convention(false);
         includeClient = objects.property(Boolean.class).convention(true);
         includeServer = objects.property(Boolean.class).convention(true);
         includeFabricApiDependency = objects.property(Boolean.class).convention(true);
@@ -47,9 +45,6 @@ public abstract class ProductionGameTestExtension {
         serverInstallerVersion = objects.property(String.class);
     }
 
-    public Property<Boolean> getEnabled() {
-        return enabled;
-    }
 
     public Property<Boolean> getIncludeClient() {
         return includeClient;

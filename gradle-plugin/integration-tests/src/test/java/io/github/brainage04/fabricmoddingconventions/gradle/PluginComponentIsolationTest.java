@@ -65,12 +65,8 @@ class PluginComponentIsolationTest {
     @Test
     void productionPluginIsStandaloneAndRegistersEnabledTasks() throws IOException {
         writeLoomFixture(PRODUCTION_PLUGIN_ID, """
-                sourceSets {
-                    gametest
-                }
 
                 productionGameTests {
-                    enabled = true
                     includeFabricApiDependency = false
                     runtimeLibraryDependencies.add("example:runtime-library:1.0")
                 }
@@ -79,6 +75,10 @@ class PluginComponentIsolationTest {
                     doLast {
                         assert project.extensions.findByName('clientGameTestRecorder') == null
                         assert project.extensions.findByName('productionGameTests') != null
+                        assert project.sourceSets.findByName('gametest') != null
+                        assert project.loom.mods.findByName('fixturemod-gametest') != null
+                        assert project.tasks.findByName('runGameTest') != null
+                        assert project.tasks.findByName('runClientGameTest') != null
                         assert project.tasks.findByName('prepareClientGameTestRun') == null
                         assert project.tasks.findByName('runProductionClientGameTest') != null
                         assert project.tasks.findByName('runProductionServerGameTest') != null
@@ -102,7 +102,7 @@ class PluginComponentIsolationTest {
 
         Path gameTestDescriptor = projectDir.resolve("src/gametest/resources/fabric.mod.json");
         Files.createDirectories(gameTestDescriptor.getParent());
-        Files.writeString(gameTestDescriptor, "production GameTest descriptor");
+        Files.writeString(gameTestDescriptor, "{\"id\":\"${mod_id}-gametest\",\"version\":\"${mod_version}\"}");
 
         var result = runGradle(
                 "prepareProductionGameTestRuns",
@@ -126,7 +126,7 @@ class PluginComponentIsolationTest {
                     .orElseThrow();
             try (var jar = new JarFile(gameTestJar.toFile())) {
                 assertEquals(
-                        "production GameTest descriptor",
+                        "{\"id\":\"fixturemod-gametest\",\"version\":\"1.2.3\"}",
                         new String(
                                 jar.getInputStream(jar.getJarEntry("fabric.mod.json")).readAllBytes(),
                                 StandardCharsets.UTF_8
@@ -167,6 +167,16 @@ class PluginComponentIsolationTest {
                         assert project.extensions.findByName('productionGameTests') != null
                         assert project.tasks.findAll { it.name == 'prepareClientGameTestRun' }.size() == 1
                         assert project.tasks.findAll { it.name == 'recordClientGameTest' }.size() == 1
+                        assert project.configurations.gametestImplementation.dependencies.any {
+                            it.group == 'io.github.brainage04'
+                                    && it.name == 'fabricmoddingconventions'
+                                    && it.version == 'fixture-version'
+                        }
+                        assert project.configurations.productionRuntimeMods.dependencies.any {
+                            it.group == 'io.github.brainage04'
+                                    && it.name == 'fabricmoddingconventions'
+                                    && it.version == 'fixture-version'
+                        }
                     }
                 }
                 """);
@@ -209,24 +219,24 @@ class PluginComponentIsolationTest {
     }
 
     private void writeFixture(String pluginIds, boolean includeLoomDependencies, String configuration) throws IOException {
-        String repositories = includeLoomDependencies
+        String repositories = "";
+        String dependencies = "";
+        String properties = includeLoomDependencies
                 ? """
-                repositories {
-                    mavenCentral()
-                    maven { url 'https://libraries.minecraft.net' }
-                    maven { url 'https://maven.fabricmc.net/' }
-                }
+                mod_side=both
+                mod_id=fixturemod
+                mod_name=Fixture Mod
+                mod_version=1.2.3
+                maven_group=io.github.brainage04.fixture
+                archives_base_name=fixturemod
+                minecraft_version=26.1.2
+                loader_version=0.19.2
+                fabric_api_version=0.146.1+26.1.2
+                fabricmoddingconventions_version=fixture-version
+                java_version=25
                 """
-                : "";
-        String dependencies = includeLoomDependencies
-                ? """
-                dependencies {
-                    minecraft 'com.mojang:minecraft:26.1.2'
-                    implementation 'net.fabricmc:fabric-loader:0.19.2'
-                }
-                """
-                : "";
-        Files.writeString(projectDir.resolve("gradle.properties"), "java_version=25\n");
+                : "java_version=25\n";
+        Files.writeString(projectDir.resolve("gradle.properties"), properties);
         Files.writeString(projectDir.resolve("settings.gradle"), "rootProject.name = 'recorder-convention-fixture'\n");
         Files.writeString(projectDir.resolve("build.gradle"), """
                 plugins {

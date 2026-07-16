@@ -1,6 +1,8 @@
 package io.github.brainage04.fabricmoddingconventions.gradle.production;
 
 import io.github.brainage04.fabricmoddingconventions.gradle.fabric.FabricModConventionsPlugin;
+import io.github.brainage04.fabricmoddingconventions.gradle.fabric.ModSide;
+import net.fabricmc.loom.api.fabricapi.FabricApiExtension;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -22,17 +24,36 @@ public final class ProductionGameTestsPlugin implements Plugin<Project> {
     @Override
     public void apply(Project project) {
         project.getPluginManager().apply(FabricModConventionsPlugin.class);
+        ModSide modSide = ModSide.from(project);
+        configureDevelopmentGameTests(project, modSide);
         ProductionGameTestExtension extension = project.getExtensions().create(
                 "productionGameTests",
                 ProductionGameTestExtension.class,
                 project.getObjects(),
                 project.getLayout()
         );
+        extension.getIncludeClient().convention(modSide != ModSide.SERVER);
+        extension.getIncludeServer().convention(modSide != ModSide.CLIENT);
         project.afterEvaluate(_ -> configureProductionGameTests(project, extension));
     }
 
+    private static void configureDevelopmentGameTests(Project project, ModSide modSide) {
+        FabricApiExtension fabricApi = project.getExtensions().getByType(FabricApiExtension.class);
+        Object modId = project.findProperty("mod_id");
+        if (modId == null || modId.toString().isBlank()) {
+            throw new GradleException(PLUGIN_ID + " requires project property 'mod_id'.");
+        }
+        fabricApi.configureTests(settings -> {
+            settings.getCreateSourceSet().set(true);
+            settings.getModId().set(modId.toString().strip() + "-gametest");
+            settings.getEnableGameTests().set(modSide != ModSide.CLIENT);
+            settings.getEnableClientGameTests().set(modSide != ModSide.SERVER);
+            settings.getEula().set(modSide != ModSide.SERVER);
+        });
+    }
+
     private static void configureProductionGameTests(Project project, ProductionGameTestExtension extension) {
-        if (!extension.getEnabled().get() || (!extension.getIncludeClient().get() && !extension.getIncludeServer().get())) {
+        if (!extension.getIncludeClient().get() && !extension.getIncludeServer().get()) {
             return;
         }
 

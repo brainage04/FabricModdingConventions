@@ -18,6 +18,9 @@ import java.util.Locale;
 /** Configures recording support for Fabric client GameTests. */
 public final class ClientGameTestRecorderPlugin implements Plugin<Project> {
     public static final String PLUGIN_ID = "io.github.brainage04.client-gametest-recorder";
+    private static final String PRODUCTION_GAMETESTS_PLUGIN_ID = "io.github.brainage04.production-gametests";
+    private static final String RUNTIME_HELPER_GROUP = "io.github.brainage04";
+    private static final String RUNTIME_HELPER_NAME = "fabricmoddingconventions";
 
     @Override
     public void apply(Project project) {
@@ -27,6 +30,10 @@ public final class ClientGameTestRecorderPlugin implements Plugin<Project> {
                 ClientGameTestRecorderExtension.class,
                 project.getObjects(),
                 project.getLayout()
+        );
+        project.getPluginManager().withPlugin(
+                PRODUCTION_GAMETESTS_PLUGIN_ID,
+                _ -> addRuntimeHelperDependencies(project)
         );
         String recordingRunDirectory = project.getProviders()
                 .environmentVariable("GTR_RECORDING_RUN_DIR")
@@ -55,6 +62,19 @@ public final class ClientGameTestRecorderPlugin implements Plugin<Project> {
         project.afterEvaluate(_ -> project.getTasks()
                 .matching(task -> task.getName().equals("runClientGameTest"))
                 .configureEach(task -> configureRunClientGameTest(project, extension, prepareTask, task)));
+    }
+
+    private static void addRuntimeHelperDependencies(Project project) {
+        Object version = project.findProperty("fabricmoddingconventions_version");
+        if (version == null || version.toString().isBlank()) {
+            throw new GradleException(
+                    PLUGIN_ID + " requires project property 'fabricmoddingconventions_version' "
+                            + "when " + PRODUCTION_GAMETESTS_PLUGIN_ID + " is applied."
+            );
+        }
+        String dependency = RUNTIME_HELPER_GROUP + ":" + RUNTIME_HELPER_NAME + ":" + version.toString().strip();
+        project.getDependencies().add("gametestImplementation", dependency);
+        project.getDependencies().add("productionRuntimeMods", dependency);
     }
 
     private static void configurePrepareTask(Project project, ClientGameTestRecorderExtension extension, PrepareClientGameTestRunTask task) {

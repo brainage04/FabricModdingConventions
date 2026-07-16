@@ -33,7 +33,19 @@ class PluginMarkerResolutionTest {
     void resolvesEveryMarkerFromThePublishedMavenRepository() throws IOException {
         Path repository = publishedRepository();
         Files.writeString(projectDirectory.resolve("settings.gradle"), settingsFile(repository));
-        Files.writeString(projectDirectory.resolve("gradle.properties"), "java_version=25\n");
+        Files.writeString(projectDirectory.resolve("gradle.properties"), """
+                mod_side=both
+                mod_id=publishedmarkerfixture
+                mod_name=Published Marker Fixture
+                mod_version=1.0.0
+                maven_group=io.github.brainage04.fixture
+                archives_base_name=publishedmarkerfixture
+                minecraft_version=26.1.2
+                loader_version=0.19.2
+                fabric_api_version=0.146.1+26.1.2
+                fabricmoddingconventions_version=%s
+                java_version=25
+                """.formatted(VERSION));
         Files.writeString(projectDirectory.resolve("build.gradle"), consumerBuildFile());
 
         var result = GradleRunner.create()
@@ -123,10 +135,6 @@ class PluginMarkerResolutionTest {
                     maven { url = 'https://maven.fabricmc.net/' }
                 }
 
-                dependencies {
-                    minecraft 'com.mojang:minecraft:26.1.2'
-                    implementation 'net.fabricmc:fabric-loader:0.19.2'
-                }
 
                 tasks.register('assertPublishedMarkers') {
                     doLast {
