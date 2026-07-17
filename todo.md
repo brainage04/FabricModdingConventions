@@ -1,6 +1,13 @@
 # FabricModdingConventions todo
 
-No active feature work is queued. New work must satisfy one of the concrete triggers below.
+The Kotlin migration below is the only active roadmap item. Other prospective work remains trigger-gated.
+
+## Planned work
+
+- [ ] Migrate the Gradle plugin implementation modules and their tests from Java to Kotlin.
+  - Preserve every published plugin ID and coordinate, extension/task DSL, runtime-helper dependency contract, and current consumer behavior.
+  - Keep the shipped Fabric runtime helper classes in Java unless introducing Fabric Language Kotlin as a consumer runtime dependency is explicitly approved.
+  - Migrate incrementally while keeping the plugin tests, marker-resolution tests, component-isolation tests, consumer builds/GameTests, and Maven Central publication dry-run green.
 
 ## Completed 2.3.0 ownership rollout
 
