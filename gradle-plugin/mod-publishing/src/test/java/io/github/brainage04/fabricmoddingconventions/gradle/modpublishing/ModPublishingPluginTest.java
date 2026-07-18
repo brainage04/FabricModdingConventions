@@ -126,6 +126,35 @@ class ModPublishingPluginTest {
     }
 
     @Test
+    void validationBuildsTheDefaultReleaseJar() throws IOException {
+        Files.writeString(projectDirectory.resolve("build.gradle"), """
+                plugins {
+                    id 'java'
+                    id '%s'
+                }
+
+                version = '1.2.3'
+
+                modPublishing {
+                    version = '1.2.3'
+                    releaseTag = 'v1.2.3'
+                    displayName = 'Publisher Fixture 1.2.3'
+                    changelog = 'Release notes'
+                    dryRun = true
+                    github {
+                        repository = 'brainage04/publisher-fixture'
+                        commitish = 'main'
+                    }
+                }
+                """.formatted(PLUGIN_ID));
+
+        BuildResult result = runGradle("validateModPublication");
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":jar").getOutcome());
+        assertEquals(TaskOutcome.SUCCESS, result.task(":validateModPublication").getOutcome());
+    }
+
+    @Test
     void rejectsMalformedPublishingBooleanInsteadOfSilentlyDisablingRelease() throws IOException {
         writeBuildFile("""
                 github.repository = 'brainage04/publisher-fixture'

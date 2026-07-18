@@ -230,6 +230,9 @@ public final class ModPublishingPlugin implements Plugin<Project> {
                     validation.getCurseforgeProjectId().convention(extension.getCurseforge().getProjectId().orElse(""));
                     validation.getCurseforgeToken().convention(extension.getCurseforge().getToken().orElse(""));
                     validation.dependsOn("processResources");
+                    validation.dependsOn(project.getTasks().matching(candidate ->
+                            candidate.getName().equals("jar") || candidate.getName().equals("remapJar")
+                    ));
                 }
         );
         return task;
