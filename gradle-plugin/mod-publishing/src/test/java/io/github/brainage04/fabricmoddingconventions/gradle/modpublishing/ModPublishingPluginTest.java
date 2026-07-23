@@ -238,21 +238,21 @@ class ModPublishingPluginTest {
     }
 
     @Test
-    void rejectsMismatchedReleaseTagBeforeAnyPublisherRuns() throws IOException {
+    void acceptsASharedReleaseTagForALoaderSpecificVersionNumber() throws IOException {
         writeBuildFile("""
                 dryRun = true
-                releaseTag = 'v9.9.9'
+                version = '1.2.3-neoforge'
+                releaseTag = 'v1.2.3'
                 github {
                     repository = 'brainage04/publisher-fixture'
                     commitish = 'main'
                 }
                 """, "");
 
-        BuildResult result = runGradleAndFail("publishGithub");
+        BuildResult result = runGradle("publishGithub");
 
-        assertTrue(result.getOutput().contains("Expected release tag v1.2.3, got v9.9.9"));
-        assertEquals(TaskOutcome.FAILED, result.task(":validateModPublication").getOutcome());
-        assertEquals(null, result.task(":publishGithub"));
+        assertEquals(TaskOutcome.SUCCESS, result.task(":validateModPublication").getOutcome());
+        assertEquals(TaskOutcome.SUCCESS, result.task(":publishGithub").getOutcome());
     }
 
     @Test

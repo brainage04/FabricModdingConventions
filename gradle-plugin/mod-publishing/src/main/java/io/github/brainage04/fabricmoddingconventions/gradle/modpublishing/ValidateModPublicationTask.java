@@ -111,11 +111,8 @@ public abstract class ValidateModPublicationTask extends DefaultTask {
             throw new GradleException("modPublishing.maxRetries must be zero or greater.");
         }
 
-        String version = required(getVersion(), "modPublishing.version");
-        String releaseTag = required(getReleaseTag(), "modPublishing.releaseTag");
-        if (!releaseTag.equals("v" + version)) {
-            throw new GradleException("Expected release tag v" + version + ", got " + releaseTag);
-        }
+        required(getVersion(), "modPublishing.version");
+        required(getReleaseTag(), "modPublishing.releaseTag");
         required(getDisplayName(), "modPublishing.displayName");
         nonEmpty(getMinecraftVersions().get(), "modPublishing.minecraftVersions");
         nonEmpty(getModLoaders().get(), "modPublishing.modLoaders");
