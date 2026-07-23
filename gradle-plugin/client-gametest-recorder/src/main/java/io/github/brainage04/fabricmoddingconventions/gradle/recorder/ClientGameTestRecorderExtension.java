@@ -18,6 +18,11 @@ public abstract class ClientGameTestRecorderExtension {
     private final Property<String> simulationDistance;
     private final Property<String> guiScale;
     private final Property<String> fullscreen;
+    private final Property<Boolean> disableUnsecureChatToast;
+    private final Property<Boolean> disableSocialInteractionsToast;
+    private final Property<Boolean> disableRecipeToasts;
+    private final Property<Boolean> disableAdvancementToasts;
+    private final Property<Boolean> disableAdvancementChatMessages;
 
     @Inject
     public ClientGameTestRecorderExtension(ObjectFactory objects, ProjectLayout layout) {
@@ -31,6 +36,11 @@ public abstract class ClientGameTestRecorderExtension {
         simulationDistance = objects.property(String.class).convention("5");
         guiScale = objects.property(String.class).convention("1");
         fullscreen = objects.property(String.class).convention("true");
+        disableUnsecureChatToast = objects.property(Boolean.class).convention(true);
+        disableSocialInteractionsToast = objects.property(Boolean.class).convention(true);
+        disableRecipeToasts = objects.property(Boolean.class).convention(true);
+        disableAdvancementToasts = objects.property(Boolean.class).convention(true);
+        disableAdvancementChatMessages = objects.property(Boolean.class).convention(true);
     }
 
 
@@ -72,5 +82,25 @@ public abstract class ClientGameTestRecorderExtension {
 
     public Property<String> getFullscreen() {
         return fullscreen;
+    }
+
+    public Property<Boolean> getDisableUnsecureChatToast() {
+        return disableUnsecureChatToast;
+    }
+
+    public Property<Boolean> getDisableSocialInteractionsToast() {
+        return disableSocialInteractionsToast;
+    }
+
+    public Property<Boolean> getDisableRecipeToasts() {
+        return disableRecipeToasts;
+    }
+
+    public Property<Boolean> getDisableAdvancementToasts() {
+        return disableAdvancementToasts;
+    }
+
+    public Property<Boolean> getDisableAdvancementChatMessages() {
+        return disableAdvancementChatMessages;
     }
 }

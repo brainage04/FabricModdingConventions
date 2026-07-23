@@ -6,7 +6,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.resources.Identifier;
-import org.joml.Matrix3x2fStack;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -15,7 +14,6 @@ import java.util.Locale;
 
 public final class ClientGameTestRecordingHud {
     private static final Identifier HUD_ID = Identifier.fromNamespaceAndPath(FabricModdingConventions.MOD_ID, "gametest_recording_feedback");
-    private static final float RECORDING_SCALE = 1.5F;
     private static final int X = 5;
     private static final int Y = 10;
     private static final int PANEL_PADDING = 4;
@@ -108,19 +106,12 @@ public final class ClientGameTestRecordingHud {
         int lineHeight = font.lineHeight + LINE_GAP;
         int panelWidth = width + PANEL_PADDING * 2;
         int panelHeight = lines.size() * lineHeight + PANEL_PADDING * 2 - LINE_GAP;
-        Matrix3x2fStack pose = graphics.pose();
-        pose.pushMatrix();
-        try {
-            pose.scale(RECORDING_SCALE);
-            graphics.fill(X, Y, X + panelWidth, Y + panelHeight, BACKGROUND_COLOR);
+        graphics.fill(X, Y, X + panelWidth, Y + panelHeight, BACKGROUND_COLOR);
 
-            int textY = Y + PANEL_PADDING;
-            for (HudLine line : lines) {
-                graphics.text(font, fit(font, line.text(), MAX_WIDTH), X + PANEL_PADDING, textY, line.color(), true);
-                textY += lineHeight;
-            }
-        } finally {
-            pose.popMatrix();
+        int textY = Y + PANEL_PADDING;
+        for (HudLine line : lines) {
+            graphics.text(font, fit(font, line.text(), MAX_WIDTH), X + PANEL_PADDING, textY, line.color(), true);
+            textY += lineHeight;
         }
     }
 

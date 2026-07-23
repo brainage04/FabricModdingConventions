@@ -144,6 +144,21 @@ plugins {
 GTR_RECORDING_PROFILE=smoke ./gradlew --no-daemon recordClientGameTest
 ```
 
+The recorder prepares a low-noise client profile by default: GUI scale `1`, the insecure-server and Social Interactions tutorial toasts suppressed, recipe and advancement toasts suppressed, and advancement announcement chat messages suppressed. These settings apply only while the recorder's GameTest JVM property is active; normal clients are unchanged. Override any setting per consumer:
+
+```gradle
+clientGameTestRecorder {
+    guiScale = "2"
+    disableUnsecureChatToast = true
+    disableSocialInteractionsToast = true
+    disableRecipeToasts = true
+    disableAdvancementToasts = true
+    disableAdvancementChatMessages = true
+}
+```
+
+The recording HUD uses Minecraft's scaled GUI coordinates, so its panel and text follow the configured GUI scale instead of shrinking relative to the framebuffer. The five notification controls default to `true`; set an individual property to `false` when that vanilla notification is part of the scenario.
+
 The Java-side helpers live under `io.github.brainage04.fabricmoddingconventions`.
 
 ## Production GameTest tasks

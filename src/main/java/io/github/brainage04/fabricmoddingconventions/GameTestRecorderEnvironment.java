@@ -2,6 +2,14 @@ package io.github.brainage04.fabricmoddingconventions;
 
 public final class GameTestRecorderEnvironment {
     public static final String ENABLED_PROPERTY = "fabricmoddingconventions.clientGameTest";
+    public static final String DISABLE_UNSECURE_CHAT_TOAST_PROPERTY =
+            "fabricmoddingconventions.clientGameTestRecorder.disableUnsecureChatToast";
+    public static final String DISABLE_RECIPE_TOASTS_PROPERTY =
+            "fabricmoddingconventions.clientGameTestRecorder.disableRecipeToasts";
+    public static final String DISABLE_ADVANCEMENT_TOASTS_PROPERTY =
+            "fabricmoddingconventions.clientGameTestRecorder.disableAdvancementToasts";
+    public static final String DISABLE_ADVANCEMENT_CHAT_MESSAGES_PROPERTY =
+            "fabricmoddingconventions.clientGameTestRecorder.disableAdvancementChatMessages";
 
     public static final String RECORDING_NAME_ENV = "CLIENT_GAMETEST_RECORDING_NAME";
     public static final String RECORDING_PROFILE_ENV = "CLIENT_GAMETEST_RECORDING_PROFILE";
@@ -18,5 +26,25 @@ public final class GameTestRecorderEnvironment {
 
     public static boolean isEnabled() {
         return Boolean.getBoolean(ENABLED_PROPERTY);
+    }
+
+    public static boolean disableUnsecureChatToast() {
+        return disabledDuringRecording(DISABLE_UNSECURE_CHAT_TOAST_PROPERTY);
+    }
+
+    public static boolean disableRecipeToasts() {
+        return disabledDuringRecording(DISABLE_RECIPE_TOASTS_PROPERTY);
+    }
+
+    public static boolean disableAdvancementToasts() {
+        return disabledDuringRecording(DISABLE_ADVANCEMENT_TOASTS_PROPERTY);
+    }
+
+    public static boolean disableAdvancementChatMessages() {
+        return disabledDuringRecording(DISABLE_ADVANCEMENT_CHAT_MESSAGES_PROPERTY);
+    }
+
+    private static boolean disabledDuringRecording(String property) {
+        return isEnabled() && Boolean.parseBoolean(System.getProperty(property, "true"));
     }
 }

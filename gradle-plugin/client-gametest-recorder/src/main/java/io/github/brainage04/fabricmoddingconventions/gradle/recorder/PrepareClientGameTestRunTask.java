@@ -37,6 +37,9 @@ public abstract class PrepareClientGameTestRunTask extends DefaultTask {
     @Input
     public abstract Property<String> getFullscreen();
 
+    @Input
+    public abstract Property<Boolean> getDisableSocialInteractionsToast();
+
     @OutputFile
     public abstract RegularFileProperty getOptionsFile();
 
@@ -61,6 +64,7 @@ public abstract class PrepareClientGameTestRunTask extends DefaultTask {
         settings.put("maxFps", getMaxFps().get());
         settings.put("menuBackgroundBlurriness", "0");
         settings.put("mipmapLevels", "0");
+        settings.put("joinedFirstServer", getDisableSocialInteractionsToast().get().toString());
         settings.put("narrator", "0");
         settings.put("narratorHotkey", "false");
         settings.put("particles", "2");

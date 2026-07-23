@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "io.github.brainage04.fabricmoddingconventions.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "ClientAdvancementsMixin",
+    "ClientPacketListenerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

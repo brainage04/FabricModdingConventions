@@ -197,12 +197,33 @@ class PluginComponentIsolationTest {
                     simulationDistance = '8'
                     guiScale = '3'
                     fullscreen = 'false'
+                    disableUnsecureChatToast = false
+                    disableSocialInteractionsToast = false
+                    disableRecipeToasts = false
+                    disableAdvancementToasts = false
+                    disableAdvancementChatMessages = false
+                }
+
+                tasks.register('verifyRecorderNotificationSettings') {
+                    doLast {
+                        def recorder = project.extensions.clientGameTestRecorder
+                        assert !recorder.disableUnsecureChatToast.get()
+                        assert !recorder.disableSocialInteractionsToast.get()
+                        assert !recorder.disableRecipeToasts.get()
+                        assert !recorder.disableAdvancementToasts.get()
+                        assert !recorder.disableAdvancementChatMessages.get()
+                    }
                 }
                 """);
 
-        var result = runGradle("prepareClientGameTestRun", "-PfixtureRecordingAudioDevice=pipewire.monitor");
+        var result = runGradle(
+                "prepareClientGameTestRun",
+                "verifyRecorderNotificationSettings",
+                "-PfixtureRecordingAudioDevice=pipewire.monitor"
+        );
 
         assertEquals(TaskOutcome.SUCCESS, result.task(":prepareClientGameTestRun").getOutcome());
+        assertEquals(TaskOutcome.SUCCESS, result.task(":verifyRecorderNotificationSettings").getOutcome());
         assertEquals(expectedOptions(), Files.readString(projectDir.resolve("build/run/clientGameTest/options.txt")));
     }
 
@@ -267,6 +288,7 @@ class PluginComponentIsolationTest {
                 "maxFps:144",
                 "menuBackgroundBlurriness:0",
                 "mipmapLevels:0",
+                "joinedFirstServer:false",
                 "narrator:0",
                 "narratorHotkey:false",
                 "particles:2",

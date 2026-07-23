@@ -21,6 +21,7 @@ public final class ClientGameTestRecorderPlugin implements Plugin<Project> {
     private static final String PRODUCTION_GAMETESTS_PLUGIN_ID = "io.github.brainage04.production-gametests";
     private static final String RUNTIME_HELPER_GROUP = "io.github.brainage04";
     private static final String RUNTIME_HELPER_NAME = "fabricmoddingconventions";
+    private static final String RUNTIME_PROPERTY_PREFIX = "fabricmoddingconventions.clientGameTestRecorder.";
 
     @Override
     public void apply(Project project) {
@@ -95,6 +96,7 @@ public final class ClientGameTestRecorderPlugin implements Plugin<Project> {
         task.getSimulationDistance().convention(extension.getSimulationDistance());
         task.getGuiScale().convention(extension.getGuiScale());
         task.getFullscreen().convention(extension.getFullscreen());
+        task.getDisableSocialInteractionsToast().convention(extension.getDisableSocialInteractionsToast());
         task.getOptionsFile().convention(extension.getRunDir().file("options.txt"));
     }
 
@@ -112,7 +114,11 @@ public final class ClientGameTestRecorderPlugin implements Plugin<Project> {
         JavaExec javaExec = requireJavaExec(task);
         javaExec.jvmArgs(List.of(
                 "-Dfabric.client.gametest.disableNetworkSynchronizer=true",
-                "-D" + FabricModConventionsPlugin.CLIENT_GAMETEST_ENABLED_PROPERTY + "=true"
+                "-D" + FabricModConventionsPlugin.CLIENT_GAMETEST_ENABLED_PROPERTY + "=true",
+                runtimeProperty("disableUnsecureChatToast", extension.getDisableUnsecureChatToast().get()),
+                runtimeProperty("disableRecipeToasts", extension.getDisableRecipeToasts().get()),
+                runtimeProperty("disableAdvancementToasts", extension.getDisableAdvancementToasts().get()),
+                runtimeProperty("disableAdvancementChatMessages", extension.getDisableAdvancementChatMessages().get())
         ));
 
         String openAlDrivers = project.getProviders()
@@ -131,6 +137,10 @@ public final class ClientGameTestRecorderPlugin implements Plugin<Project> {
         if (truthy(managedXvfbValue)) {
             loomRunTask.getUseXvfb().set(false);
         }
+    }
+
+    private static String runtimeProperty(String name, boolean value) {
+        return "-D" + RUNTIME_PROPERTY_PREFIX + name + "=" + value;
     }
 
     private static JavaExec requireJavaExec(Task task) {
