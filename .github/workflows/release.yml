@@ -12,7 +12,7 @@ jobs:
   prepare:
     permissions:
       contents: write
-    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-release-prepare.yml@v2.3.1
+    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-release-prepare.yml@v2.3.2
     with:
       resolve_release_notes_with_gradle: false
     secrets:
@@ -22,7 +22,7 @@ jobs:
     needs: prepare
     permissions:
       contents: write
-    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-github.yml@v2.3.1
+    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-github.yml@v2.3.2
     with:
       artifact_file: ${{ needs.prepare.outputs.artifact_file }}
       release_body: ${{ needs.prepare.outputs.release_body }}
@@ -30,6 +30,40 @@ jobs:
       release_name: ${{ format('FabricModdingConventions {0}', github.ref_name) }}
     secrets:
       release_token: ${{ secrets.GITHUB_TOKEN }}
+
+  plugin-assets:
+    needs: github
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: validate gradle wrapper
+        uses: gradle/actions/wrapper-validation@v5
+
+      - name: setup jdk
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: microsoft
+
+      - name: setup gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: stage Gradle plugin artifacts
+        run: ./gradlew --no-daemon stagePluginReleaseArtifacts
+
+      - name: upload Gradle plugin artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${GITHUB_REF_NAME}" build/plugin-release-artifacts/* --clobber
 
   maven-central:
     needs: prepare

@@ -31,7 +31,7 @@ For local development with a sibling checkout, publish the library to its local 
 ./gradlew --no-daemon publishAllPublicationsToLocalRepository
 ```
 
-Consumers in this workspace are configured to prefer `../FabricModdingConventions/build/local-repo` when present and otherwise resolve the Maven Central artifact.
+Consumers in this workspace prefer `../FabricModdingConventions/build/local-repo`, then use normal plugin repositories when the component is published there, and finally resolve the Gradle module metadata and artifacts attached to the matching public GitHub Release.
 
 ## Gradle plugin components
 

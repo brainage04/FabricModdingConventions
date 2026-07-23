@@ -109,6 +109,33 @@ tasks.named("publishToMavenCentral") {
 	)
 }
 
+def pluginReleaseArtifacts = [
+		[projectPath: ":gradle-plugin:fabric-mod-conventions", artifactId: "fabric-mod-conventions-gradle"],
+		[projectPath: ":gradle-plugin:client-gametest-recorder", artifactId: "client-gametest-recorder-gradle"],
+		[projectPath: ":gradle-plugin:production-gametests", artifactId: "production-gametests-gradle"],
+		[projectPath: ":gradle-plugin:workspace-dependencies", artifactId: "workspace-dependencies-gradle"],
+		[projectPath: ":gradle-plugin:maven-central-publishing", artifactId: "maven-central-publishing-gradle"],
+		[projectPath: ":gradle-plugin:mod-publishing", artifactId: "mod-publishing-gradle"],
+]
+
+tasks.register("stagePluginReleaseArtifacts", Sync) {
+	pluginReleaseArtifacts.each { component ->
+		dependsOn(
+				"${component.projectPath}:jar",
+				"${component.projectPath}:sourcesJar",
+				"${component.projectPath}:generateMetadataFileForPluginMavenPublication",
+		)
+
+		def componentProject = project(component.projectPath)
+		from(componentProject.layout.buildDirectory.file("libs/${component.artifactId}-${project.version}.jar"))
+		from(componentProject.layout.buildDirectory.file("libs/${component.artifactId}-${project.version}-sources.jar"))
+		from(componentProject.layout.buildDirectory.file("publications/pluginMaven/module.json")) {
+			rename { "${component.artifactId}-${project.version}.module" }
+		}
+	}
+	into(layout.buildDirectory.dir("plugin-release-artifacts"))
+}
+
 
 test {
 	useJUnitPlatform()
