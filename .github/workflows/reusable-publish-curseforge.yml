@@ -25,6 +25,11 @@ on:
         required: false
         default: ''
         type: string
+      gradle_task:
+        description: Gradle task that publishes this artifact to CurseForge
+        required: false
+        default: publishCurseforge
+        type: string
     secrets:
       curseforge_token:
         description: CurseForge API token
@@ -90,12 +95,13 @@ jobs:
         if: steps.config.outputs.enabled == 'true'
         env:
           CURSEFORGE_TOKEN: ${{ secrets.curseforge_token }}
+          GRADLE_TASK: ${{ inputs.gradle_task }}
           MOD_PUBLISHING_RELEASE_JAR: release-artifacts/${{ inputs.artifact_file }}
           RELEASE_BODY: ${{ inputs.release_body }}
           RELEASE_PRERELEASE: ${{ contains(github.ref_name, '-') }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: >-
-          ./gradlew publishCurseforge
+          ./gradlew "${GRADLE_TASK}"
           -PpublishCurseforge=true
           -PcurseforgeProjectId=${{ inputs.project_id }}
           -PcurseforgeProjectSlug=${{ inputs.project_slug }}

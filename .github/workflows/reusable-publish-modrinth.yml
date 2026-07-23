@@ -21,10 +21,34 @@ on:
         required: false
         default: ''
         type: string
+      gradle_task:
+        description: Gradle task that publishes this artifact to Modrinth
+        required: false
+        default: publishModrinth
+        type: string
+      sync_gradle_task:
+        description: Gradle task that synchronizes the Modrinth project and icon
+        required: false
+        default: syncModrinthIcon
+        type: string
+      sync_project:
+        description: Synchronize project metadata and icon before publishing
+        required: false
+        default: true
+        type: boolean
+      sync_state_file:
+        description: Project state file written by the synchronization task
+        required: false
+        default: build/mod-publishing/modrinth-project-state.json
+        type: string
     secrets:
       modrinth_token:
         description: Modrinth personal access token
         required: false
+    outputs:
+      project_id:
+        description: Synchronized or configured Modrinth project id
+        value: ${{ jobs.publish.outputs.project_id }}
 
 permissions:
   contents: read
@@ -32,6 +56,8 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-24.04
+    outputs:
+      project_id: ${{ steps.project.outputs.id }}
     steps:
       - name: check Modrinth token
         id: config
@@ -80,19 +106,20 @@ jobs:
 
       - name: synchronize Modrinth project and icon
         id: modrinth_sync
-        if: steps.config.outputs.enabled == 'true'
+        if: steps.config.outputs.enabled == 'true' && inputs.sync_project
         continue-on-error: true
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_REPOSITORY_DESCRIPTION: ${{ github.event.repository.description }}
+          GRADLE_TASK: ${{ inputs.sync_gradle_task }}
           MODRINTH_PROJECT_ID: ${{ inputs.project_id }}
           MODRINTH_TOKEN: ${{ secrets.modrinth_token }}
-        run: ./gradlew syncModrinthIcon -PpublishModrinth=true
+        run: ./gradlew "${GRADLE_TASK}" -PpublishModrinth=true
 
       - name: export synchronized Modrinth project state
-        if: steps.config.outputs.enabled == 'true' && steps.modrinth_sync.outcome == 'success'
+        if: steps.config.outputs.enabled == 'true' && inputs.sync_project && steps.modrinth_sync.outcome == 'success'
         run: |
-          state_file='build/mod-publishing/modrinth-project-state.json'
+          state_file='${{ inputs.sync_state_file }}'
           project_id="$(jq -er '.id | select(type == "string" and length > 0)' "$state_file")"
           project_created="$(jq -er '.created | tostring' "$state_file")"
           {
@@ -100,18 +127,40 @@ jobs:
             echo "MODRINTH_PROJECT_CREATED=$project_created"
           } >> "$GITHUB_ENV"
 
+      - name: export configured Modrinth project
+        if: steps.config.outputs.enabled == 'true' && inputs.sync_project == false
+        env:
+          CONFIGURED_PROJECT_ID: ${{ inputs.project_id }}
+        run: |
+          if [ -z "${CONFIGURED_PROJECT_ID}" ]; then
+            echo "Modrinth project id is required when project synchronization is disabled."
+            exit 1
+          fi
+          echo "MODRINTH_PROJECT_ID=${CONFIGURED_PROJECT_ID}" >> "$GITHUB_ENV"
+
+      - name: expose Modrinth project id
+        id: project
+        if: steps.config.outputs.enabled == 'true' && (inputs.sync_project == false || steps.modrinth_sync.outcome == 'success')
+        run: |
+          if [ -z "${MODRINTH_PROJECT_ID}" ]; then
+            echo "Modrinth project id was not resolved."
+            exit 1
+          fi
+          echo "id=${MODRINTH_PROJECT_ID}" >> "$GITHUB_OUTPUT"
+
       - name: publish Modrinth version
         if: steps.config.outputs.enabled == 'true'
         env:
+          GRADLE_TASK: ${{ inputs.gradle_task }}
           MOD_PUBLISHING_RELEASE_JAR: release-artifacts/${{ inputs.artifact_file }}
           MODRINTH_TOKEN: ${{ secrets.modrinth_token }}
           RELEASE_BODY: ${{ inputs.release_body }}
           RELEASE_PRERELEASE: ${{ contains(github.ref_name, '-') }}
           RELEASE_TAG: ${{ github.ref_name }}
-        run: ./gradlew publishModrinth -PpublishModrinth=true
+        run: ./gradlew "${GRADLE_TASK}" -PpublishModrinth=true
 
       - name: fail if Modrinth synchronization failed
-        if: always() && steps.config.outputs.enabled == 'true' && steps.modrinth_sync.outcome == 'failure'
+        if: always() && steps.config.outputs.enabled == 'true' && inputs.sync_project && steps.modrinth_sync.outcome == 'failure'
         run: |
           echo "Modrinth project or icon synchronization failed before version publication."
           exit 1

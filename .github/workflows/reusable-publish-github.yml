@@ -7,6 +7,11 @@ on:
         description: Exact release JAR file name from release preparation
         required: true
         type: string
+      additional_artifact_file:
+        description: Optional second release JAR file name from release preparation
+        required: false
+        default: ''
+        type: string
       release_body:
         description: Release notes shared across destinations
         required: true
@@ -65,6 +70,12 @@ jobs:
           name: release-artifact
           path: release-artifacts
 
+      - name: validate GitHub publication mode
+        if: inputs.publish_with_gradle && inputs.additional_artifact_file != ''
+        run: |
+          echo "Gradle GitHub publication supports one release artifact; use bootstrap publication for multiple artifacts."
+          exit 1
+
       - name: publish GitHub release
         if: inputs.publish_with_gradle
         env:
@@ -80,6 +91,7 @@ jobs:
         if: ${{ !inputs.publish_with_gradle }}
         env:
           ARTIFACT_FILE: release-artifacts/${{ inputs.artifact_file }}
+          ADDITIONAL_ARTIFACT_FILE: ${{ inputs.additional_artifact_file }}
           GH_TOKEN: ${{ secrets.release_token }}
           RELEASE_BODY: ${{ inputs.release_body }}
           RELEASE_NAME: ${{ inputs.release_name }}
@@ -87,12 +99,16 @@ jobs:
         run: |
           TITLE="${RELEASE_NAME:-${RELEASE_TAG}}"
           printf '%s\n' "${RELEASE_BODY}" > "${RUNNER_TEMP}/release-notes.md"
+          ARTIFACTS=("${ARTIFACT_FILE}")
+          if [ -n "${ADDITIONAL_ARTIFACT_FILE}" ]; then
+            ARTIFACTS+=("release-artifacts/${ADDITIONAL_ARTIFACT_FILE}")
+          fi
           PRERELEASE_ARGUMENT=()
           if [[ "${RELEASE_TAG}" == *-* ]]; then
             PRERELEASE_ARGUMENT+=(--prerelease)
           fi
           gh release create "${RELEASE_TAG}" \
-            "${ARTIFACT_FILE}" \
+            "${ARTIFACTS[@]}" \
             --repo "${GITHUB_REPOSITORY}" \
             --title "${TITLE}" \
             --notes-file "${RUNNER_TEMP}/release-notes.md" \

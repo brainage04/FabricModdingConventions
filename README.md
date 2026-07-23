@@ -115,6 +115,8 @@ modPublishing {
 
 `publishGithub`, `publishModrinth`, and `publishCurseforge` are independently retryable; `publishMods` runs every enabled destination. Validation rejects malformed booleans, negative retry counts, missing release artifacts, and inconsistent release metadata before network access. Modrinth project metadata and icons are synchronized through typed tasks. Ordinary `build` and `check` execution do not contact publishing endpoints.
 
+The reusable release workflows keep a single primary artifact by default. Multi-loader projects can pass `additional_artifact_pattern` to release preparation, attach the resulting `additional_artifact_file` through bootstrap GitHub publication, and invoke loader-specific Gradle tasks through the Modrinth and CurseForge workflows. A secondary Modrinth job can disable duplicate project synchronization with `sync_project: false`.
+
 The base plugin requires `mod_side`, `java_version`, `mod_id`, `mod_version`, `mod_name`, `maven_group`, `archives_base_name`, `loader_version`, `minecraft_version`, and `fabric_api_version` in Gradle properties. Its optional behaviors can be narrowed per consumer:
 
 ```gradle

@@ -13,6 +13,11 @@ on:
         required: false
         default: true
         type: boolean
+      additional_artifact_pattern:
+        description: Optional glob for one additional release JAR under build/libs
+        required: false
+        default: ''
+        type: string
     secrets:
       release_token:
         description: GitHub token used only when generated release notes are required
@@ -21,6 +26,9 @@ on:
       artifact_file:
         description: Exact release JAR file name
         value: ${{ jobs.prepare.outputs.artifact_file }}
+      additional_artifact_file:
+        description: Exact additional release JAR file name, or empty when not configured
+        value: ${{ jobs.prepare.outputs.additional_artifact_file }}
       release_body:
         description: Annotated-tag or GitHub-generated release notes
         value: ${{ jobs.prepare.outputs.release_body }}
@@ -35,6 +43,7 @@ jobs:
       contents: write
     outputs:
       artifact_file: ${{ steps.artifact.outputs.file }}
+      additional_artifact_file: ${{ steps.artifact.outputs.additional_file }}
       release_body: ${{ steps.notes.outputs.body }}
     steps:
       - name: checkout repository
@@ -71,8 +80,10 @@ jobs:
       - name: build
         run: ./gradlew clean build
 
-      - name: collect exact release artifact
+      - name: collect exact release artifacts
         id: artifact
+        env:
+          ADDITIONAL_ARTIFACT_PATTERN: ${{ inputs.additional_artifact_pattern }}
         run: |
           VERSION="$(grep '^mod_version=' gradle.properties | cut -d= -f2)"
           ARCHIVES_NAME="$(grep '^archives_base_name=' gradle.properties | cut -d= -f2)"
@@ -81,12 +92,27 @@ jobs:
           mkdir -p release-artifacts
           cp "build/libs/${ARTIFACT_FILE}" "release-artifacts/${ARTIFACT_FILE}"
           echo "file=${ARTIFACT_FILE}" >> "$GITHUB_OUTPUT"
+          echo "additional_file=" >> "$GITHUB_OUTPUT"
+          if [ -n "${ADDITIONAL_ARTIFACT_PATTERN}" ]; then
+            mapfile -t ADDITIONAL_FILES < <(compgen -G "build/libs/${ADDITIONAL_ARTIFACT_PATTERN}" || true)
+            if [ "${#ADDITIONAL_FILES[@]}" -ne 1 ]; then
+              echo "Expected exactly one additional release artifact matching ${ADDITIONAL_ARTIFACT_PATTERN}; found ${#ADDITIONAL_FILES[@]}."
+              exit 1
+            fi
+            ADDITIONAL_FILE="$(basename "${ADDITIONAL_FILES[0]}")"
+            if [ "${ADDITIONAL_FILE}" = "${ARTIFACT_FILE}" ]; then
+              echo "Additional release artifact must differ from the primary artifact."
+              exit 1
+            fi
+            cp "${ADDITIONAL_FILES[0]}" "release-artifacts/${ADDITIONAL_FILE}"
+            echo "additional_file=${ADDITIONAL_FILE}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: upload exact release artifact
         uses: actions/upload-artifact@v7
         with:
           name: release-artifact
-          path: release-artifacts/${{ steps.artifact.outputs.file }}
+          path: release-artifacts/*.jar
           if-no-files-found: error
 
       - name: resolve release notes
