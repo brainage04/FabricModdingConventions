@@ -121,20 +121,23 @@ public final class ModPublishingPlugin implements Plugin<Project> {
                 project.getLayout().getProjectDirectory().file("src/main/resources/fabric.mod.json")
         );
 
-        File license = firstExisting(project, "LICENSE", "LICENSE.md");
+        Project rootProject = project.getRootProject();
+        File license = firstExisting(rootProject, "LICENSE", "LICENSE.md");
         if (license != null) {
-            extension.getLicenseFile().convention(project.getLayout().getProjectDirectory().file(license.getName()));
-        }
-        File projectConfig = project.file(".modrinth/project.json");
-        if (projectConfig.isFile()) {
-            extension.getModrinth().getProjectConfig().convention(
-                    project.getLayout().getProjectDirectory().file(".modrinth/project.json")
+            extension.getLicenseFile().convention(
+                    rootProject.getLayout().getProjectDirectory().file(license.getName())
             );
         }
-        File projectBody = project.file("README.md");
+        File projectConfig = rootProject.file(".modrinth/project.json");
+        if (projectConfig.isFile()) {
+            extension.getModrinth().getProjectConfig().convention(
+                    rootProject.getLayout().getProjectDirectory().file(".modrinth/project.json")
+            );
+        }
+        File projectBody = rootProject.file("README.md");
         if (projectBody.isFile()) {
             extension.getModrinth().getProjectBody().convention(
-                    project.getLayout().getProjectDirectory().file("README.md")
+                    rootProject.getLayout().getProjectDirectory().file("README.md")
             );
         }
 

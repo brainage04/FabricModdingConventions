@@ -559,7 +559,7 @@ class ModPublishingPluginTest {
     }
 
     @Test
-    void resolvesWorkflowReleaseJarFromMultiprojectRoot() throws IOException {
+    void resolvesWorkflowPathsFromMultiprojectRoot() throws IOException {
         Files.writeString(projectDirectory.resolve("settings.gradle"), """
                 rootProject.name = 'publisher-fixture'
                 include 'fabric'
@@ -578,6 +578,9 @@ class ModPublishingPluginTest {
                 tasks.register('printReleaseJar') {
                     doLast {
                         println('RELEASE_JAR=' + modPublishing.releaseJar.get().asFile.canonicalPath)
+                        println('PROJECT_CONFIG=' + modPublishing.modrinth.projectConfig.get().asFile.canonicalPath)
+                        println('PROJECT_BODY=' + modPublishing.modrinth.projectBody.get().asFile.canonicalPath)
+                        println('LICENSE_FILE=' + modPublishing.licenseFile.get().asFile.canonicalPath)
                     }
                 }
                 """.formatted(PLUGIN_ID));
@@ -588,6 +591,15 @@ class ModPublishingPluginTest {
         );
 
         assertTrue(result.getOutput().contains("RELEASE_JAR=" + releaseJar.toFile().getCanonicalPath()));
+        assertTrue(result.getOutput().contains(
+                "PROJECT_CONFIG=" + projectDirectory.resolve(".modrinth/project.json").toFile().getCanonicalPath()
+        ));
+        assertTrue(result.getOutput().contains(
+                "PROJECT_BODY=" + projectDirectory.resolve("README.md").toFile().getCanonicalPath()
+        ));
+        assertTrue(result.getOutput().contains(
+                "LICENSE_FILE=" + projectDirectory.resolve("LICENSE").toFile().getCanonicalPath()
+        ));
     }
 
     private String modrinthSyncConfiguration(String apiEndpoint) {
