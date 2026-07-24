@@ -107,10 +107,21 @@ jobs:
           if [[ "${RELEASE_TAG}" == *-* ]]; then
             PRERELEASE_ARGUMENT+=(--prerelease)
           fi
-          gh release create "${RELEASE_TAG}" \
-            "${ARTIFACTS[@]}" \
-            --repo "${GITHUB_REPOSITORY}" \
-            --title "${TITLE}" \
-            --notes-file "${RUNNER_TEMP}/release-notes.md" \
-            --verify-tag \
-            "${PRERELEASE_ARGUMENT[@]}"
+          if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            gh release edit "${RELEASE_TAG}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --title "${TITLE}" \
+              --notes-file "${RUNNER_TEMP}/release-notes.md"
+            gh release upload "${RELEASE_TAG}" \
+              "${ARTIFACTS[@]}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --clobber
+          else
+            gh release create "${RELEASE_TAG}" \
+              "${ARTIFACTS[@]}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --title "${TITLE}" \
+              --notes-file "${RUNNER_TEMP}/release-notes.md" \
+              --verify-tag \
+              "${PRERELEASE_ARGUMENT[@]}"
+          fi
