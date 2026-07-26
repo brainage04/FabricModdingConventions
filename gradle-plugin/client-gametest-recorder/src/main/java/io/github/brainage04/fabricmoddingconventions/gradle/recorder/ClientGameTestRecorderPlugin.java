@@ -12,6 +12,7 @@ import org.gradle.api.provider.ProviderFactory;
 import org.gradle.api.tasks.JavaExec;
 import org.gradle.api.tasks.TaskProvider;
 
+import java.io.File;
 import java.util.List;
 import java.util.Locale;
 
@@ -69,6 +70,10 @@ public final class ClientGameTestRecorderPlugin implements Plugin<Project> {
         return ":".equals(projectPath) ? "runClientGameTest" : projectPath + ":runClientGameTest";
     }
 
+    static String clientGameTestRunDirectory(Project project, File runDirectory) {
+        return project.relativePath(runDirectory);
+    }
+
     private static void addRuntimeHelperDependencies(Project project) {
         Object version = project.findProperty("fabricmoddingconventions_version");
         if (version == null || version.toString().isBlank()) {
@@ -108,7 +113,7 @@ public final class ClientGameTestRecorderPlugin implements Plugin<Project> {
     ) {
         task.dependsOn(prepareTask);
         LoomGradleExtensionAPI loom = project.getExtensions().getByType(LoomGradleExtensionAPI.class);
-        String runDirectory = project.getRootProject().relativePath(extension.getRunDir().get().getAsFile());
+        String runDirectory = clientGameTestRunDirectory(project, extension.getRunDir().get().getAsFile());
         loom.getRuns().named("clientGameTest").configure(run -> run.setRunDir(runDirectory));
         AbstractRunTask loomRunTask = requireLoomRunTask(task);
         JavaExec javaExec = requireJavaExec(task);

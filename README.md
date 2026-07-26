@@ -163,6 +163,30 @@ The recording HUD uses Minecraft's scaled GUI coordinates, so its panel and text
 
 The Java-side helpers live under `io.github.brainage04.fabricmoddingconventions`.
 
+### Fleet audit and recording
+
+`scripts/mod_fleet.py` applies the shared version, structure, workflow, and recording policy in `scripts/mod-fleet.json` to every owned non-Forge mod checkout. It also discovers unlisted sibling Minecraft repositories; add `--github` to reconcile the policy against every authenticated public and private repository available through the `gh` CLI.
+
+```shell
+./scripts/mod_fleet.py audit --github --strict
+./scripts/mod_fleet.py record
+```
+
+`record` runs each eligible `recordClientGameTest` sequentially, preserves per-repository logs and failure workspaces, and collects successful MP4 files, normalized JSON metadata, and fleet reports under a timestamped `~/Downloads/minecraft-mod-gametest-recordings-*` directory. Limit an iteration with repeated `--include <repository>` arguments or preview every command with `--dry-run`. After correcting a partial failure, pass the existing directory to `--output` with `--resume`; valid passed artifacts are retained and only unfinished repositories run again.
+
+For a new Minecraft release, override the expected baseline without editing the script:
+
+```shell
+./scripts/mod_fleet.py audit --github --strict \
+  --minecraft-version <version> \
+  --loader-version <version> \
+  --fabric-api-version <version> \
+  --java-version <version> \
+  --conventions-version <version>
+```
+
+After migrating the fleet, update the manifest baseline and each new repository's explicit recording or exclusion policy. New GitHub or local Minecraft repositories fail strict reconciliation until classified.
+
 ## Production GameTest tasks
 
 Applying `io.github.brainage04.production-gametests` creates the `gametest` source set and configures Loom's development GameTest runs from `mod_side`. It also registers production tasks for the applicable sides; consumers only configure genuine runtime differences:

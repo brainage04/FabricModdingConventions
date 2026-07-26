@@ -55,7 +55,12 @@ jobs:
         shell: bash
         run: |
           MOD_SIDE="$(sed -n 's/^mod_side=//p' gradle.properties)"
-          if [ "$MOD_SIDE" != 'server' ]; then
+          if grep -R \
+            --include='build.gradle' \
+            --include='build.gradle.kts' \
+            --quiet 'io.github.brainage04.client-gametest-recorder' .; then
+            echo 'present=true' >> "$GITHUB_OUTPUT"
+          elif [ "$MOD_SIDE" != 'server' ]; then
             echo 'present=true' >> "$GITHUB_OUTPUT"
           else
             echo 'present=false' >> "$GITHUB_OUTPUT"

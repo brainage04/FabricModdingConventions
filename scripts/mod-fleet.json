@@ -1,0 +1,212 @@
+{
+  "schemaVersion": 1,
+  "owner": "brainage04",
+  "baseline": {
+    "minecraftVersion": "26.2",
+    "loaderVersion": "0.19.3",
+    "fabricApiVersion": "0.155.0+26.2",
+    "javaVersion": "25",
+    "conventionsVersion": "2.3.9"
+  },
+  "ignoredRepositories": {
+    "DevUtils": "Forge-only legacy mod",
+    "ToggleSprint": "Forge-only 1.8.9 mod",
+    "FabricModdingConventions": "Shared tooling rather than a Minecraft mod",
+    "FabricModdingTemplate": "Project template rather than a Minecraft mod"
+  },
+  "repositories": [
+    {
+      "name": "AcceleratedDamage",
+      "visibility": "public",
+      "platform": "Fabric server",
+      "status": "active",
+      "managed": true,
+      "recording": {"enabled": true, "profile": "showcase"}
+    },
+    {
+      "name": "BrainageHUD",
+      "visibility": "public",
+      "platform": "Fabric client",
+      "status": "active",
+      "managed": true,
+      "recording": {"enabled": true, "profile": "showcase"}
+    },
+    {
+      "name": "BrainageLib",
+      "visibility": "public",
+      "platform": "Fabric server library",
+      "status": "active",
+      "managed": true,
+      "recording": {"enabled": true, "profile": "showcase"}
+    },
+    {
+      "name": "BrainageMinigames",
+      "visibility": "public",
+      "platform": "Fabric server",
+      "status": "active",
+      "managed": true,
+      "recording": {"enabled": true, "profile": "showcase"}
+    },
+    {
+      "name": "BrainageServerUtils",
+      "visibility": "public",
+      "platform": "Fabric server",
+      "status": "active",
+      "managed": true,
+      "recording": {"enabled": true, "profile": "showcase"}
+    },
+    {
+      "name": "BrainageUHC",
+      "visibility": "private",
+      "platform": "Fabric server",
+      "status": "superseded by BrainageMinigames",
+      "managed": false,
+      "recording": {"enabled": false, "reason": "Superseded implementation; archive instead of adding new coverage"}
+    },
+    {
+      "name": "FortniteInMinecraft",
+      "visibility": "public",
+      "platform": "Fabric and NeoForge",
+      "status": "active",
+      "managed": true,
+      "recording": {"enabled": true, "profile": "showcase"}
+    },
+    {
+      "name": "GetEnchantInfo",
+      "visibility": "public",
+      "platform": "Fabric client",
+      "status": "active",
+      "managed": true,
+      "recording": {"enabled": true, "profile": "showcase"}
+    },
+    {
+      "name": "HudRendererLib",
+      "visibility": "public",
+      "platform": "Fabric and NeoForge client library",
+      "status": "active",
+      "managed": true,
+      "recording": {"enabled": true, "profile": "showcase"}
+    },
+    {
+      "name": "IceSkates",
+      "visibility": "private",
+      "platform": "Fabric",
+      "status": "active",
+      "managed": true,
+      "recording": {"enabled": true, "profile": "showcase"}
+    },
+    {
+      "name": "MagicCarpet",
+      "visibility": "public",
+      "platform": "Fabric",
+      "status": "active",
+      "managed": true,
+      "recording": {"enabled": true, "profile": "showcase"}
+    },
+    {
+      "name": "MaxVillagerTrades",
+      "visibility": "public",
+      "platform": "Fabric server",
+      "status": "active",
+      "managed": true,
+      "recording": {"enabled": true, "profile": "showcase"}
+    },
+    {
+      "name": "MilkablePlayers",
+      "visibility": "public",
+      "platform": "Fabric server",
+      "status": "active",
+      "managed": true,
+      "recording": {"enabled": false, "reason": "The core interaction needs two real players; the current one-client harness cannot demonstrate it honestly"}
+    },
+    {
+      "name": "NPCAddons",
+      "visibility": "private",
+      "platform": "Fabric client",
+      "status": "active",
+      "managed": true,
+      "recording": {"enabled": true, "profile": "showcase"}
+    },
+    {
+      "name": "ProceduralDungeon",
+      "visibility": "public",
+      "platform": "Fabric",
+      "status": "active",
+      "managed": true,
+      "recording": {"enabled": true, "profile": "showcase"}
+    },
+    {
+      "name": "SimpleTPA",
+      "visibility": "public",
+      "platform": "Fabric server",
+      "status": "active",
+      "managed": true,
+      "recording": {"enabled": false, "reason": "Teleport requests require two independently controlled real players; server GameTests remain the deterministic coverage"}
+    },
+    {
+      "name": "SimpleTwitchChat",
+      "visibility": "public",
+      "platform": "Fabric client",
+      "status": "active",
+      "managed": true,
+      "recording": {"enabled": true, "profile": "showcase"}
+    },
+    {
+      "name": "Telekinesis",
+      "visibility": "public",
+      "platform": "Fabric server with client recording fixture",
+      "status": "active",
+      "managed": true,
+      "recording": {"enabled": true, "profile": "showcase"}
+    },
+    {
+      "name": "TextureAtlasGenerator",
+      "visibility": "private",
+      "platform": "Fabric client",
+      "status": "active",
+      "managed": true,
+      "recording": {"enabled": true, "profile": "showcase"}
+    },
+    {
+      "name": "TwitchPlaysMinecraft",
+      "visibility": "private",
+      "platform": "Fabric and NeoForge client",
+      "status": "active",
+      "managed": true,
+      "recording": {
+        "enabled": true,
+        "profile": "showcase",
+        "trace": true,
+        "prepare": [
+          {
+            "cwd": "TwitchPlaysMinecraft",
+            "command": [
+              "../baritone/gradlew",
+              "-p",
+              "../baritone",
+              "--no-daemon",
+              "-Pmaven_group=io.github.brainage04",
+              "publishAllPublicationsToLocalBaritoneRepository"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "VeinMiner",
+      "visibility": "public",
+      "platform": "Fabric server with client recording fixture",
+      "status": "active",
+      "managed": true,
+      "recording": {"enabled": true, "profile": "showcase"}
+    },
+    {
+      "name": "baritone",
+      "visibility": "public",
+      "platform": "Fabric, NeoForge, and Forge upstream fork",
+      "status": "upstream-style fork",
+      "managed": false,
+      "recording": {"enabled": false, "reason": "Preserve upstream build structure; pathfinding is covered through TwitchPlaysMinecraft fixture scenarios"}
+    }
+  ]
+}
