@@ -12,7 +12,8 @@
     "DevUtils": "Forge-only legacy mod",
     "ToggleSprint": "Forge-only 1.8.9 mod",
     "FabricModdingConventions": "Shared tooling rather than a Minecraft mod",
-    "FabricModdingTemplate": "Project template rather than a Minecraft mod"
+    "ModernMinecraftModTemplate": "Project template rather than a Minecraft mod",
+    "LegacyMinecraftModTemplate": "Forge-only 1.8.9 project template"
   },
   "repositories": [
     {
