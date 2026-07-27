@@ -65,6 +65,14 @@
       "recording": {"enabled": false, "reason": "Superseded implementation; archive instead of adding new coverage"}
     },
     {
+      "name": "DimensionStructureVariants",
+      "visibility": "public",
+      "platform": "Fabric and NeoForge server",
+      "status": "active",
+      "managed": true,
+      "recording": {"enabled": true, "profile": "showcase"}
+    },
+    {
       "name": "FortniteInMinecraft",
       "visibility": "public",
       "platform": "Fabric and NeoForge",
@@ -105,7 +113,7 @@
       "recording": {"enabled": true, "profile": "showcase"}
     },
     {
-      "name": "MaxVillagerTrades",
+      "name": "BetterVillagerTrades",
       "visibility": "public",
       "platform": "Fabric and NeoForge server",
       "status": "active",
@@ -137,6 +145,14 @@
       "recording": {"enabled": true, "profile": "showcase"}
     },
     {
+      "name": "SimpleHomes",
+      "visibility": "public",
+      "platform": "Fabric and NeoForge server",
+      "status": "active",
+      "managed": true,
+      "recording": {"enabled": true, "profile": "showcase"}
+    },
+    {
       "name": "SimpleTPA",
       "visibility": "public",
       "platform": "Fabric and NeoForge server",
@@ -148,6 +164,14 @@
       "name": "SimpleTwitchChat",
       "visibility": "public",
       "platform": "Fabric and NeoForge client",
+      "status": "active",
+      "managed": true,
+      "recording": {"enabled": true, "profile": "showcase"}
+    },
+    {
+      "name": "SpawnCommands",
+      "visibility": "public",
+      "platform": "Fabric and NeoForge server",
       "status": "active",
       "managed": true,
       "recording": {"enabled": true, "profile": "showcase"}
