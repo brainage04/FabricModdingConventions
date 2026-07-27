@@ -22,10 +22,10 @@ mavenCentralPublishing {
 
 repositories {
 	mavenCentral()
-	maven { url "https://plugins.gradle.org/m2/" }
+	maven { url = uri("https://plugins.gradle.org/m2/") }
 	mavenLocal()
-	maven { url "https://libraries.minecraft.net" }
-	maven { url "https://maven.fabricmc.net/" }
+	maven { url = uri("https://libraries.minecraft.net") }
+	maven { url = uri("https://maven.fabricmc.net/") }
 }
 
 fabricApi {

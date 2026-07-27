@@ -378,6 +378,7 @@ def run_recordings(
     output.mkdir(parents=True, exist_ok=True)
     (output / "logs").mkdir(exist_ok=True)
     (output / "metadata").mkdir(exist_ok=True)
+    (output / "recordings").mkdir(exist_ok=True)
     (output / ".work").mkdir(exist_ok=True)
 
     previous_results: dict[str, dict[str, Any]] = {}
@@ -458,7 +459,7 @@ def run_recordings(
             if len(metadata_files) != 1:
                 raise RuntimeError(f"Expected exactly one metadata file, found {len(metadata_files)} in {work_dir}")
 
-            destination_video = output / videos[0].name
+            destination_video = output / "recordings" / videos[0].name
             destination_metadata = output / "metadata" / metadata_files[0].name
             shutil.copy2(videos[0], destination_video)
             copy_metadata(metadata_files[0], destination_metadata, destination_video, output)

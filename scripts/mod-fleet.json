@@ -19,7 +19,7 @@
     {
       "name": "AcceleratedDamage",
       "visibility": "public",
-      "platform": "Fabric server",
+      "platform": "Fabric and NeoForge server",
       "status": "active",
       "managed": true,
       "recording": {"enabled": true, "profile": "showcase"}
@@ -27,7 +27,7 @@
     {
       "name": "BrainageHUD",
       "visibility": "public",
-      "platform": "Fabric client",
+      "platform": "Fabric and NeoForge client",
       "status": "active",
       "managed": true,
       "recording": {"enabled": true, "profile": "showcase"}
@@ -35,7 +35,7 @@
     {
       "name": "BrainageLib",
       "visibility": "public",
-      "platform": "Fabric server library",
+      "platform": "Fabric and NeoForge server library",
       "status": "active",
       "managed": true,
       "recording": {"enabled": true, "profile": "showcase"}
@@ -43,7 +43,7 @@
     {
       "name": "BrainageMinigames",
       "visibility": "public",
-      "platform": "Fabric server",
+      "platform": "Fabric and NeoForge server",
       "status": "active",
       "managed": true,
       "recording": {"enabled": true, "profile": "showcase"}
@@ -51,7 +51,7 @@
     {
       "name": "BrainageServerUtils",
       "visibility": "public",
-      "platform": "Fabric server",
+      "platform": "Fabric and NeoForge server",
       "status": "active",
       "managed": true,
       "recording": {"enabled": true, "profile": "showcase"}
@@ -59,7 +59,7 @@
     {
       "name": "BrainageUHC",
       "visibility": "private",
-      "platform": "Fabric server",
+      "platform": "Fabric and NeoForge server",
       "status": "superseded by BrainageMinigames",
       "managed": false,
       "recording": {"enabled": false, "reason": "Superseded implementation; archive instead of adding new coverage"}
@@ -75,7 +75,7 @@
     {
       "name": "GetEnchantInfo",
       "visibility": "public",
-      "platform": "Fabric client",
+      "platform": "Fabric and NeoForge client",
       "status": "active",
       "managed": true,
       "recording": {"enabled": true, "profile": "showcase"}
@@ -91,7 +91,7 @@
     {
       "name": "IceSkates",
       "visibility": "private",
-      "platform": "Fabric",
+      "platform": "Fabric and NeoForge",
       "status": "active",
       "managed": true,
       "recording": {"enabled": true, "profile": "showcase"}
@@ -99,7 +99,7 @@
     {
       "name": "MagicCarpet",
       "visibility": "public",
-      "platform": "Fabric",
+      "platform": "Fabric and NeoForge",
       "status": "active",
       "managed": true,
       "recording": {"enabled": true, "profile": "showcase"}
@@ -107,7 +107,7 @@
     {
       "name": "MaxVillagerTrades",
       "visibility": "public",
-      "platform": "Fabric server",
+      "platform": "Fabric and NeoForge server",
       "status": "active",
       "managed": true,
       "recording": {"enabled": true, "profile": "showcase"}
@@ -115,7 +115,7 @@
     {
       "name": "MilkablePlayers",
       "visibility": "public",
-      "platform": "Fabric server",
+      "platform": "Fabric and NeoForge server",
       "status": "active",
       "managed": true,
       "recording": {"enabled": false, "reason": "The core interaction needs two real players; the current one-client harness cannot demonstrate it honestly"}
@@ -123,7 +123,7 @@
     {
       "name": "NPCAddons",
       "visibility": "private",
-      "platform": "Fabric client",
+      "platform": "Fabric and NeoForge client",
       "status": "active",
       "managed": true,
       "recording": {"enabled": true, "profile": "showcase"}
@@ -131,7 +131,7 @@
     {
       "name": "ProceduralDungeon",
       "visibility": "public",
-      "platform": "Fabric",
+      "platform": "Fabric and NeoForge",
       "status": "active",
       "managed": true,
       "recording": {"enabled": true, "profile": "showcase"}
@@ -139,7 +139,7 @@
     {
       "name": "SimpleTPA",
       "visibility": "public",
-      "platform": "Fabric server",
+      "platform": "Fabric and NeoForge server",
       "status": "active",
       "managed": true,
       "recording": {"enabled": false, "reason": "Teleport requests require two independently controlled real players; server GameTests remain the deterministic coverage"}
@@ -147,7 +147,7 @@
     {
       "name": "SimpleTwitchChat",
       "visibility": "public",
-      "platform": "Fabric client",
+      "platform": "Fabric and NeoForge client",
       "status": "active",
       "managed": true,
       "recording": {"enabled": true, "profile": "showcase"}
@@ -155,7 +155,7 @@
     {
       "name": "Telekinesis",
       "visibility": "public",
-      "platform": "Fabric server with client recording fixture",
+      "platform": "Fabric and NeoForge server with Fabric client recording fixture",
       "status": "active",
       "managed": true,
       "recording": {"enabled": true, "profile": "showcase"}
@@ -163,7 +163,7 @@
     {
       "name": "TextureAtlasGenerator",
       "visibility": "private",
-      "platform": "Fabric client",
+      "platform": "Fabric and NeoForge client",
       "status": "active",
       "managed": true,
       "recording": {"enabled": true, "profile": "showcase"}
@@ -196,7 +196,7 @@
     {
       "name": "VeinMiner",
       "visibility": "public",
-      "platform": "Fabric server with client recording fixture",
+      "platform": "Fabric and NeoForge server with Fabric client recording fixture",
       "status": "active",
       "managed": true,
       "recording": {"enabled": true, "profile": "showcase"}

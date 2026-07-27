@@ -23,11 +23,6 @@ public abstract class ModPublishingExtension {
         github = objects.newInstance(GitHubPublishingDestination.class);
         modrinth = objects.newInstance(ModrinthPublishingDestination.class);
         curseforge = objects.newInstance(CurseForgePublishingDestination.class);
-
-        getModLoaders().add("fabric");
-        getDryRun().convention(false);
-        getMaxRetries().convention(3);
-        getPrerelease().convention(false);
     }
 
     public abstract Property<String> getVersion();

@@ -14,8 +14,8 @@ ext {
 apply from: rootProject.file("gradle/plugin-component.gradle")
 
 repositories {
-	maven { url "https://libraries.minecraft.net" }
-	maven { url "https://maven.fabricmc.net/" }
+	maven { url = uri("https://libraries.minecraft.net") }
+	maven { url = uri("https://maven.fabricmc.net/") }
 }
 
 dependencies {

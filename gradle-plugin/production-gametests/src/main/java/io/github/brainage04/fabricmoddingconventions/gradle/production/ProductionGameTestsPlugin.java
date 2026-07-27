@@ -107,6 +107,7 @@ public final class ProductionGameTestsPlugin implements Plugin<Project> {
                     task.dependsOn(prepareRuns);
                     task.getMods().from(gameTestJar.flatMap(Jar::getArchiveFile));
                     task.getRuntimeLibraries().from(runtimeLibraries);
+                    task.includeRuntimeLibrariesInClasspath();
                     task.getUseXVFB().convention(productionExtension.getClientUseXvfb());
                     task.getJvmArgs().add("-Dfabric.client.gametest");
                     if (productionExtension.getDisableClientNetworkSynchronizer().get()) {
@@ -139,6 +140,7 @@ public final class ProductionGameTestsPlugin implements Plugin<Project> {
                     task.dependsOn(prepareRuns);
                     task.getMods().from(gameTestJar.flatMap(Jar::getArchiveFile));
                     task.getRuntimeLibraries().from(runtimeLibraries);
+                    task.includeRuntimeLibrariesInClasspath();
                     task.getJvmArgs().add("-Dfabric-api.gametest");
                     task.getJvmArgs().addAll(extension.getServerJvmArgs());
                     task.getProgramArgs().addAll(extension.getServerProgramArgs());

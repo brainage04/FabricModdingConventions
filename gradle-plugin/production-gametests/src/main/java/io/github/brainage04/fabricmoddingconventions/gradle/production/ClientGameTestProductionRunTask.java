@@ -6,16 +6,13 @@ import org.gradle.api.tasks.Classpath;
 import org.gradle.work.DisableCachingByDefault;
 import org.gradle.process.ExecSpec;
 
-import javax.inject.Inject;
-
 /** Production client GameTest task with an explicit non-mod runtime library classpath. */
 @DisableCachingByDefault(because = "Runs a production Minecraft client process.")
 public abstract class ClientGameTestProductionRunTask extends ClientProductionRunTask {
     @Classpath
     public abstract ConfigurableFileCollection getRuntimeLibraries();
 
-    @Inject
-    public ClientGameTestProductionRunTask() {
+    public final void includeRuntimeLibrariesInClasspath() {
         getClasspath().from(getRuntimeLibraries());
     }
 

@@ -6,10 +6,6 @@ import org.gradle.api.provider.Property;
 
 /** Modrinth project and version destination settings. */
 public abstract class ModrinthPublishingDestination extends PublishingDestination {
-    public ModrinthPublishingDestination() {
-        getApiEndpoint().convention("https://api.modrinth.com/v2");
-        getDiscordUrl().convention("https://discord.gg/N4zfhBx8Fm");
-    }
 
     public abstract Property<String> getProjectId();
 

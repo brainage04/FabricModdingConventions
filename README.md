@@ -172,7 +172,7 @@ The Java-side helpers live under `io.github.brainage04.fabricmoddingconventions`
 ./scripts/mod_fleet.py record
 ```
 
-`record` runs each eligible `recordClientGameTest` sequentially, preserves per-repository logs and failure workspaces, and collects successful MP4 files, normalized JSON metadata, and fleet reports under a timestamped `~/Downloads/minecraft-mod-gametest-recordings-*` directory. Limit an iteration with repeated `--include <repository>` arguments or preview every command with `--dry-run`. After correcting a partial failure, pass the existing directory to `--output` with `--resume`; valid passed artifacts are retained and only unfinished repositories run again.
+`record` runs each eligible `recordClientGameTest` sequentially, preserves per-repository logs and failure workspaces, and collects successful MP4 files under `recordings/`, normalized JSON metadata under `metadata/`, and fleet reports inside one timestamped `~/Downloads/minecraft-mod-gametest-recordings-*` directory. It does not write individual recordings directly to `~/Downloads`. Limit an iteration with repeated `--include <repository>` arguments or preview every command with `--dry-run`. After correcting a partial failure, pass the existing directory to `--output` with `--resume`; valid passed artifacts are retained and only unfinished repositories run again.
 
 For a new Minecraft release, override the expected baseline without editing the script:
 

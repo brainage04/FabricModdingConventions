@@ -5,9 +5,6 @@ import org.gradle.api.provider.Property;
 
 /** GitHub release destination settings. */
 public abstract class GitHubPublishingDestination extends PublishingDestination {
-    public GitHubPublishingDestination() {
-        getApiEndpoint().convention("https://api.github.com");
-    }
 
     public abstract Property<String> getRepository();
 

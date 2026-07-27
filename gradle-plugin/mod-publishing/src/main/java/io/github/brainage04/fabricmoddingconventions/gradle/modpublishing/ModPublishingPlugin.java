@@ -87,6 +87,7 @@ public final class ModPublishingPlugin implements Plugin<Project> {
         );
         Provider<String> modName = providers.gradleProperty("mod_name")
                 .orElse(providers.provider(project::getName));
+        extension.getModLoaders().add("fabric");
         extension.getVersion().convention(version);
         extension.getReleaseTag().convention(
                 providers.environmentVariable("RELEASE_TAG").orElse(version.map(value -> "v" + value))
@@ -164,6 +165,7 @@ public final class ModPublishingPlugin implements Plugin<Project> {
         extension.getModrinth().getApiEndpoint().convention(
                 providers.gradleProperty("modrinthApiEndpoint").orElse("https://api.modrinth.com/v2")
         );
+        extension.getModrinth().getDiscordUrl().convention("https://discord.gg/N4zfhBx8Fm");
 
         extension.getCurseforge().getEnabled().convention(booleanProperty(project, "publishCurseforge"));
         extension.getCurseforge().getProjectId().convention(providers.gradleProperty("curseforgeProjectId"));
@@ -175,6 +177,8 @@ public final class ModPublishingPlugin implements Plugin<Project> {
         extension.getCurseforge().getJavaVersions().addAll(
                 providers.gradleProperty("java_version").map(List::of).orElse(List.of())
         );
+        extension.getCurseforge().getClient().convention(true);
+        extension.getCurseforge().getServer().convention(true);
 
         project.getPluginManager().withPlugin("java", ignored -> {
             TaskProvider<AbstractArchiveTask> jar = project.getTasks().named("jar", AbstractArchiveTask.class);
