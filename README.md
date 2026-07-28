@@ -54,7 +54,7 @@ The recorder and production GameTest components apply the base plugin internally
 | `client` | client-only code in `src/main` | enabled | disabled |
 | `server` | server/common code in `src/main` | disabled | enabled |
 
-The reusable workflows `reusable-mod-build.yml`, `reusable-client-gametests.yml`, and `reusable-production-gametests.yml` own standard build, client GameTest/recording, and production GameTest orchestration. Consumer workflows provide only trigger policy, profiles, and optional Baritone or template-smoke inputs.
+The reusable workflows `reusable-mod-build.yml`, `reusable-client-gametests.yml`, `reusable-production-gametests.yml`, and `reusable-neoforge-gametests.yml` own standard build, client GameTest/recording, Fabric production GameTest, and NeoForge GameTest orchestration. `reusable-multiloader-release.yml` owns the shared Fabric/NeoForge GitHub, Modrinth, and CurseForge release matrix. Consumer workflows provide only trigger policy, profiles, artifact patterns, project identifiers, and genuine dependency preparation.
 
 ```gradle
 plugins {
@@ -115,7 +115,7 @@ modPublishing {
 
 `publishGithub`, `publishModrinth`, and `publishCurseforge` are independently retryable; `publishMods` runs every enabled destination. Validation rejects malformed booleans, negative retry counts, missing release artifacts, and inconsistent release metadata before network access. Modrinth project metadata and icons are synchronized through typed tasks. Ordinary `build` and `check` execution do not contact publishing endpoints.
 
-The reusable release workflows keep a single primary artifact by default. Multi-loader projects can pass `additional_artifact_pattern` to release preparation, attach the resulting `additional_artifact_file` through bootstrap GitHub publication, and invoke loader-specific Gradle tasks through the Modrinth and CurseForge workflows. A secondary Modrinth job can disable duplicate project synchronization with `sync_project: false`.
+Multi-loader release callers use `reusable-multiloader-release.yml`, supplying the NeoForge artifact pattern and destination project identifiers once. The wrapper prepares both exact artifacts, publishes both to one GitHub release, synchronizes Modrinth through the Fabric module before publishing both loader versions, and publishes both CurseForge files. Its boolean destination inputs keep unsupported services disabled without duplicating the release graph.
 
 The base plugin requires `mod_side`, `java_version`, `mod_id`, `mod_version`, `mod_name`, `maven_group`, `archives_base_name`, `loader_version`, `minecraft_version`, and `fabric_api_version` in Gradle properties. Its optional behaviors can be narrowed per consumer:
 
@@ -162,6 +162,19 @@ clientGameTestRecorder {
 The recording HUD uses Minecraft's scaled GUI coordinates, so its panel and text follow the configured GUI scale instead of shrinking relative to the framebuffer. The five notification controls default to `true`; set an individual property to `false` when that vanilla notification is part of the scenario.
 
 The Java-side helpers live under `io.github.brainage04.fabricmoddingconventions`.
+
+### Dedicated-server client GameTest harness
+
+`ClientGameTestServers.withDedicatedServer` owns server creation, client connection, connection-state validation, disconnection, and server closure. The simple overload uses `flatServerProperties()`; pass explicit properties only when a fixture changes the default server:
+
+```java
+ClientGameTestServers.withDedicatedServer(context, "Example GameTest", server -> {
+    server.runOnServer(ExampleClientGameTest::prepare);
+    // Exercise and assert the connected client.
+});
+```
+
+The callback may retain a fixture-specific `try`/`finally` for server-state cleanup. Connection cleanup belongs to the harness and runs even when the callback fails.
 
 ### Fleet audit and recording
 

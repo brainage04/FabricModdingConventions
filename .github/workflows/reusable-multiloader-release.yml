@@ -1,0 +1,193 @@
+name: reusable multi-loader release
+
+on:
+  workflow_call:
+    inputs:
+      java_version:
+        description: JDK version used by release builds
+        required: false
+        default: '25'
+        type: string
+      additional_artifact_pattern:
+        description: Glob for the NeoForge release JAR under build/libs
+        required: true
+        type: string
+      release_name:
+        description: GitHub release title
+        required: false
+        default: ''
+        type: string
+      publish_modrinth:
+        description: Publish Fabric and NeoForge artifacts to Modrinth
+        required: false
+        default: true
+        type: boolean
+      publish_curseforge:
+        description: Publish Fabric and NeoForge artifacts to CurseForge
+        required: false
+        default: true
+        type: boolean
+      modrinth_project_id:
+        description: Existing Modrinth project id; synchronization resolves it when omitted
+        required: false
+        default: ''
+        type: string
+      curseforge_project_id:
+        description: CurseForge numeric project id
+        required: false
+        default: ''
+        type: string
+      curseforge_project_slug:
+        description: CurseForge project slug
+        required: false
+        default: ''
+        type: string
+      fabric_modrinth_task:
+        description: Fabric Modrinth publication task
+        required: false
+        default: :fabric:publishModrinth
+        type: string
+      fabric_modrinth_sync_task:
+        description: Fabric Modrinth project synchronization task
+        required: false
+        default: :fabric:syncModrinthIcon
+        type: string
+      fabric_modrinth_state_file:
+        description: Fabric Modrinth synchronization state file
+        required: false
+        default: fabric/build/mod-publishing/modrinth-project-state.json
+        type: string
+      neoforge_modrinth_task:
+        description: NeoForge Modrinth publication task
+        required: false
+        default: :neoforge:publishModrinth
+        type: string
+      fabric_curseforge_task:
+        description: Fabric CurseForge publication task
+        required: false
+        default: :fabric:publishCurseforge
+        type: string
+      neoforge_curseforge_task:
+        description: NeoForge CurseForge publication task
+        required: false
+        default: :neoforge:publishCurseforge
+        type: string
+    secrets:
+      release_token:
+        description: GitHub token with contents write permission
+        required: true
+      modrinth_token:
+        description: Modrinth personal access token
+        required: false
+      curseforge_token:
+        description: CurseForge API token
+        required: false
+    outputs:
+      artifact_file:
+        description: Exact Fabric release JAR file name
+        value: ${{ jobs.prepare.outputs.artifact_file }}
+      additional_artifact_file:
+        description: Exact NeoForge release JAR file name
+        value: ${{ jobs.prepare.outputs.additional_artifact_file }}
+      release_body:
+        description: Release notes shared across destinations
+        value: ${{ jobs.prepare.outputs.release_body }}
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    permissions:
+      contents: write
+    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-release-prepare.yml@v2.4.0
+    with:
+      java_version: ${{ inputs.java_version }}
+      additional_artifact_pattern: ${{ inputs.additional_artifact_pattern }}
+      resolve_release_notes_with_gradle: false
+    secrets:
+      release_token: ${{ secrets.release_token }}
+
+  github:
+    needs: prepare
+    permissions:
+      contents: write
+    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-github.yml@v2.4.0
+    with:
+      artifact_file: ${{ needs.prepare.outputs.artifact_file }}
+      additional_artifact_file: ${{ needs.prepare.outputs.additional_artifact_file }}
+      release_body: ${{ needs.prepare.outputs.release_body }}
+      java_version: ${{ inputs.java_version }}
+      publish_with_gradle: false
+      release_name: ${{ inputs.release_name }}
+    secrets:
+      release_token: ${{ secrets.release_token }}
+
+  modrinth-fabric:
+    needs: prepare
+    if: inputs.publish_modrinth
+    permissions:
+      contents: read
+    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-modrinth.yml@v2.4.0
+    with:
+      artifact_file: ${{ needs.prepare.outputs.artifact_file }}
+      release_body: ${{ needs.prepare.outputs.release_body }}
+      java_version: ${{ inputs.java_version }}
+      project_id: ${{ inputs.modrinth_project_id }}
+      gradle_task: ${{ inputs.fabric_modrinth_task }}
+      sync_gradle_task: ${{ inputs.fabric_modrinth_sync_task }}
+      sync_state_file: ${{ inputs.fabric_modrinth_state_file }}
+    secrets:
+      modrinth_token: ${{ secrets.modrinth_token }}
+
+  modrinth-neoforge:
+    needs:
+      - prepare
+      - modrinth-fabric
+    if: inputs.publish_modrinth
+    permissions:
+      contents: read
+    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-modrinth.yml@v2.4.0
+    with:
+      artifact_file: ${{ needs.prepare.outputs.additional_artifact_file }}
+      release_body: ${{ needs.prepare.outputs.release_body }}
+      java_version: ${{ inputs.java_version }}
+      project_id: ${{ needs.modrinth-fabric.outputs.project_id }}
+      gradle_task: ${{ inputs.neoforge_modrinth_task }}
+      sync_project: false
+    secrets:
+      modrinth_token: ${{ secrets.modrinth_token }}
+
+  curseforge-fabric:
+    needs: prepare
+    if: inputs.publish_curseforge
+    permissions:
+      contents: read
+    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-curseforge.yml@v2.4.0
+    with:
+      artifact_file: ${{ needs.prepare.outputs.artifact_file }}
+      release_body: ${{ needs.prepare.outputs.release_body }}
+      java_version: ${{ inputs.java_version }}
+      project_id: ${{ inputs.curseforge_project_id }}
+      project_slug: ${{ inputs.curseforge_project_slug }}
+      gradle_task: ${{ inputs.fabric_curseforge_task }}
+    secrets:
+      curseforge_token: ${{ secrets.curseforge_token }}
+
+  curseforge-neoforge:
+    needs:
+      - prepare
+      - curseforge-fabric
+    if: inputs.publish_curseforge
+    permissions:
+      contents: read
+    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-curseforge.yml@v2.4.0
+    with:
+      artifact_file: ${{ needs.prepare.outputs.additional_artifact_file }}
+      release_body: ${{ needs.prepare.outputs.release_body }}
+      java_version: ${{ inputs.java_version }}
+      project_id: ${{ inputs.curseforge_project_id }}
+      project_slug: ${{ inputs.curseforge_project_slug }}
+      gradle_task: ${{ inputs.neoforge_curseforge_task }}
+    secrets:
+      curseforge_token: ${{ secrets.curseforge_token }}

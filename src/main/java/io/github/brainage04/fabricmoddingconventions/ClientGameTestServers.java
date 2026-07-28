@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.function.Consumer;
 
 public final class ClientGameTestServers {
     private static final int DEDICATED_SERVER_JOIN_TIMEOUT_TICKS = SharedConstants.TICKS_PER_MINUTE;
@@ -42,6 +43,35 @@ public final class ClientGameTestServers {
             return socket.getLocalPort();
         } catch (IOException exception) {
             throw new AssertionError("Expected to find an available port for the client GameTest server.", exception);
+        }
+    }
+
+    public static void withDedicatedServer(
+            ClientGameTestContext context,
+            String serverName,
+            Consumer<TestDedicatedServerContext> test
+    ) {
+        withDedicatedServer(context, flatServerProperties(), serverName, test);
+    }
+
+    public static void withDedicatedServer(
+            ClientGameTestContext context,
+            Properties serverProperties,
+            String serverName,
+            Consumer<TestDedicatedServerContext> test
+    ) {
+        Objects.requireNonNull(context, "context");
+        Objects.requireNonNull(serverProperties, "serverProperties");
+        Objects.requireNonNull(test, "test");
+
+        try (TestDedicatedServerContext server = context.worldBuilder().createServer(serverProperties)) {
+            try {
+                connectToDedicatedServer(context, server, serverName);
+                assertClientWorldAndPlayerAvailable(context);
+                test.accept(server);
+            } finally {
+                disconnectFromDedicatedServer(context);
+            }
         }
     }
 

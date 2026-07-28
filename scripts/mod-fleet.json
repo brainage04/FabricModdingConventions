@@ -6,7 +6,7 @@
     "loaderVersion": "0.19.3",
     "fabricApiVersion": "0.155.0+26.2",
     "javaVersion": "25",
-    "conventionsVersion": "2.3.9"
+    "conventionsVersion": "2.4.0"
   },
   "ignoredRepositories": {
     "DevUtils": "Forge-only legacy mod",
