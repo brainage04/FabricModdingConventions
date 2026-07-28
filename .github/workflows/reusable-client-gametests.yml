@@ -45,7 +45,7 @@ permissions:
 jobs:
   client-gametests:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - name: checkout repository
         uses: actions/checkout@v5
@@ -68,9 +68,15 @@ jobs:
 
       - name: install client test tools
         if: steps.client-test-support.outputs.present == 'true'
+        env:
+          RECORD_CLIENT_GAMETESTS: ${{ inputs.record_client_gametests }}
         run: |
+          packages=(xvfb x11-utils mesa-utils libflite1 libgl1-mesa-dri libglx-mesa0 libxi6 libxrandr2 libxrender1 libxtst6 libxinerama1 libxcursor1 libxxf86vm1)
+          if [ "${RECORD_CLIENT_GAMETESTS}" = 'true' ]; then
+            packages+=(ffmpeg pipewire-bin)
+          fi
           sudo apt-get update
-          sudo apt-get install -y xvfb ffmpeg pipewire-bin x11-utils mesa-utils libflite1 libgl1-mesa-dri libglx-mesa0 libxi6 libxrandr2 libxrender1 libxtst6 libxinerama1 libxcursor1 libxxf86vm1
+          sudo apt-get install -y "${packages[@]}"
 
       - name: validate gradle wrapper
         if: steps.client-test-support.outputs.present == 'true'
