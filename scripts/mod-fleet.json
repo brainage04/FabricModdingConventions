@@ -115,10 +115,10 @@
     {
       "name": "MilkablePlayers",
       "visibility": "public",
-      "platform": "Fabric and NeoForge server",
+      "platform": "Fabric and NeoForge server with Fabric spectator recording fixture",
       "status": "active",
       "managed": true,
-      "recording": {"enabled": false, "reason": "Fabric production GameTests use Carpet fake players for the real interaction path; no client showcase fixture is configured yet"}
+      "recording": {"enabled": true, "profile": "showcase"}
     },
     {
       "name": "NPCAddons",
@@ -147,10 +147,10 @@
     {
       "name": "SimpleTPA",
       "visibility": "public",
-      "platform": "Fabric and NeoForge server",
+      "platform": "Fabric and NeoForge server with Fabric spectator recording fixture",
       "status": "active",
       "managed": true,
-      "recording": {"enabled": false, "reason": "Fabric production GameTests use independently controlled Carpet fake players for request, accept, deny, and auto-accept flows; no client showcase fixture is configured yet"}
+      "recording": {"enabled": true, "profile": "showcase"}
     },
     {
       "name": "SimpleTwitchChat",
