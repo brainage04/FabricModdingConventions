@@ -14,8 +14,9 @@ import java.util.Locale;
 
 public final class ClientGameTestRecordingHud {
     private static final Identifier HUD_ID = Identifier.fromNamespaceAndPath(FabricModdingConventions.MOD_ID, "gametest_recording_feedback");
-    private static final int X = 5;
-    private static final int Y = 10;
+    private static final boolean SHOWCASE_PROFILE =
+            "showcase".equals(System.getenv(GameTestRecorderEnvironment.RECORDING_PROFILE_ENV));
+    private static final int SCREEN_MARGIN = 5;
     private static final int PANEL_PADDING = 4;
     private static final int LINE_GAP = 2;
     private static final int MAX_WIDTH = 360;
@@ -106,22 +107,31 @@ public final class ClientGameTestRecordingHud {
         int lineHeight = font.lineHeight + LINE_GAP;
         int panelWidth = width + PANEL_PADDING * 2;
         int panelHeight = lines.size() * lineHeight + PANEL_PADDING * 2 - LINE_GAP;
-        graphics.fill(X, Y, X + panelWidth, Y + panelHeight, BACKGROUND_COLOR);
+        int panelX = client.getWindow().getGuiScaledWidth() - panelWidth - SCREEN_MARGIN;
+        int panelY = client.getWindow().getGuiScaledHeight() - panelHeight - SCREEN_MARGIN;
+        graphics.fill(
+                panelX, panelY, panelX + panelWidth, panelY + panelHeight, BACKGROUND_COLOR);
 
-        int textY = Y + PANEL_PADDING;
+        int textY = panelY + PANEL_PADDING;
         for (HudLine line : lines) {
-            graphics.text(font, fit(font, line.text(), MAX_WIDTH), X + PANEL_PADDING, textY, line.color(), true);
+            graphics.text(
+                    font,
+                    fit(font, line.text(), MAX_WIDTH),
+                    panelX + PANEL_PADDING,
+                    textY,
+                    line.color(),
+                    true);
             textY += lineHeight;
         }
     }
 
     private static List<HudLine> lines() {
         ArrayList<HudLine> lines = new ArrayList<>();
-        lines.add(new HudLine("GameTest Recording", HEADER_COLOR));
+        lines.add(new HudLine(SHOWCASE_PROFILE ? "Feature showcase" : "GameTest Recording", HEADER_COLOR));
 
         Step step = currentStep;
         if (step != null) {
-            if (!step.id().isBlank()) {
+            if (!SHOWCASE_PROFILE && !step.id().isBlank()) {
                 lines.add(new HudLine("Scenario: " + step.id(), LABEL_COLOR));
             }
             if (!step.title().isBlank()) {
@@ -130,6 +140,10 @@ public final class ClientGameTestRecordingHud {
             if (!step.subtitle().isBlank()) {
                 lines.add(new HudLine(step.subtitle(), SUBTITLE_COLOR));
             }
+        }
+
+        if (SHOWCASE_PROFILE) {
+            return lines;
         }
 
         List<String> logs;

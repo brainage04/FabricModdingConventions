@@ -27,15 +27,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-@DisableCachingByDefault(because = "The task controls external Minecraft, Xvfb, PipeWire, and ffmpeg processes.")
+@DisableCachingByDefault(because = "The task controls external Minecraft, Xvfb, PulseAudio, and ffmpeg processes.")
 public abstract class RecordClientGameTestTask extends DefaultTask {
-    private static final Pattern PIPEWIRE_ID_PATTERN = Pattern.compile("^\\s*id\\s+(\\d+),");
-    private static final Pattern DEFAULT_SINK_PATTERN = Pattern.compile("\\*\\s*(\\d+)\\.");
-
     @Internal
     public abstract DirectoryProperty getProjectDirectory();
 
@@ -50,7 +49,7 @@ public abstract class RecordClientGameTestTask extends DefaultTask {
 
     @TaskAction
     public void record() {
-        requireTools(List.of("ffmpeg", "ffprobe", "Xvfb", "xdpyinfo", "pw-cli", "wpctl"));
+        requireTools(List.of("ffmpeg", "ffprobe", "Xvfb", "xdpyinfo", "pactl"));
 
         File projectDir = getProjectDirectory().get().getAsFile();
         String timestamp = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").withZone(ZoneOffset.UTC).format(Instant.now());
@@ -62,15 +61,31 @@ public abstract class RecordClientGameTestTask extends DefaultTask {
         String fps = env("GTR_RECORDING_FPS", "30");
         int startWaitSeconds = parsePositiveInt(env("GTR_RECORDING_START_WAIT_SECONDS", "90"), "GTR_RECORDING_START_WAIT_SECONDS");
         String xvfbScreen = env("GTR_RECORDING_XVFB_SCREEN", "1920x1080x24");
-        boolean setDefaultAudio = truthy(env("GTR_RECORDING_AUDIO_SET_DEFAULT", "false"));
+        double prePadding = parsePadding(env("GTR_RECORDING_PRE_PADDING_SECONDS", "0.5"));
+        double postPadding = parsePadding(env("GTR_RECORDING_POST_PADDING_SECONDS", "0.5"));
+        int frameRate = parsePositiveInt(fps, "GTR_RECORDING_FPS");
+        if (truthy(env("GTR_RECORDING_AUDIO_SET_DEFAULT", "false"))) {
+            throw new GradleException("Changing the desktop default audio sink is prohibited; recording uses a dedicated route.");
+        }
         String safeRecordingName = sanitizePathComponent(recordingName);
         File output = new File(recordingDir, safeRecordingName + "-" + timestamp + ".mp4");
         File metadata = new File(recordingDir, safeRecordingName + "-" + timestamp + ".json");
         File startSignal = new File(recordingDir, "." + safeRecordingName + "-" + timestamp + ".start");
         File readySignal = new File(recordingDir, "." + safeRecordingName + "-" + timestamp + ".ready");
+        File stopSignal = new File(recordingDir, "." + safeRecordingName + "-" + timestamp + ".stop");
+        File completeSignal = new File(recordingDir, "." + safeRecordingName + "-" + timestamp + ".complete");
+        File boundaries = new File(recordingDir, safeRecordingName + "-" + timestamp + "-boundaries.properties");
+        File rawCapture = new File(recordingDir, safeRecordingName + "-" + timestamp + "-raw.mkv");
+        File progress = new File(recordingDir, safeRecordingName + "-" + timestamp + "-capture-progress.txt");
+        File audioProgress = new File(recordingDir, safeRecordingName + "-" + timestamp + "-audio-packet-times.txt");
+        File audioAnalysis = new File(recordingDir, safeRecordingName + "-" + timestamp + "-audio-analysis.txt");
         File alsoftConfig = new File(recordingDir, "." + safeRecordingName + "-" + timestamp + "-alsoft.conf");
         String audioSinkName = env("GTR_RECORDING_AUDIO_SINK_NAME", "gametest_recorder_" + timestamp);
         String audioSource = audioSinkName + ".monitor";
+        if (!audioSinkName.matches("[A-Za-z0-9_-]+")) {
+            throw new GradleException("Audio sink name must contain only letters, digits, underscores and hyphens.");
+        }
+        String audioApplicationId = "fmc.recorder." + safeRecordingName + "." + timestamp;
         File keptRunDir = new File(recordingDir, safeRecordingName + "-" + timestamp + "-run");
         String recordingStartedAt = DateTimeFormatter.ISO_INSTANT.format(Instant.now());
         String xvfbDisplay = env("GTR_RECORDING_XVFB_DISPLAY", "");
@@ -79,24 +94,34 @@ public abstract class RecordClientGameTestTask extends DefaultTask {
         Process ffmpegProcess = null;
         Integer ffmpegStatus = null;
         String audioSinkId = "";
-        String previousDefaultSinkId = "";
         int gradleStatus = 1;
         boolean videoSaved = false;
         boolean audioSaved = false;
         boolean recordingStartObserved = false;
+        boolean recordingStopObserved = false;
         boolean ffmpegExitedBeforeShutdown = false;
+        AtomicBoolean soundInitialized = new AtomicBoolean();
+        AtomicBoolean soundFailed = new AtomicBoolean();
+        Map<String, Object> boundaryEvidence = new LinkedHashMap<>();
+        boolean audioRouteVerified = false;
+        boolean audioDecoded = false;
+        boolean audioNonSilent = false;
+        String captureFailure = null;
         Map<String, String> processEnvironment = new LinkedHashMap<>(System.getenv());
         List<String> gradleCommand = List.of(
                 "./gradlew",
                 "--no-daemon",
-                "-P" + getRecordingAudioDeviceProjectProperty().get()
-                        + "=FabricModdingConventions Recording Null Sink",
+                "-P" + getRecordingAudioDeviceProjectProperty().get() + "=" + audioSinkName,
                 getRunTaskName().get()
         );
 
         recordingDir.mkdirs();
         deleteIfExists(startSignal.toPath());
         deleteIfExists(readySignal.toPath());
+        deleteIfExists(stopSignal.toPath());
+        deleteIfExists(completeSignal.toPath());
+        deleteIfExists(boundaries.toPath());
+        deleteIfExists(progress.toPath());
 
         try {
             if (xvfbDisplay.isBlank()) {
@@ -105,6 +130,12 @@ public abstract class RecordClientGameTestTask extends DefaultTask {
             if (!xvfbDisplay.startsWith(":")) {
                 xvfbDisplay = ":" + xvfbDisplay;
             }
+            String displayNumber = xvfbDisplay.substring(1);
+            if (!displayNumber.matches("[0-9]+")
+                    || new File("/tmp/.X" + displayNumber + "-lock").exists()
+                    || new File("/tmp/.X11-unix/X" + displayNumber).exists()) {
+                throw new GradleException("Refusing to attach to an existing or invalid X display: " + xvfbDisplay);
+            }
             getLogger().lifecycle("Starting virtual X display {} ({})...", xvfbDisplay, xvfbScreen);
             xvfbProcess = new ProcessBuilder("Xvfb", xvfbDisplay, "-screen", "0", xvfbScreen, "-nolisten", "tcp")
                     .redirectErrorStream(true)
@@ -112,20 +143,15 @@ public abstract class RecordClientGameTestTask extends DefaultTask {
             waitForXDisplay(xvfbDisplay, xvfbProcess);
 
             audioSinkId = createVirtualAudioSink(audioSinkName);
-            if (setDefaultAudio) {
-                previousDefaultSinkId = currentDefaultAudioSinkId();
-                runCommand(List.of("wpctl", "set-default", audioSinkId));
-            }
 
             Files.writeString(alsoftConfig.toPath(), """
                     [general]
                     drivers = pulse
 
                     [pulse]
-                    device = %s
                     allow-moves = false
-                    """.formatted(audioSinkName), StandardCharsets.UTF_8);
-            getLogger().lifecycle("Routing GameTest audio to virtual PipeWire sink: {}", audioSinkName);
+                    """, StandardCharsets.UTF_8);
+            getLogger().lifecycle("Routing GameTest audio to isolated PulseAudio sink: {}", audioSinkName);
             getLogger().lifecycle("Recording audio from PulseAudio monitor source: {}", audioSource);
 
             processEnvironment.clear();
@@ -133,8 +159,11 @@ public abstract class RecordClientGameTestTask extends DefaultTask {
             processEnvironment.put("DISPLAY", xvfbDisplay);
             processEnvironment.put("ALSOFT_CONF", alsoftConfig.getAbsolutePath());
             processEnvironment.put("ALSOFT_DRIVERS", "pulse");
+            processEnvironment.put("ALSOFT_PULSE_DEFAULT", audioSinkName);
             processEnvironment.put("PULSE_SINK", audioSinkName);
-            processEnvironment.put("GTR_RECORDING_AUDIO_DEVICE", "FabricModdingConventions Recording Null Sink");
+            processEnvironment.put("PULSE_PROP", "application.id=" + audioApplicationId);
+            // Vanilla selects an enumerated OpenAL device; environment defaults alone do not pin it.
+            processEnvironment.put("GTR_RECORDING_AUDIO_DEVICE", audioSinkName);
             processEnvironment.put("GTR_RECORDING_MANAGED_XVFB", "true");
             processEnvironment.put("GTR_RECORDING_NAME", recordingName);
             processEnvironment.put("GTR_RECORDING_PROFILE", recordingProfile);
@@ -144,6 +173,9 @@ public abstract class RecordClientGameTestTask extends DefaultTask {
             processEnvironment.put("CLIENT_GAMETEST_RECORDING_TRACE", recordingTrace);
             processEnvironment.put("CLIENT_GAMETEST_RECORDING_START_SIGNAL", startSignal.getAbsolutePath());
             processEnvironment.put("CLIENT_GAMETEST_RECORDING_READY_SIGNAL", readySignal.getAbsolutePath());
+            processEnvironment.put("CLIENT_GAMETEST_RECORDING_STOP_SIGNAL", stopSignal.getAbsolutePath());
+            processEnvironment.put("CLIENT_GAMETEST_RECORDING_COMPLETE_SIGNAL", completeSignal.getAbsolutePath());
+            processEnvironment.put("CLIENT_GAMETEST_RECORDING_BOUNDARIES", boundaries.getAbsolutePath());
             if (!recordingProfile.isBlank()) {
                 processEnvironment.putIfAbsent("CLIENT_GAMETEST_PROFILE", recordingProfile);
             }
@@ -155,7 +187,14 @@ public abstract class RecordClientGameTestTask extends DefaultTask {
             gradleBuilder.environment().clear();
             gradleBuilder.environment().putAll(processEnvironment);
             gradleProcess = gradleBuilder.start();
-            Thread logThread = streamToStdout(gradleProcess, "client-gametest-output");
+            Thread logThread = streamToStdout(gradleProcess, "client-gametest-output", line -> {
+                if (line.contains("Sound engine started")) {
+                    soundInitialized.set(true);
+                }
+                if (line.contains("Failed to open OpenAL device") || line.contains("Error starting SoundSystem")) {
+                    soundFailed.set(true);
+                }
+            });
 
             getLogger().lifecycle("Waiting for client GameTest recording-start signal...");
             long signalDeadline = System.currentTimeMillis() + startWaitSeconds * 1000L;
@@ -168,48 +207,96 @@ public abstract class RecordClientGameTestTask extends DefaultTask {
                 getLogger().lifecycle("Recording virtual display {} to {}", xvfbDisplay, output.getAbsolutePath());
                 String videoSize = videoSizeFromXvfbScreen(xvfbScreen);
                 List<String> ffmpegCommand = List.of(
-                        "ffmpeg", "-y",
+                        "ffmpeg", "-y", "-copyts", "-stats_period", "0.05", "-progress", progress.getAbsolutePath(),
                         "-f", "x11grab", "-framerate", fps, "-video_size", videoSize, "-draw_mouse", "0", "-i", xvfbDisplay + ".0",
                         "-f", "pulse", "-thread_queue_size", "1024", "-i", audioSource,
-                        "-map", "0:v:0", "-map", "1:a:0", "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-pix_fmt", "yuv420p",
-                        "-c:a", "aac", "-b:a", "160k", "-shortest", output.getAbsolutePath()
+                        "-map", "0:v:0", "-map", "1:a:0", "-c:v", "libx264", "-preset", "veryfast", "-crf", "18",
+                        "-pix_fmt", "yuv420p", "-fps_mode", "passthrough", "-c:a", "pcm_s16le",
+                        "-stats_mux_pre:a:0", audioProgress.getAbsolutePath(),
+                        "-stats_mux_pre_fmt:a:0", "{pts} {tb}", rawCapture.getAbsolutePath()
                 );
                 ProcessBuilder ffmpegBuilder = new ProcessBuilder(ffmpegCommand);
                 ffmpegBuilder.directory(projectDir);
                 ffmpegBuilder.redirectErrorStream(true);
                 ffmpegBuilder.environment().putAll(processEnvironment);
                 ffmpegProcess = ffmpegBuilder.start();
-                streamToStdout(ffmpegProcess, "ffmpeg-output");
+                streamToStdout(ffmpegProcess, "ffmpeg-output", _ -> {});
+                waitForCaptureFrames(ffmpegProcess, progress);
+                waitForAudioCoverage(ffmpegProcess, audioProgress, System.currentTimeMillis() / 1000.0);
+                verifyGameAudioRoute(audioSinkName, audioApplicationId);
+                audioRouteVerified = true;
+                sleep((long) Math.ceil(prePadding * 1000) + 100L);
+                if (!ffmpegProcess.isAlive()) {
+                    throw new GradleException("Capture exited during pre-world padding.");
+                }
                 Files.writeString(readySignal.toPath(), Long.toString(System.currentTimeMillis()), StandardCharsets.UTF_8);
+                boundaryEvidence.put("captureReadyEpochMs", System.currentTimeMillis());
+                getLogger().lifecycle("[CLIENT_GAMETEST_BOUNDARY] CAPTURE_READY: encoded frames and isolated game audio route verified");
             }
 
-            gradleStatus = gradleProcess.waitFor();
+            while (gradleProcess.isAlive() && !stopSignal.exists()) {
+                sleep(50L);
+            }
+            recordingStopObserved = stopSignal.exists();
+            if (recordingStopObserved && ffmpegProcess != null) {
+                ffmpegExitedBeforeShutdown = !ffmpegProcess.isAlive();
+                Properties world = new Properties();
+                try (var reader = Files.newBufferedReader(boundaries.toPath())) {
+                    world.load(reader);
+                }
+                world.forEach((key, value) -> boundaryEvidence.put(key.toString(), value));
+                long stopAfterMs = (long) Math.ceil(Long.parseLong(world.getProperty("worldClearedUs")) / 1000.0
+                        + postPadding * 1000 + 2000.0 / frameRate);
+                while (System.currentTimeMillis() < stopAfterMs && ffmpegProcess.isAlive()) {
+                    sleep(10L);
+                }
+                // PulseAudio packets can trail wall time; stopping on video readiness alone
+                // truncates the game's final audio even when the audio stream is non-empty.
+                boundaryEvidence.put("audioCapturedThroughEpochSeconds",
+                        waitForAudioCoverage(ffmpegProcess, audioProgress, stopAfterMs / 1000.0));
+                stopFfmpeg(ffmpegProcess);
+                if (ffmpegProcess.isAlive() || (ffmpegProcess.exitValue() != 0 && ffmpegProcess.exitValue() != 255)) {
+                    throw new GradleException("Capture did not finalize successfully before client teardown.");
+                }
+                Files.writeString(completeSignal.toPath(), Long.toString(System.currentTimeMillis()), StandardCharsets.UTF_8);
+                boundaryEvidence.put("captureCompleteEpochMs", System.currentTimeMillis());
+                getLogger().lifecycle("[CLIENT_GAMETEST_BOUNDARY] CAPTURE_COMPLETE: raw capture finalized before client teardown");
+            }
+
+            if (!gradleProcess.waitFor(30, TimeUnit.SECONDS)) {
+                throw new GradleException("Client GameTest did not terminate within 30 seconds of capture completion.");
+            }
+            gradleStatus = gradleProcess.exitValue();
             logThread.join(1000L);
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Client GameTest recording failed.", exception);
+        } catch (IOException | RuntimeException exception) {
+            captureFailure = exception.toString();
+            getLogger().error("Client GameTest recording failed; retaining raw evidence.", exception);
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             throw new GradleException("Interrupted while recording client GameTest.", exception);
         } finally {
             if (ffmpegProcess != null) {
-                ffmpegExitedBeforeShutdown = !ffmpegProcess.isAlive();
-                if (ffmpegProcess.isAlive()) {
-                    runCommand(List.of("kill", "-INT", Long.toString(ffmpegProcess.pid())), Map.of(), true);
-                    waitForProcess(ffmpegProcess, 10, TimeUnit.SECONDS);
-                    if (ffmpegProcess.isAlive()) {
-                        ffmpegProcess.destroyForcibly();
-                        waitForProcess(ffmpegProcess, 2, TimeUnit.SECONDS);
-                    }
+                if (!recordingStopObserved && !ffmpegProcess.isAlive()) {
+                    ffmpegExitedBeforeShutdown = true;
                 }
+                stopFfmpeg(ffmpegProcess);
                 if (!ffmpegProcess.isAlive()) {
                     ffmpegStatus = ffmpegProcess.exitValue();
                 }
             }
-            if (!previousDefaultSinkId.isBlank()) {
-                runCommand(List.of("wpctl", "set-default", previousDefaultSinkId), Map.of(), true);
+            if (gradleProcess != null && gradleProcess.isAlive()) {
+                List<ProcessHandle> children = gradleProcess.descendants().toList();
+                children.forEach(ProcessHandle::destroy);
+                gradleProcess.destroy();
+                waitForProcess(gradleProcess, 5, TimeUnit.SECONDS);
+                children.stream().filter(ProcessHandle::isAlive).forEach(ProcessHandle::destroyForcibly);
+                if (gradleProcess.isAlive()) {
+                    gradleProcess.destroyForcibly();
+                    waitForProcess(gradleProcess, 2, TimeUnit.SECONDS);
+                }
             }
             if (!audioSinkId.isBlank()) {
-                runCommand(List.of("pw-cli", "destroy", audioSinkId), Map.of(), true);
+                runCommand(List.of("pactl", "unload-module", audioSinkId), Map.of(), true);
             }
             if (xvfbProcess != null && xvfbProcess.isAlive()) {
                 xvfbProcess.destroy();
@@ -220,18 +307,37 @@ public abstract class RecordClientGameTestTask extends DefaultTask {
             }
             deleteIfExists(startSignal.toPath());
             deleteIfExists(readySignal.toPath());
+            deleteIfExists(stopSignal.toPath());
+            deleteIfExists(completeSignal.toPath());
             deleteIfExists(alsoftConfig.toPath());
         }
 
+        if (recordingStopObserved && rawCapture.isFile()) {
+            try {
+                trimToWorldBoundaries(rawCapture, output, boundaryEvidence, prePadding, postPadding, frameRate);
+            } catch (RuntimeException exception) {
+                captureFailure = exception.toString();
+                getLogger().error("Could not trim recording; retaining raw boundary evidence.", exception);
+            }
+        }
         if (output.isFile() && runCommand(List.of("ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", output.getAbsolutePath()), Map.of(), true).status() == 0) {
             videoSaved = true;
             getLogger().lifecycle("Recording saved: {}", output.getAbsolutePath());
         }
         if (videoSaved) {
             CommandResult audioProbe = runCommand(List.of("ffprobe", "-v", "error", "-select_streams", "a", "-show_entries", "stream=codec_type", "-of", "csv=p=0", output.getAbsolutePath()), Map.of(), true);
-            if (!audioProbe.output().trim().isBlank()) {
-                audioSaved = true;
-                getLogger().lifecycle("Recording audio stream saved: {}", audioSource);
+            audioSaved = audioProbe.status() == 0 && !audioProbe.output().trim().isBlank();
+            CommandResult analysis = runCommand(List.of("ffmpeg", "-v", "info", "-i", output.getAbsolutePath(),
+                    "-vn", "-af", "astats=metadata=0:reset=0", "-f", "null", "-"), Map.of(), true);
+            audioDecoded = analysis.status() == 0
+                    && Pattern.compile("Number of samples: [1-9][0-9]*").matcher(analysis.output()).find();
+            audioNonSilent = Pattern.compile("Peak level dB: -?[0-9]").matcher(analysis.output()).find();
+            audioSaved = audioSaved && audioDecoded && audioRouteVerified
+                    && soundInitialized.get() && !soundFailed.get();
+            try {
+                Files.writeString(audioAnalysis.toPath(), analysis.output(), StandardCharsets.UTF_8);
+            } catch (IOException exception) {
+                throw new UncheckedIOException(exception);
             }
         }
 
@@ -244,6 +350,7 @@ public abstract class RecordClientGameTestTask extends DefaultTask {
         List<String> recordingFailures = recordingFailureMessages(
                 gradleStatus,
                 recordingStartObserved,
+                recordingStopObserved,
                 ffmpegExitedBeforeShutdown,
                 ffmpegStatus,
                 videoSaved,
@@ -251,6 +358,16 @@ public abstract class RecordClientGameTestTask extends DefaultTask {
                 resolvedRunDir != null,
                 runDir.toString()
         );
+        if (captureFailure != null) {
+            recordingFailures.add(captureFailure);
+        }
+        if (!audioRouteVerified || !soundInitialized.get() || soundFailed.get() || !audioDecoded) {
+            recordingFailures.add("Game audio must initialize successfully on the isolated sink and decode to PCM samples.");
+        }
+        if (boundaryEvidence.containsKey("clockDriftUs")
+                && Math.abs(Long.parseLong(boundaryEvidence.get("clockDriftUs").toString())) > 10_000L) {
+            recordingFailures.add("Wall clock drift exceeded 10ms during capture; boundary timing requires review.");
+        }
         recordingFailures.forEach(getLogger()::error);
 
         Map<String, Object> metadataModel = new LinkedHashMap<>();
@@ -265,11 +382,27 @@ public abstract class RecordClientGameTestTask extends DefaultTask {
         metadataModel.put("xvfbScreen", xvfbScreen);
         metadataModel.put("video", output.getAbsolutePath());
         metadataModel.put("videoSaved", videoSaved);
+        metadataModel.put("recordingStartObserved", recordingStartObserved);
+        metadataModel.put("recordingStopObserved", recordingStopObserved);
         metadataModel.put("audioRequested", true);
         metadataModel.put("audioRoute", "virtual");
         metadataModel.put("audioSource", audioSource);
         metadataModel.put("audioSink", audioSinkName);
         metadataModel.put("audioSaved", audioSaved);
+        metadataModel.put("audioRouteVerified", audioRouteVerified);
+        metadataModel.put("gameSoundInitialized", soundInitialized.get());
+        metadataModel.put("gameSoundInitializationFailed", soundFailed.get());
+        metadataModel.put("audioDecoded", audioDecoded);
+        metadataModel.put("audioNonSilent", audioNonSilent);
+        metadataModel.put("audioAnalysis", audioAnalysis.getAbsolutePath());
+        metadataModel.put("audioSilencePolicy", "Quiet intervals are permitted; an entirely silent recording requires semantic review, not an automatic sound failure.");
+        metadataModel.put("boundaries", boundaryEvidence);
+        metadataModel.put("boundaryEvidence", boundaries.getAbsolutePath());
+        metadataModel.put("rawCapture", rawCapture.getAbsolutePath());
+        metadataModel.put("captureProgress", progress.getAbsolutePath());
+        metadataModel.put("audioPacketTimestamps", audioProgress.getAbsolutePath());
+        metadataModel.put("prePaddingSeconds", prePadding);
+        metadataModel.put("postPaddingSeconds", postPadding);
         metadataModel.put("ffmpegStatus", ffmpegStatus);
         metadataModel.put("recordingDirectory", canonicalFile(recordingDir).getPath());
         metadataModel.put("runDirectory", resolvedRunDir == null ? null : resolvedRunDir.getAbsolutePath());
@@ -299,6 +432,7 @@ public abstract class RecordClientGameTestTask extends DefaultTask {
     static List<String> recordingFailureMessages(
             int gradleStatus,
             boolean recordingStartObserved,
+            boolean recordingStopObserved,
             boolean ffmpegExitedBeforeShutdown,
             Integer ffmpegStatus,
             boolean videoSaved,
@@ -313,18 +447,21 @@ public abstract class RecordClientGameTestTask extends DefaultTask {
         if (!recordingStartObserved) {
             failures.add("Client GameTest recording-start signal was not observed.");
         }
+        if (!recordingStopObserved) {
+            failures.add("Client GameTest recording-stop signal was not observed.");
+        }
         if (ffmpegExitedBeforeShutdown) {
             failures.add("ffmpeg exited before the client GameTest completed with status " + ffmpegStatus + ".");
         }
         if (!videoSaved) {
             failures.add("Recorded video is missing or invalid.");
         } else if (!audioSaved) {
-            failures.add("Recording was saved without an audio stream.");
+            failures.add("Recording audio failed decoding, game sound initialization, or isolated-routing verification.");
         }
         if (!runDirectorySaved) {
             failures.add("Client GameTest run directory was not found: " + runDirectory);
         }
-        return List.copyOf(failures);
+        return failures;
     }
 
     private void requireTools(Collection<String> names) {
@@ -388,55 +525,185 @@ public abstract class RecordClientGameTestTask extends DefaultTask {
         throw new GradleException("Timed out waiting for X display " + displayName + ".");
     }
 
-    private String findPipeWireNodeIdByName(String nodeName) {
-        CommandResult result = runCommand(List.of("pw-cli", "list-objects", "Node"), Map.of(), true);
-        if (result.status() != 0) {
-            return "";
-        }
-        String currentId = "";
-        for (String line : result.output().lines().toList()) {
-            var idMatcher = PIPEWIRE_ID_PATTERN.matcher(line);
-            if (idMatcher.find()) {
-                currentId = idMatcher.group(1);
-            }
-            if (line.contains("node.name") && line.contains("\"" + nodeName + "\"") && !currentId.isBlank()) {
-                return currentId;
-            }
-        }
-        return "";
-    }
-
     private String createVirtualAudioSink(String sinkName) {
-        runCommand(List.of(
-                "pw-cli",
-                "create-node",
-                "adapter",
-                "{ factory.name = support.null-audio-sink node.name = \"" + sinkName + "\" node.description = \"FabricModdingConventions Recording Null Sink\" media.class = Audio/Sink object.linger = true priority.driver = 1 priority.session = 1 node.autoconnect = false audio.position = [ FL FR ] }"
-        ));
-        for (int attempt = 0; attempt < 20; attempt++) {
-            String id = findPipeWireNodeIdByName(sinkName);
-            if (!id.isBlank()) {
-                return id;
-            }
-            sleep(100L);
+        boolean exists = runCommand(List.of("pactl", "list", "short", "sinks")).output().lines()
+                .map(line -> line.split("\\s+"))
+                .anyMatch(columns -> columns.length > 1 && columns[1].equals(sinkName));
+        if (exists) {
+            throw new GradleException("Refusing to reuse an existing audio sink: " + sinkName);
         }
-        throw new GradleException("Expected to create a virtual PipeWire null sink for GameTest recording audio: " + sinkName);
+        // Use the same PulseAudio server as Minecraft, ffmpeg, and route verification.
+        // Direct pw-cli calls would ignore PULSE_SERVER and touch another session.
+        return runCommand(List.of(
+                "pactl", "load-module", "module-null-sink",
+                "sink_name=" + sinkName, "rate=48000", "channels=2",
+                "channel_map=front-left,front-right",
+                "sink_properties=device.description=" + sinkName
+        )).output().strip();
     }
 
-    private String currentDefaultAudioSinkId() {
-        CommandResult result = runCommand(List.of("wpctl", "status"), Map.of(), true);
-        if (result.status() != 0) {
-            return "";
+    private void verifyGameAudioRoute(String sinkName, String applicationId) {
+        String sinkIndex = "";
+        for (String line : runCommand(List.of("pactl", "list", "short", "sinks")).output().lines().toList()) {
+            String[] columns = line.split("\\s+");
+            if (columns.length > 1 && columns[1].equals(sinkName)) {
+                sinkIndex = columns[0];
+            }
         }
-        for (String line : result.output().lines().toList()) {
-            if (line.contains("*")) {
-                var matcher = DEFAULT_SINK_PATTERN.matcher(line);
-                if (matcher.find()) {
-                    return matcher.group(1);
+        if (sinkIndex.isBlank()) {
+            throw new GradleException("Dedicated sink is not visible to PulseAudio: " + sinkName);
+        }
+        boolean monitorFound = runCommand(List.of("pactl", "list", "short", "sources")).output().lines()
+                .map(line -> line.split("\\s+"))
+                .anyMatch(columns -> columns.length > 1 && columns[1].equals(sinkName + ".monitor"));
+        if (!monitorFound) {
+            throw new GradleException("Dedicated sink monitor is not available.");
+        }
+        String inputs = runCommand(List.of("pactl", "list", "sink-inputs")).output();
+        for (String input : inputs.split("Sink Input #")) {
+            if (input.contains("application.id = \"" + applicationId + "\"")) {
+                var route = Pattern.compile("(?m)^\\s*Sink:\\s*(\\d+)\\s*$").matcher(input);
+                if (!route.find() || !sinkIndex.equals(route.group(1))) {
+                    throw new GradleException("Minecraft audio is not routed exclusively to the dedicated sink.");
+                }
+                getLogger().lifecycle("Verified Minecraft PulseAudio stream on sink {} (index {}).", sinkName, sinkIndex);
+                return;
+            }
+        }
+        throw new GradleException("Minecraft did not open a tagged PulseAudio playback stream. Check OpenAL initialization.");
+    }
+
+    private void waitForCaptureFrames(Process ffmpeg, File progress) throws IOException {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+        while (System.nanoTime() < deadline && ffmpeg.isAlive()) {
+            if (progress.isFile() && Pattern.compile("(?m)^frame=[1-9][0-9]*\\s*$")
+                    .matcher(Files.readString(progress.toPath())).find()) {
+                return;
+            }
+            sleep(25L);
+        }
+        throw new GradleException("ffmpeg did not report an encoded video frame before world entry.");
+    }
+
+    private double waitForAudioCoverage(Process ffmpeg, File timestamps, double through) throws IOException {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+        while (!timestamps.isFile() && System.nanoTime() < deadline && ffmpeg.isAlive()) {
+            sleep(25L);
+        }
+        if (timestamps.isFile()) {
+            try (var reader = Files.newBufferedReader(timestamps.toPath())) {
+                while (System.nanoTime() < deadline && ffmpeg.isAlive()) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        String[] fields = line.split("[ /]");
+                        if (fields.length != 3) continue;
+                        double seconds = Double.parseDouble(fields[0])
+                                * Long.parseLong(fields[1]) / Long.parseLong(fields[2]);
+                        if (seconds >= through) return seconds;
+                    }
+                    sleep(25L);
                 }
             }
         }
-        return "";
+        throw new GradleException("Audio packets did not cover the required capture boundary: " + through);
+    }
+
+    private void trimToWorldBoundaries(File raw, File output, Map<String, Object> evidence,
+            double prePadding, double postPadding, int fps) {
+        double firstTick = Long.parseLong(evidence.get("firstWorldTickStartUs").toString()) / 1_000_000.0;
+        double lastTick = Long.parseLong(evidence.get("lastWorldTickEndUs").toString()) / 1_000_000.0;
+        double requestedStart = firstTick - prePadding;
+        double worldExit = Long.parseLong(evidence.get("worldClearedUs").toString()) / 1_000_000.0;
+        double requestedEnd = (postPadding == 0 ? lastTick : Math.max(lastTick, worldExit)) + postPadding;
+        CommandResult probe = runCommand(List.of("ffprobe", "-v", "error", "-select_streams", "v:0",
+                "-show_frames", "-show_entries", "frame=best_effort_timestamp_time", "-of", "csv=p=0", raw.getAbsolutePath()));
+        double selectedStart = Double.NaN;
+        double selectedEnd = Double.NaN;
+        double previous = Double.NaN;
+        double largestGap = 0;
+        long frameIndex = 0;
+        long startIndex = -1;
+        long endIndex = -1;
+        for (var lines = probe.output().lines().iterator(); lines.hasNext();) {
+            String line = lines.next();
+            int comma = line.indexOf(',');
+            String timestamp = (comma < 0 ? line : line.substring(0, comma)).strip();
+            if (!timestamp.matches("[0-9]+(?:\\.[0-9]+)?")) {
+                continue;
+            }
+            double pts = Double.parseDouble(timestamp);
+            if (!Double.isNaN(previous)) {
+                largestGap = Math.max(largestGap, pts - previous);
+            }
+            previous = pts;
+            if (pts <= requestedStart) {
+                selectedStart = pts;
+                startIndex = frameIndex;
+            }
+            if (pts >= requestedEnd && Double.isNaN(selectedEnd)) {
+                selectedEnd = pts;
+                endIndex = frameIndex;
+            }
+            frameIndex++;
+        }
+        if (Double.isNaN(selectedStart) || Double.isNaN(selectedEnd) || selectedEnd <= selectedStart) {
+            throw new GradleException("Raw capture does not cover requested actual-world boundaries and padding.");
+        }
+        File frameTimes = new File(output.getParentFile(), output.getName() + "-raw-frame-times.csv");
+        try {
+            Files.writeString(frameTimes.toPath(), probe.output(), StandardCharsets.UTF_8);
+        } catch (IOException exception) {
+            throw new UncheckedIOException(exception);
+        }
+        String start = String.format(Locale.ROOT, "%.6f", selectedStart);
+        String end = String.format(Locale.ROOT, "%.6f", selectedEnd);
+        // Reserve 6 dB of AAC reconstruction headroom independently of game-mix peaks.
+        runCommand(List.of("ffmpeg", "-y", "-copyts", "-i", raw.getAbsolutePath(),
+                "-vf", "trim=start=" + start + ":end=" + end + ",setpts=PTS-" + start + "/TB",
+                "-af", "atrim=start=" + start + ":end=" + end + ",asetpts=PTS-" + start + "/TB,volume=0.5",
+                "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p",
+                "-fps_mode", "passthrough", "-c:a", "aac", "-b:a", "160k",
+                "-movflags", "+faststart", output.getAbsolutePath()));
+        evidence.put("requestedStartEpochSeconds", requestedStart);
+        evidence.put("requestedEndEpochSeconds", requestedEnd);
+        evidence.put("selectedStartEpochSeconds", selectedStart);
+        evidence.put("selectedEndExclusiveEpochSeconds", selectedEnd);
+        evidence.put("rawStartFrameIndex", startIndex);
+        evidence.put("rawEndFrameIndexExclusive", endIndex);
+        evidence.put("firstWorldTickVideoSeconds", firstTick - selectedStart);
+        evidence.put("lastWorldTickVideoSeconds", lastTick - selectedStart);
+        evidence.put("worldExitVideoSeconds", worldExit - selectedStart);
+        evidence.put("effectivePostWorldExitPaddingSeconds", selectedEnd - worldExit);
+        evidence.put("effectivePrePaddingSeconds", firstTick - selectedStart);
+        evidence.put("effectivePostPaddingSeconds", selectedEnd - lastTick);
+        evidence.put("nominalFrameIntervalSeconds", 1.0 / fps);
+        evidence.put("largestObservedRawFrameGapSeconds", largestGap);
+        evidence.put("rawFrameTimestamps", frameTimes.getAbsolutePath());
+        evidence.put("boundaryPolicy", "Outward quantization to actual captured frame PTS. Start: first tick minus pre-padding. With positive post-padding: observed world clear plus padding, retaining all intervening presentations. With zero post-padding: last tick completion. End is exclusive at/after the requested bound. Zero padding includes intersecting frame intervals, not exact tick-aligned frames. GPU present call brackets are CPU timestamps, not GPU completion or X11 sampling timestamps.");
+        saveBoundaryFrame(output, "first-world-tick", firstTick - selectedStart);
+        saveBoundaryFrame(output, "last-world-tick", lastTick - selectedStart);
+        saveBoundaryFrame(output, "before-first-world-tick", Math.max(0, firstTick - selectedStart - 1.0 / fps));
+        saveBoundaryFrame(output, "after-last-world-tick", Math.min(selectedEnd - selectedStart - 1.0 / fps, lastTick - selectedStart + 1.0 / fps));
+        getLogger().lifecycle("[CLIENT_GAMETEST_BOUNDARY] VIDEO_WINDOW pre={}s post={}s; raw frame interval [{}, {})",
+                firstTick - selectedStart, selectedEnd - lastTick, startIndex, endIndex);
+    }
+
+    private void saveBoundaryFrame(File video, String marker, double seconds) {
+        runCommand(List.of("ffmpeg", "-y", "-v", "error", "-ss", String.format(Locale.ROOT, "%.6f", Math.max(0, seconds)),
+                "-i", video.getAbsolutePath(), "-frames:v", "1",
+                new File(video.getParentFile(), video.getName() + "-" + marker + ".png").getAbsolutePath()));
+    }
+
+    private static double parsePadding(String value) {
+        try {
+            double seconds = Double.parseDouble(value);
+            if (!Double.isFinite(seconds) || seconds < 0 || seconds > 60) {
+                throw new NumberFormatException("outside 0..60 seconds");
+            }
+            return seconds;
+        } catch (NumberFormatException exception) {
+            throw new GradleException("Recording padding must be a finite number from 0 to 60 seconds: " + value, exception);
+        }
     }
 
     private void copyDirectory(File source, File target) {
@@ -463,12 +730,13 @@ public abstract class RecordClientGameTestTask extends DefaultTask {
         }
     }
 
-    private Thread streamToStdout(Process process, String name) {
+    private Thread streamToStdout(Process process, String name, java.util.function.Consumer<String> observer) {
         Thread thread = new Thread(() -> {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     System.out.println(line);
+                    observer.accept(line);
                 }
             } catch (IOException exception) {
                 getLogger().debug("Stopped reading process output for {}.", name, exception);
@@ -529,6 +797,18 @@ public abstract class RecordClientGameTestTask extends DefaultTask {
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             throw new GradleException("Interrupted while waiting for recording process.", exception);
+        }
+    }
+
+    private void stopFfmpeg(Process ffmpegProcess) {
+        if (!ffmpegProcess.isAlive()) {
+            return;
+        }
+        runCommand(List.of("kill", "-INT", Long.toString(ffmpegProcess.pid())), Map.of(), true);
+        waitForProcess(ffmpegProcess, 10, TimeUnit.SECONDS);
+        if (ffmpegProcess.isAlive()) {
+            ffmpegProcess.destroyForcibly();
+            waitForProcess(ffmpegProcess, 2, TimeUnit.SECONDS);
         }
     }
 

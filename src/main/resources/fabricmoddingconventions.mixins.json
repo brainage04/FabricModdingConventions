@@ -4,7 +4,8 @@
   "compatibilityLevel": "JAVA_25",
   "client": [
     "ClientAdvancementsMixin",
-    "ClientPacketListenerMixin"
+    "ClientPacketListenerMixin",
+    "RecordingMinecraftMixin"
   ],
   "injectors": {
     "defaultRequire": 1

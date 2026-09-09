@@ -11,7 +11,7 @@ The library provides:
 - a reusable `recordClientGameTest` Gradle task using `GTR_*` environment variables;
 - opt-in Fabric Loom production GameTest tasks.
 
-The recorder task requires `ffmpeg`, `ffprobe`, Xvfb/`xdpyinfo`, and PipeWire tools (`pw-cli`, `wpctl`) on the recording host.
+The recorder task requires `ffmpeg`/`ffprobe` with X11 capture, PulseAudio input, H.264/AAC encoding and mux-packet statistics support, Xvfb/`xdpyinfo`, and `pactl` with access to a PulseAudio-compatible server. Set `PULSE_SERVER` to a private server for a fully isolated recording session.
 
 ## Dependency
 
@@ -161,11 +161,23 @@ clientGameTestRecorder {
 
 The recording HUD uses Minecraft's scaled GUI coordinates, so its panel and text follow the configured GUI scale instead of shrinking relative to the framebuffer. The five notification controls default to `true`; set an individual property to `false` when that vanilla notification is part of the scenario.
 
+`GTR_RECORDING_PROFILE=showcase` uses a compact “Feature showcase” card with the current title and subtitle, without diagnostic scenario IDs or history. Other profiles retain the diagnostic overlay. This controls presentation, not the consumer's scenario selection.
+
+Prepared clients use Minecraft's `minimized` inactivity policy rather than `afk`: programmatic GameTest input does not reset the ten-minute AFK timer, whose 10-FPS cap would otherwise slow synchronized tests during long recordings.
+
+The recorder uses an isolated Xvfb display and creates its own null audio sink on the selected PulseAudio-compatible server. It pins Minecraft's OpenAL device to that sink, verifies the tagged game stream is routed exclusively there, and records the sink monitor. It does not change the desktop's default sink. Recording readiness requires encoded video and verified game-audio routing; completion additionally requires successful game sound initialization and decoded PCM audio. Silence is reported separately from routing or decoding failures.
+
+Prepared recording clients use master volume `0.7` with music disabled. Raw audio remains PCM; final AAC encoding applies gain `0.5` (approximately 6 dB of headroom) to reduce reconstruction overshoot independently of game-mix peaks.
+
+`GTR_RECORDING_PRE_PADDING_SECONDS` and `GTR_RECORDING_POST_PADDING_SECONDS` accept finite values from `0` through `60`, both defaulting to `0.5`. Pre-padding is measured before the first client-world tick. Positive post-padding extends past actual world exit; zero post-padding ends at the last client-world tick instead. Zero pre-padding starts at the first world tick.
+
+Frame selection rounds outward using captured frame timestamps, so effective padding can exceed the requested value by frame quantization or a capture gap. Metadata reports the tick/present boundaries, selected frames, effective padding, and capture gaps. Present markers bracket CPU calls while a client level exists; they are not GPU-completion timestamps or proof that every world tick was visibly captured. Audio packet coverage is awaited through the selected capture boundary before the encoder is stopped.
+
 The Java-side helpers live under `io.github.brainage04.fabricmoddingconventions`.
 
 ### Dedicated-server client GameTest harness
 
-`ClientGameTestServers.withDedicatedServer` owns server creation, client connection, connection-state validation, disconnection, and server closure. The simple overload uses `flatServerProperties()`; pass explicit properties only when a fixture changes the default server:
+`ClientGameTestServers.withDedicatedServer` owns recorder preparation before server creation, client connection, connection-state validation, disconnection, recording completion, and server closure. Existing recorder starts inside the callback are idempotent. The simple overload uses `flatServerProperties()`; pass explicit properties only when a fixture changes the default server:
 
 ```java
 ClientGameTestServers.withDedicatedServer(context, "Example GameTest", server -> {
@@ -174,7 +186,7 @@ ClientGameTestServers.withDedicatedServer(context, "Example GameTest", server ->
 });
 ```
 
-The callback may retain a fixture-specific `try`/`finally` for server-state cleanup. Connection cleanup belongs to the harness and runs even when the callback fails.
+The callback may retain a fixture-specific `try`/`finally` for server-state cleanup. Connection cleanup and recording completion belong to the harness and run even when the callback fails. NeoForge consumers use the loader-neutral recording session and recording mixin, disconnect before finishing, and await the recorder's completion acknowledgment before terminating the client.
 
 ### Fleet audit and recording
 

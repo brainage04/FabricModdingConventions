@@ -46,7 +46,8 @@ public abstract class PrepareClientGameTestRunTask extends DefaultTask {
     @TaskAction
     public void writeOptions() {
         String soundDevice = getRecordingAudioDevice().get();
-        String masterVolume = soundDevice.isBlank() ? "0.0" : "1.0";
+        // Reduce game-mix transients before the recorder applies AAC encoding headroom.
+        String masterVolume = soundDevice.isBlank() ? "0.0" : "0.7";
         Map<String, String> settings = new java.util.LinkedHashMap<>();
         settings.put("version", getMinecraftOptionsVersion().get());
         settings.put("ao", "false");
@@ -60,6 +61,8 @@ public abstract class PrepareClientGameTestRunTask extends DefaultTask {
         settings.put("graphicsPreset", "\"fast\"");
         settings.put("guiScale", getGuiScale().get());
         settings.put("improvedTransparency", "false");
+        // Programmatic GameTest input does not reset Minecraft's ten-minute AFK timer.
+        settings.put("inactivityFpsLimit", "\"minimized\"");
         settings.put("maxAnisotropyBit", "1");
         settings.put("maxFps", getMaxFps().get());
         settings.put("menuBackgroundBlurriness", "0");

@@ -8,4 +8,7 @@ public interface ClientGameTestRecordingHandshake {
     void signalClientReady();
 
     void awaitRecorderReady(ClientGameTestContext context);
+
+    default void signalRecordingStopped() {
+    }
 }

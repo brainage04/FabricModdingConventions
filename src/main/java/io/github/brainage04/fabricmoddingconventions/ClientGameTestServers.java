@@ -64,6 +64,7 @@ public final class ClientGameTestServers {
         Objects.requireNonNull(serverProperties, "serverProperties");
         Objects.requireNonNull(test, "test");
 
+        ClientGameTestRecorder.startRecording(context);
         try (TestDedicatedServerContext server = context.worldBuilder().createServer(serverProperties)) {
             try {
                 connectToDedicatedServer(context, server, serverName);
@@ -72,6 +73,9 @@ public final class ClientGameTestServers {
             } finally {
                 disconnectFromDedicatedServer(context);
             }
+        }
+        finally {
+            ClientGameTestRecorder.stopRecording(context);
         }
     }
 
