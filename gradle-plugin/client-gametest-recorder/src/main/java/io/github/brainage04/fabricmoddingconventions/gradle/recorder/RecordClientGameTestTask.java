@@ -206,12 +206,13 @@ public abstract class RecordClientGameTestTask extends DefaultTask {
             if (recordingStartObserved) {
                 getLogger().lifecycle("Recording virtual display {} to {}", xvfbDisplay, output.getAbsolutePath());
                 String videoSize = videoSizeFromXvfbScreen(xvfbScreen);
+                // Passthrough alone still rounds timestamps into the encoder's default 1/fps timebase.
                 List<String> ffmpegCommand = List.of(
                         "ffmpeg", "-y", "-copyts", "-stats_period", "0.05", "-progress", progress.getAbsolutePath(),
                         "-f", "x11grab", "-framerate", fps, "-video_size", videoSize, "-draw_mouse", "0", "-i", xvfbDisplay + ".0",
                         "-f", "pulse", "-thread_queue_size", "1024", "-i", audioSource,
                         "-map", "0:v:0", "-map", "1:a:0", "-c:v", "libx264", "-preset", "veryfast", "-crf", "18",
-                        "-pix_fmt", "yuv420p", "-fps_mode", "passthrough", "-c:a", "pcm_s16le",
+                        "-pix_fmt", "yuv420p", "-fps_mode", "passthrough", "-enc_time_base:v", "demux", "-c:a", "pcm_s16le",
                         "-stats_mux_pre:a:0", audioProgress.getAbsolutePath(),
                         "-stats_mux_pre_fmt:a:0", "{pts} {tb}", rawCapture.getAbsolutePath()
                 );
@@ -621,6 +622,10 @@ public abstract class RecordClientGameTestTask extends DefaultTask {
         double selectedEnd = Double.NaN;
         double previous = Double.NaN;
         double largestGap = 0;
+        double firstTickFrame = Double.NaN;
+        double beforeFirstTickFrame = Double.NaN;
+        double lastTickFrame = Double.NaN;
+        double afterLastTickFrame = Double.NaN;
         long frameIndex = 0;
         long startIndex = -1;
         long endIndex = -1;
@@ -632,6 +637,16 @@ public abstract class RecordClientGameTestTask extends DefaultTask {
                 continue;
             }
             double pts = Double.parseDouble(timestamp);
+            if (pts <= firstTick) {
+                beforeFirstTickFrame = firstTickFrame;
+                firstTickFrame = pts;
+            }
+            if (pts <= lastTick && pts < requestedEnd) {
+                lastTickFrame = pts;
+            }
+            if (pts > lastTick && pts < requestedEnd && Double.isNaN(afterLastTickFrame)) {
+                afterLastTickFrame = pts;
+            }
             if (!Double.isNaN(previous)) {
                 largestGap = Math.max(largestGap, pts - previous);
             }
@@ -659,10 +674,10 @@ public abstract class RecordClientGameTestTask extends DefaultTask {
         String end = String.format(Locale.ROOT, "%.6f", selectedEnd);
         // Reserve 6 dB of AAC reconstruction headroom independently of game-mix peaks.
         runCommand(List.of("ffmpeg", "-y", "-copyts", "-i", raw.getAbsolutePath(),
-                "-vf", "trim=start=" + start + ":end=" + end + ",setpts=PTS-" + start + "/TB",
+                "-vf", "trim=start_frame=" + startIndex + ":end_frame=" + endIndex + ",setpts=PTS-STARTPTS",
                 "-af", "atrim=start=" + start + ":end=" + end + ",asetpts=PTS-" + start + "/TB,volume=0.5",
                 "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p",
-                "-fps_mode", "passthrough", "-c:a", "aac", "-b:a", "160k",
+                "-fps_mode", "passthrough", "-enc_time_base:v", "demux", "-c:a", "aac", "-b:a", "160k",
                 "-movflags", "+faststart", output.getAbsolutePath()));
         evidence.put("requestedStartEpochSeconds", requestedStart);
         evidence.put("requestedEndEpochSeconds", requestedEnd);
@@ -680,18 +695,25 @@ public abstract class RecordClientGameTestTask extends DefaultTask {
         evidence.put("largestObservedRawFrameGapSeconds", largestGap);
         evidence.put("rawFrameTimestamps", frameTimes.getAbsolutePath());
         evidence.put("boundaryPolicy", "Outward quantization to actual captured frame PTS. Start: first tick minus pre-padding. With positive post-padding: observed world clear plus padding, retaining all intervening presentations. With zero post-padding: last tick completion. End is exclusive at/after the requested bound. Zero padding includes intersecting frame intervals, not exact tick-aligned frames. GPU present call brackets are CPU timestamps, not GPU completion or X11 sampling timestamps.");
-        saveBoundaryFrame(output, "first-world-tick", firstTick - selectedStart);
-        saveBoundaryFrame(output, "last-world-tick", lastTick - selectedStart);
-        saveBoundaryFrame(output, "before-first-world-tick", Math.max(0, firstTick - selectedStart - 1.0 / fps));
-        saveBoundaryFrame(output, "after-last-world-tick", Math.min(selectedEnd - selectedStart - 1.0 / fps, lastTick - selectedStart + 1.0 / fps));
+        Map<String, Double> boundaryFrames = Map.of(
+                "first-world-tick", Math.max(0, firstTickFrame - selectedStart),
+                "last-world-tick", Math.max(0, lastTickFrame - selectedStart),
+                "before-first-world-tick", Double.isNaN(beforeFirstTickFrame) ? 0 : Math.max(0, beforeFirstTickFrame - selectedStart),
+                "after-last-world-tick", Math.max(0, (Double.isNaN(afterLastTickFrame) ? lastTickFrame : afterLastTickFrame) - selectedStart));
+        evidence.put("boundaryFrameVideoSeconds", boundaryFrames);
+        evidence.put("boundaryFramePolicy", "First/last images use captured frames at or before each tick boundary. Adjacent images clamp to retained video when padding excludes the neighboring frame; inspect their actual PTS rather than assuming they lie outside the tick interval.");
+        boundaryFrames.forEach((marker, seconds) -> saveBoundaryFrame(output, marker, seconds));
         getLogger().lifecycle("[CLIENT_GAMETEST_BOUNDARY] VIDEO_WINDOW pre={}s post={}s; raw frame interval [{}, {})",
                 firstTick - selectedStart, selectedEnd - lastTick, startIndex, endIndex);
     }
 
     private void saveBoundaryFrame(File video, String marker, double seconds) {
+        File frame = new File(video.getParentFile(), video.getName() + "-" + marker + ".png");
         runCommand(List.of("ffmpeg", "-y", "-v", "error", "-ss", String.format(Locale.ROOT, "%.6f", Math.max(0, seconds)),
-                "-i", video.getAbsolutePath(), "-frames:v", "1",
-                new File(video.getParentFile(), video.getName() + "-" + marker + ".png").getAbsolutePath()));
+                "-i", video.getAbsolutePath(), "-frames:v", "1", frame.getAbsolutePath()));
+        if (!frame.isFile() || frame.length() == 0) {
+            throw new GradleException("No decoded frame for recording boundary " + marker + " at " + seconds + "s.");
+        }
     }
 
     private static double parsePadding(String value) {

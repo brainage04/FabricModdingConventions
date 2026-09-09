@@ -173,6 +173,10 @@ Prepared recording clients use master volume `0.7` with music disabled. Raw audi
 
 Frame selection rounds outward using captured frame timestamps, so effective padding can exceed the requested value by frame quantization or a capture gap. Metadata reports the tick/present boundaries, selected frames, effective padding, and capture gaps. Present markers bracket CPU calls while a client level exists; they are not GPU-completion timestamps or proof that every world tick was visibly captured. Audio packet coverage is awaited through the selected capture boundary before the encoder is stopped.
 
+Both video encoders preserve the demuxer timebase in passthrough mode instead of rounding irregular timestamps to `1/fps`. Final video selection uses decoded frame indices and rebases the first retained frame to zero; audio retains its offset from the selected wall-clock boundary. This does not eliminate genuine capture gaps or container timestamp quantization.
+
+Boundary PNGs select captured frames at or before the tick boundaries rather than seeking forward from an arbitrary tick time. Neighboring images clamp to retained footage when padding excludes the adjacent frame; `boundaryFrameVideoSeconds` records their actual positions. Failure to decode a requested boundary image fails finalization.
+
 The Java-side helpers live under `io.github.brainage04.fabricmoddingconventions`.
 
 ### Dedicated-server client GameTest harness
