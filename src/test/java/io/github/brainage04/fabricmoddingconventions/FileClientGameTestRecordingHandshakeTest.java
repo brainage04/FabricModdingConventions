@@ -24,6 +24,7 @@ class FileClientGameTestRecordingHandshakeTest {
 
         assertFalse(handshake.isEnabled());
         handshake.signalClientReady();
+        handshake.signalRecordingStopped();
         handshake.awaitRecorderReady(contextThatFailsOnInteraction());
     }
 
@@ -42,6 +43,22 @@ class FileClientGameTestRecordingHandshakeTest {
                 timestamp >= beforeSignal && timestamp <= afterSignal,
                 () -> "Expected signal timestamp between " + beforeSignal + " and " + afterSignal + " but was " + timestamp
         );
+    }
+
+    @Test
+    void signalRecordingStoppedWritesTimestampSignal() throws Exception {
+        Path startSignal = tempDir.resolve("start.signal");
+        Path stopSignal = tempDir.resolve("signals/client/stop.signal");
+        FileClientGameTestRecordingHandshake handshake =
+                FileClientGameTestRecordingHandshake.of(startSignal, null, stopSignal);
+
+        long beforeSignal = System.currentTimeMillis();
+        handshake.signalRecordingStopped();
+        long afterSignal = System.currentTimeMillis();
+
+        assertTrue(Files.isRegularFile(stopSignal));
+        long timestamp = assertDoesNotThrow(() -> Long.parseLong(Files.readString(stopSignal)));
+        assertTrue(timestamp >= beforeSignal && timestamp <= afterSignal);
     }
 
     @Test

@@ -131,7 +131,7 @@ public final class ClientGameTestRecorderPlugin implements Plugin<Project> {
                 .filter(value -> !value.isBlank())
                 .getOrElse("null");
         javaExec.environment("ALSOFT_DRIVERS", openAlDrivers);
-        for (String name : List.of("ALSOFT_CONF", "PULSE_SINK")) {
+        for (String name : List.of("ALSOFT_CONF", "ALSOFT_PULSE_DEFAULT", "PULSE_SINK", "PULSE_SERVER", "PULSE_PROP")) {
             String value = project.getProviders().environmentVariable(name).getOrNull();
             if (value != null && !value.isBlank()) {
                 javaExec.environment(name, value);

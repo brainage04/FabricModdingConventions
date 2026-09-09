@@ -16,6 +16,9 @@ public final class GameTestRecorderEnvironment {
     public static final String RECORDING_TRACE_ENV = "CLIENT_GAMETEST_RECORDING_TRACE";
     public static final String START_SIGNAL_ENV = "CLIENT_GAMETEST_RECORDING_START_SIGNAL";
     public static final String READY_SIGNAL_ENV = "CLIENT_GAMETEST_RECORDING_READY_SIGNAL";
+    public static final String STOP_SIGNAL_ENV = "CLIENT_GAMETEST_RECORDING_STOP_SIGNAL";
+    public static final String COMPLETE_SIGNAL_ENV = "CLIENT_GAMETEST_RECORDING_COMPLETE_SIGNAL";
+    public static final String BOUNDARIES_ENV = "CLIENT_GAMETEST_RECORDING_BOUNDARIES";
 
     public static final String TEST_PROFILE_ENV = "CLIENT_GAMETEST_PROFILE";
     public static final String TEST_ONLY_ENV = "CLIENT_GAMETEST_ONLY";

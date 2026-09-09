@@ -13,22 +13,34 @@ public final class FileClientGameTestRecordingHandshake implements ClientGameTes
 
     private final Path startSignal;
     private final Path readySignal;
+    private final Path stopSignal;
     private final int readyTimeoutTicks;
 
-    private FileClientGameTestRecordingHandshake(Path startSignal, Path readySignal, int readyTimeoutTicks) {
+    private FileClientGameTestRecordingHandshake(
+            Path startSignal, Path readySignal, Path stopSignal, int readyTimeoutTicks) {
         if (readyTimeoutTicks <= 0) {
             throw new IllegalArgumentException("readyTimeoutTicks must be positive");
         }
         this.startSignal = startSignal;
         this.readySignal = readySignal;
+        this.stopSignal = stopSignal;
         this.readyTimeoutTicks = readyTimeoutTicks;
     }
 
     public static ClientGameTestRecordingHandshake fromEnvironment() {
-        return fromEnvironment(GameTestRecorderEnvironment.START_SIGNAL_ENV, GameTestRecorderEnvironment.READY_SIGNAL_ENV);
+        return fromEnvironment(
+                GameTestRecorderEnvironment.START_SIGNAL_ENV,
+                GameTestRecorderEnvironment.READY_SIGNAL_ENV,
+                GameTestRecorderEnvironment.STOP_SIGNAL_ENV);
     }
 
-    public static ClientGameTestRecordingHandshake fromEnvironment(String startSignalEnv, String readySignalEnv) {
+    public static ClientGameTestRecordingHandshake fromEnvironment(
+            String startSignalEnv, String readySignalEnv) {
+        return fromEnvironment(startSignalEnv, readySignalEnv, null);
+    }
+
+    public static ClientGameTestRecordingHandshake fromEnvironment(
+            String startSignalEnv, String readySignalEnv, String stopSignalEnv) {
         Objects.requireNonNull(startSignalEnv, "startSignalEnv");
         Objects.requireNonNull(readySignalEnv, "readySignalEnv");
         String startSignal = System.getenv(startSignalEnv);
@@ -36,9 +48,11 @@ public final class FileClientGameTestRecordingHandshake implements ClientGameTes
             return disabled();
         }
         String readySignal = System.getenv(readySignalEnv);
+        String stopSignal = stopSignalEnv == null ? null : System.getenv(stopSignalEnv);
         return new FileClientGameTestRecordingHandshake(
                 Path.of(startSignal),
                 readySignal == null || readySignal.isBlank() ? null : Path.of(readySignal),
+                stopSignal == null || stopSignal.isBlank() ? null : Path.of(stopSignal),
                 DEFAULT_READY_TIMEOUT_TICKS
         );
     }
@@ -48,13 +62,25 @@ public final class FileClientGameTestRecordingHandshake implements ClientGameTes
     }
 
     public static FileClientGameTestRecordingHandshake of(Path startSignal, Path readySignal) {
-        return of(startSignal, readySignal, DEFAULT_READY_TIMEOUT_TICKS);
+        return of(startSignal, readySignal, null, DEFAULT_READY_TIMEOUT_TICKS);
     }
 
-    public static FileClientGameTestRecordingHandshake of(Path startSignal, Path readySignal, int readyTimeoutTicks) {
+    public static FileClientGameTestRecordingHandshake of(
+            Path startSignal, Path readySignal, int readyTimeoutTicks) {
+        return of(startSignal, readySignal, null, readyTimeoutTicks);
+    }
+
+    public static FileClientGameTestRecordingHandshake of(
+            Path startSignal, Path readySignal, Path stopSignal) {
+        return of(startSignal, readySignal, stopSignal, DEFAULT_READY_TIMEOUT_TICKS);
+    }
+
+    public static FileClientGameTestRecordingHandshake of(
+            Path startSignal, Path readySignal, Path stopSignal, int readyTimeoutTicks) {
         return new FileClientGameTestRecordingHandshake(
                 Objects.requireNonNull(startSignal, "startSignal"),
                 readySignal,
+                stopSignal,
                 readyTimeoutTicks
         );
     }
@@ -72,6 +98,10 @@ public final class FileClientGameTestRecordingHandshake implements ClientGameTes
         return Optional.ofNullable(readySignal);
     }
 
+    public Optional<Path> stopSignal() {
+        return Optional.ofNullable(stopSignal);
+    }
+
     public int readyTimeoutTicks() {
         return readyTimeoutTicks;
     }
@@ -87,6 +117,13 @@ public final class FileClientGameTestRecordingHandshake implements ClientGameTes
         signalClientReady();
         if (readySignal != null) {
             context.waitFor(_ -> Files.exists(readySignal), readyTimeoutTicks);
+        }
+    }
+
+    @Override
+    public void signalRecordingStopped() {
+        if (stopSignal != null) {
+            writeSignal(stopSignal);
         }
     }
 
@@ -117,6 +154,10 @@ public final class FileClientGameTestRecordingHandshake implements ClientGameTes
         @Override
         public void awaitRecorderReady(ClientGameTestContext context) {
             Objects.requireNonNull(context, "context");
+        }
+
+        @Override
+        public void signalRecordingStopped() {
         }
     }
 }
