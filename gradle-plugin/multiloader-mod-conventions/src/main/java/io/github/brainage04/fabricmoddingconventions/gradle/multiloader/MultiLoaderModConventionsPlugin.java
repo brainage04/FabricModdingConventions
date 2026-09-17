@@ -301,8 +301,11 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
 
         fabric.getTasks().named("recordClientGameTest", RecordClientGameTestTask.class)
                 .configure(task -> task.getRunTaskName().set("runProductionClientGameTest"));
+        // matching(...) rather than named(...): loom registers the clientGameTest run later, when the
+        // GameTest source set exists, so named() aborts plugin application with
+        // "RunConfigSettings with name 'clientGameTest' not found".
         LoomGradleExtensionAPI loom = fabric.getExtensions().getByType(LoomGradleExtensionAPI.class);
-        loom.getRuns().named("clientGameTest").configure(run -> run.setRunDir(
+        loom.getRuns().matching(run -> run.getName().equals("clientGameTest")).configureEach(run -> run.setRunDir(
                 fabric.getLayout().getBuildDirectory().dir("run/loomClientGameTest").get().getAsFile().getAbsolutePath()
         ));
         fabric.getTasks().named("prepareClientGameTestRun").configure(task ->
