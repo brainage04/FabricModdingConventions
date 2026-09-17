@@ -65,18 +65,23 @@ public final class ClientGameTestRecorderPlugin implements Plugin<Project> {
         // in that layout loom's own clientGameTest run must keep its directory: re-pointing it at the
         // recorder directory makes it share the production client run's directory, which Gradle
         // rejects whenever runClientGameTest selects both tasks.
-        project.afterEvaluate(_ -> {
-            String configuredRun = project.getTasks()
-                    .named("recordClientGameTest", RecordClientGameTestTask.class)
-                    .map(task -> task.getRunTaskName().getOrElse(""))
-                    .getOrElse("");
-            if (!configuredRun.endsWith("runClientGameTest")) {
-                return;
-            }
-            project.getTasks()
-                    .matching(task -> task.getName().equals("runClientGameTest"))
-                    .configureEach(task -> configureRunClientGameTest(project, extension, prepareTask, task));
-        });
+        project.afterEvaluate(_ -> project.getTasks()
+                .matching(task -> task.getName().equals("runClientGameTest"))
+                .configureEach(task -> configureRunClientGameTest(project, extension, prepareTask, task)));
+    }
+
+    /**
+     * True when the recorder runs loom's own {@code runClientGameTest} task. The multi-loader
+     * conventions point it at {@code runProductionClientGameTest} instead, and in that layout the
+     * dev run must keep its own directory — but it still executes client GameTests, so it gets the
+     * recorder properties either way.
+     */
+    static boolean drivesLoomClientGameTestRun(Project project) {
+        String configuredRun = project.getTasks()
+                .named("recordClientGameTest", RecordClientGameTestTask.class)
+                .map(task -> task.getRunTaskName().getOrElse(""))
+                .getOrElse("");
+        return configuredRun.endsWith("runClientGameTest");
     }
 
     static String clientGameTestTaskPath(String projectPath) {
@@ -126,8 +131,10 @@ public final class ClientGameTestRecorderPlugin implements Plugin<Project> {
     ) {
         task.dependsOn(prepareTask);
         LoomGradleExtensionAPI loom = project.getExtensions().getByType(LoomGradleExtensionAPI.class);
-        String runDirectory = clientGameTestRunDirectory(project, extension.getRunDir().get().getAsFile());
-        loom.getRuns().named("clientGameTest").configure(run -> run.setRunDir(runDirectory));
+        if (drivesLoomClientGameTestRun(project)) {
+            String runDirectory = clientGameTestRunDirectory(project, extension.getRunDir().get().getAsFile());
+            loom.getRuns().named("clientGameTest").configure(run -> run.setRunDir(runDirectory));
+        }
         AbstractRunTask loomRunTask = requireLoomRunTask(task);
         JavaExec javaExec = requireJavaExec(task);
         javaExec.jvmArgs(List.of(
