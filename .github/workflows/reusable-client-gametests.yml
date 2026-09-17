@@ -55,10 +55,14 @@ jobs:
         shell: bash
         run: |
           MOD_SIDE="$(sed -n 's/^mod_side=//p' gradle.properties)"
+          # A repository using the multi-loader conventions never names the recorder plug-in in
+          # its own build files: MultiLoaderModConventionsPlugin applies it. Without this
+          # alternation every mod_side=server repository silently skipped its client GameTests.
           if grep -R \
             --include='build.gradle' \
             --include='build.gradle.kts' \
-            --quiet 'io.github.brainage04.client-gametest-recorder' .; then
+            --quiet -e 'io.github.brainage04.client-gametest-recorder' \
+                     -e 'io.github.brainage04.multiloader-mod-conventions' .; then
             echo 'present=true' >> "$GITHUB_OUTPUT"
           elif [ "$MOD_SIDE" != 'server' ]; then
             echo 'present=true' >> "$GITHUB_OUTPUT"

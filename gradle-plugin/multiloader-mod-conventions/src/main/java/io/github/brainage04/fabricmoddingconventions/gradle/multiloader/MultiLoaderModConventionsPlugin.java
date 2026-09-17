@@ -191,9 +191,10 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
         fabric.getPluginManager().apply(ARCHITECTURY_LOOM_NO_REMAP);
         fabric.getPluginManager().apply(ARCHITECTURY_LOOM);
         LoomGradleExtensionAPI loom = fabric.getExtensions().getByType(LoomGradleExtensionAPI.class);
-        if (property(root, "mod_side", "both").equalsIgnoreCase("both")) {
-            loom.splitEnvironmentSourceSets();
-        }
+        // Do not split the source sets here: the recorder plug-in applies fabric-mod-conventions,
+        // whose configureSourceLayout already splits them for mod_side=both. Splitting twice
+        // aborts plugin application with "The value for extension 'loom' property
+        // 'minecraftJarConfiguration' is final and cannot be changed any further".
         fabric.getPluginManager().apply(RECORDER_PLUGIN);
         fabric.getPluginManager().apply(PRODUCTION_GAMETESTS_PLUGIN);
         fabric.getPluginManager().apply(WORKSPACE_DEPENDENCIES_PLUGIN);
@@ -294,6 +295,10 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
 
         fabric.getTasks().named("recordClientGameTest", RecordClientGameTestTask.class)
                 .configure(task -> task.getRunTaskName().set("runProductionClientGameTest"));
+        LoomGradleExtensionAPI loom = fabric.getExtensions().getByType(LoomGradleExtensionAPI.class);
+        loom.getRuns().named("clientGameTest").configure(run -> run.setRunDir(
+                fabric.getLayout().getBuildDirectory().dir("run/loomClientGameTest").get().getAsFile().getAbsolutePath()
+        ));
         fabric.getTasks().named("prepareClientGameTestRun").configure(task ->
                 task.mustRunAfter("prepareProductionGameTestRuns"));
         fabric.getTasks().matching(task -> task.getName().equals("runProductionClientGameTest"))
