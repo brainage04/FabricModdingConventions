@@ -92,7 +92,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: build
-        run: ./gradlew --no-daemon build
+        run: ./gradlew --no-daemon --refresh-dependencies build
 
       - name: prepare template smoke dependencies
         if: inputs.run_template_smoke

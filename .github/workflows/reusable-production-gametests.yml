@@ -68,7 +68,7 @@ jobs:
           if [ -n "${REQUESTED_CLIENT_GAMETEST_PROFILE}" ]; then
             export CLIENT_GAMETEST_PROFILE="${REQUESTED_CLIENT_GAMETEST_PROFILE}"
           fi
-          ./gradlew --no-daemon ${{ inputs.gradle_task }}
+          ./gradlew --no-daemon --refresh-dependencies ${{ inputs.gradle_task }}
 
       - name: store production GameTest reports
         if: failure()

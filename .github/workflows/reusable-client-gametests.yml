@@ -122,7 +122,7 @@ jobs:
           if [ -n "$REQUESTED_CLIENT_GAMETEST_PROFILE" ]; then
             export CLIENT_GAMETEST_PROFILE="$REQUESTED_CLIENT_GAMETEST_PROFILE"
           fi
-          xvfb-run -a --server-args="-screen 0 1280x720x24" ./gradlew --no-daemon runClientGameTest
+          xvfb-run -a --server-args="-screen 0 1280x720x24" ./gradlew --no-daemon --refresh-dependencies runClientGameTest
 
       - name: record client GameTests
         if: steps.client-test-support.outputs.present == 'true' && inputs.record_client_gametests

@@ -59,7 +59,7 @@ jobs:
       - name: run NeoForge GameTests
         env:
           GRADLE_TASK: ${{ inputs.gradle_task }}
-        run: ./gradlew --no-daemon "${GRADLE_TASK}"
+        run: ./gradlew --no-daemon --refresh-dependencies "${GRADLE_TASK}"
 
       - name: store NeoForge GameTest reports
         if: failure()
