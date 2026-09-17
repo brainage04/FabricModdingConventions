@@ -141,8 +141,8 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
                 repository.patternLayout(layout -> layout.artifact("[artifact]-[revision].[ext]"));
                 repository.metadataSources(metadata -> metadata.artifact());
                 repository.content(content -> {
-                    content.includeModule("github.brainage04", "hudrendererlib");
-                    content.includeModule("github.brainage04", "hudrendererlib-neoforge");
+                    content.includeModule("io.github.brainage04", "hudrendererlib");
+                    content.includeModule("io.github.brainage04", "hudrendererlib-neoforge");
                 });
             });
         }
