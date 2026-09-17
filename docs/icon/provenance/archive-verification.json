@@ -1,0 +1,34 @@
+{
+  "archive": "../removed/blender-ab",
+  "retired_candidates": [
+    {
+      "name": "conventions2-1-recording-workbench",
+      "all_render_artifacts_and_preview_archived": true,
+      "png_blend_and_embedded_author_source_hashes_preserved": true
+    },
+    {
+      "name": "conventions2-2-scenario-ledger",
+      "all_render_artifacts_and_preview_archived": true,
+      "png_blend_and_embedded_author_source_hashes_preserved": true
+    },
+    {
+      "name": "conventions2-3-server-rendezvous",
+      "all_render_artifacts_and_preview_archived": true,
+      "png_blend_and_embedded_author_source_hashes_preserved": true
+    },
+    {
+      "name": "conventions2-4-build-conventions",
+      "all_render_artifacts_and_preview_archived": true,
+      "png_blend_and_embedded_author_source_hashes_preserved": true
+    },
+    {
+      "name": "conventions2-5-recorder-task",
+      "all_render_artifacts_and_preview_archived": true,
+      "png_blend_and_embedded_author_source_hashes_preserved": true
+    }
+  ],
+  "prior_manifest_reports_scripts_and_evidence_preserved": true,
+  "only_selected_candidate_remains_active": true,
+  "removal_ledger_sidecar": "../removals.ConventionsIcon2.json",
+  "shared_removals_json_not_modified_by_this_agent": true
+}

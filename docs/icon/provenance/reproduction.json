@@ -1,0 +1,13 @@
+{
+  "working_directory": "round3/blender-ab",
+  "render_command": ["python3", "run-blender.py", "inspect-references.py", "conventions2-selected-owner-layout.py"],
+  "image_verification_command": "PYTHONPATH=/nix/store/4v9j9wbzyhrlx9980ygbr812313mazy0-python3.13-pillow-12.3.0/lib/python3.13/site-packages python3 verify-pngs.py",
+  "blender": "5.1.1; Cycles CPU; 32 samples; 1024x1024 PNG; two threads; -noaudio; no display server",
+  "resource_policy": "Existing render-blender.service, CPUWeight=20, quota 300000/100000, affinity 0,2 and nice 15. Sequential Blender invocations serialized with /tmp/minecraft-icon-blender.lock. GPU visibility disabled; no display or audio allocated.",
+  "layout": {"middle":"crafting_table","top-left":"redstone_lamp","top-center":"note_block","top-right":"observer","bottom-left":"target","bottom-center":"jukebox","bottom-right":"lectern"},
+  "empty_slots": ["middle-left", "middle-right"],
+  "reference_fidelity": "Exact modern template camera matrix, orthographic scale 6.90, seven floating block positions, vanilla shading, materials, color management and near-black background preserved. Background linear RGB (0.0025,0.0035,0.006), decoded RGB (8,11,18), as previously clarified by the parent.",
+  "source_policy": "Saved .py authoring scripts and vanilla source snapshots are locally hash-recorded, with author scripts embedded into the packed .blend. No commits, pushes or tracked portfolio edits.",
+  "retired_work": "The complete previous five-candidate workspace, including scripts, packed scenes, metadata, verifications, thumbnails, contact sheets, reports and provenance, was moved intact into round3/removed/blender-ab. New active workspace contains only the owner's selected render.",
+  "removal_ledger": "round3/removals.ConventionsIcon2.json contains the five {path,reason} entries. Main owns the merge into round3/removals.json to avoid concurrent writes."
+}

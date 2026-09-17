@@ -1,0 +1,8 @@
+[
+  {
+    "name": "conventions2-selected-owner-layout",
+    "label": "Owner-selected conventions hub",
+    "blocks": ["crafting_table", "note_block", "observer", "lectern", "jukebox", "target", "redstone_lamp"],
+    "idea": "Exact owner-specified layout: crafting table in the middle; redstone lamp top-left; note block top-center; observer top-right; target bottom-left; jukebox bottom-center; lectern bottom-right. Middle-left and middle-right remain empty. Preserves the approved modern template camera, scale, seven-slot floating arrangement, background, materials and lighting."
+  }
+]

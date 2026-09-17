@@ -1,0 +1,475 @@
+{
+  "minecraft_version": "26.2",
+  "jar": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+  "assets": [
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/blockstates/bookshelf.json",
+      "path": "source/assets/modern/assets/minecraft/blockstates/bookshelf.json",
+      "sha256": "1e46bef6dced046c6879ecc2c2eb5f675c7a456dc8953a8f2ada83fefde50670",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/models/block/bookshelf.json",
+      "path": "source/assets/modern/assets/minecraft/models/block/bookshelf.json",
+      "sha256": "ca9f599c8d0e7e01f5020f6b506dbad3dd9c7ca43088ee4319a7814e9547d1cb",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/models/block/cube_column.json",
+      "path": "source/assets/modern/assets/minecraft/models/block/cube_column.json",
+      "sha256": "4cc89841e64bfb9be33aef096675291b585d05bae81cbbd14bf977f89aa81a6b",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/models/block/cube.json",
+      "path": "source/assets/modern/assets/minecraft/models/block/cube.json",
+      "sha256": "3e4aacd02e816aeba38f83076596e18ded4cf49c01e17c62d1fce79850ffb84e",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/models/block/block.json",
+      "path": "source/assets/modern/assets/minecraft/models/block/block.json",
+      "sha256": "212df16c5aa3e6aef3f4d3e080532d28a86cf9b2071618e4ca587ee9ef3c6d09",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/oak_planks.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/oak_planks.png",
+      "sha256": "65665943ef9c8bcf63fc67d2083ed0c50243f724106d0e4bb1abea5d921b16d3",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/bookshelf.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/bookshelf.png",
+      "sha256": "cf2b8c0da8e7164162ad4991916492b724c62c31de6c18b2abb7d60ec19ba418",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/blockstates/comparator.json",
+      "path": "source/assets/modern/assets/minecraft/blockstates/comparator.json",
+      "sha256": "8fd7d7e15234e0cbd6fb79868c8d919590be7ceac88904f6be332bf40070f13c",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/models/block/comparator.json",
+      "path": "source/assets/modern/assets/minecraft/models/block/comparator.json",
+      "sha256": "b69cd6ca4f755fa64a26deed5cf4193e36ba04ca9341ca86be561b4adc2b8a80",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/comparator.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/comparator.png",
+      "sha256": "18ad6e6dbafce61514ab5b153a184ddb192bf16b5a00a820451071ec5d87eaa7",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/smooth_stone.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/smooth_stone.png",
+      "sha256": "95e15063a305df75491527a9bb7cbad6e4d98c9d974881f26752ee7f1ef15a9e",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/redstone_torch_off.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/redstone_torch_off.png",
+      "sha256": "e20fcc21502da8088e8a834ed88f1f886df6e3e3404e896a3bebbdfe3602079e",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/redstone_torch.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/redstone_torch.png",
+      "sha256": "160caba109123055dc002a7471439cb32502cbcb07074524be564782586872a6",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/blockstates/crafter.json",
+      "path": "source/assets/modern/assets/minecraft/blockstates/crafter.json",
+      "sha256": "dfa8af74cd96d1d6f2086a63fab3402864497d7f436ba469b34be58924f1edfa",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/models/block/crafter.json",
+      "path": "source/assets/modern/assets/minecraft/models/block/crafter.json",
+      "sha256": "b9326eb99b2b31521bf790ab95f57203abb47801af00d121183218f870634d36",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/crafter_bottom.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/crafter_bottom.png",
+      "sha256": "42c78713a3cdb1f6d0980170461e237a004669126397a010798a05c36df0d1cd",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/crafter_top.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/crafter_top.png",
+      "sha256": "aec36edfb538119742d251cee88902058c8b329d9b8a7180a05ef414ddad2e3c",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/crafter_north.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/crafter_north.png",
+      "sha256": "1b015289076e08c3d8546c77dac989d81cb3ef70a0205f4f55330f73ae226232",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/crafter_south.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/crafter_south.png",
+      "sha256": "4a916114347449341d7c482a5fb900b5954fe3d35d5bec4060d2c2c61337f0cd",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/crafter_west.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/crafter_west.png",
+      "sha256": "58bbc4f949b5179fad0978de9a2965cc329cf169752254e9589979fef48ef85d",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/crafter_east.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/crafter_east.png",
+      "sha256": "61b9adce7595dfa399a1c162d5152aa3d35b86fee503ed13dd857a70249b3c32",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/blockstates/crafting_table.json",
+      "path": "source/assets/modern/assets/minecraft/blockstates/crafting_table.json",
+      "sha256": "bd75337fe8f663e3c88e5f2490a7217d60925ff7f0001f98656b037441ecdb98",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/models/block/crafting_table.json",
+      "path": "source/assets/modern/assets/minecraft/models/block/crafting_table.json",
+      "sha256": "98e1ff48fd72ed2a820ae4237e6d5193e0cd5ab6abd2338493c7bbbff130dea1",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/crafting_table_side.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/crafting_table_side.png",
+      "sha256": "e9755fc6da763909b285342eae12c5f7d1cc8462fab695bb157504ea207cda8c",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/crafting_table_front.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/crafting_table_front.png",
+      "sha256": "1659c76a33039640e8bd5584af8db04bf626486432a389bcaf1567e1a45c6464",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/crafting_table_top.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/crafting_table_top.png",
+      "sha256": "251e8aa014e30d040261022895853db3204bba241b9b44c11762628550986f2d",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/blockstates/jukebox.json",
+      "path": "source/assets/modern/assets/minecraft/blockstates/jukebox.json",
+      "sha256": "8002563a048d4a5afb22d44692ca1a38e114ef95a3ccd24f02b9e0fd02b693d5",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/models/block/jukebox.json",
+      "path": "source/assets/modern/assets/minecraft/models/block/jukebox.json",
+      "sha256": "90910a3d9a68878f128027d58dfd04c8a9a341d53eeacc9c82972d5c20097185",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/models/block/cube_top.json",
+      "path": "source/assets/modern/assets/minecraft/models/block/cube_top.json",
+      "sha256": "ad80e6a3a2de304f4d68f827333d7deb90c0aee8f55d37294677e2403728f83c",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/jukebox_side.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/jukebox_side.png",
+      "sha256": "ce5e56da299713779c49b55fcdb705fbdc1381d4f449615b932877ba13c9fabb",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/jukebox_top.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/jukebox_top.png",
+      "sha256": "e03e910eeac1f84a5694045902504a9cdd832a143374a2857f9e25a7f83f80a5",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/blockstates/lectern.json",
+      "path": "source/assets/modern/assets/minecraft/blockstates/lectern.json",
+      "sha256": "2b8808e839689cb11fb511dcdadaf27121197fcf39b2da7a83780dd4a3ec87cd",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/models/block/lectern.json",
+      "path": "source/assets/modern/assets/minecraft/models/block/lectern.json",
+      "sha256": "f1a2c419f2191fdb3ce9727df32f33aa6e6c31c40d0ae7388efdaa0eed037248",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/lectern_sides.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/lectern_sides.png",
+      "sha256": "139d215c1d644dd22efc4c674de1e0a31d1db392b4106774497ee5b6685ada7b",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/lectern_base.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/lectern_base.png",
+      "sha256": "498b13eb82f8a3079748357885a4ab0a9041b8664c35ca2285c255b2348c9183",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/lectern_front.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/lectern_front.png",
+      "sha256": "14025b2d73dc1e6dbdee3c7ee9afa373c953b6b9cbd475b64c30c8e0c6f17339",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/lectern_top.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/lectern_top.png",
+      "sha256": "591388e68a0629affdc438e1031acb5b7d6b78b72535bf2c3de0a6ca1c73cb2e",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/blockstates/lodestone.json",
+      "path": "source/assets/modern/assets/minecraft/blockstates/lodestone.json",
+      "sha256": "e0a78c0961bda5af346eab23624d21fb56d16a880f7e8e38e7aa16c2ccff06cd",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/models/block/lodestone.json",
+      "path": "source/assets/modern/assets/minecraft/models/block/lodestone.json",
+      "sha256": "b3b7825312eb97f5fca6363b0af3739ea61aa644bc95694dbef836cd50d69b9b",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/lodestone_top.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/lodestone_top.png",
+      "sha256": "1ca424a8e6a6236234585387da1486dbebf9a7a1040862078959461d21ca536e",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/lodestone_side.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/lodestone_side.png",
+      "sha256": "62c423642a31cb509e8104e48b483564917dd8c15f0b9cb01f088c311a022cb4",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/blockstates/note_block.json",
+      "path": "source/assets/modern/assets/minecraft/blockstates/note_block.json",
+      "sha256": "359a3855cc5ee3fd3f22e39548eb9c70244abf8fd5b54bf5e7e8d1ff2831ddff",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/models/block/note_block.json",
+      "path": "source/assets/modern/assets/minecraft/models/block/note_block.json",
+      "sha256": "10b3bf30237a4b65a8eda7f6b0e3a16c8e07487571c99d3684945d174092a0e0",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/models/block/cube_all.json",
+      "path": "source/assets/modern/assets/minecraft/models/block/cube_all.json",
+      "sha256": "be3205d629ffb9e03834c3d1d083f8a2c62e9f9ae80820755129408634e9144a",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/note_block.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/note_block.png",
+      "sha256": "ce5e56da299713779c49b55fcdb705fbdc1381d4f449615b932877ba13c9fabb",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/blockstates/observer.json",
+      "path": "source/assets/modern/assets/minecraft/blockstates/observer.json",
+      "sha256": "065060620aa62c860bb886e78ed0178a19c36ab20afe50e668c268e817588dc8",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/models/block/observer.json",
+      "path": "source/assets/modern/assets/minecraft/models/block/observer.json",
+      "sha256": "c2b2e116d6ef34f14415f6a1809da45204f121541cf47a2d20474f3adbca32ce",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/observer_back.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/observer_back.png",
+      "sha256": "cbed479fc6df6ebc7e3c005cfe571a8237cc83625f377f26b52b59280fe63717",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/observer_side.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/observer_side.png",
+      "sha256": "fc989d0b6d95672094e1b096f4d298b9ebbd04c0b0c47ffc1cd752948fb54448",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/observer_top.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/observer_top.png",
+      "sha256": "58916b14e87610499cacdb5d2ee5f1bb8cdac2bb658309a6dc03f6263ff4ad06",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/observer_front.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/observer_front.png",
+      "sha256": "300c141e244c37922da18a3567ee4d8f4e25b9b514029684e2bd3ae70318ef6f",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/blockstates/redstone_lamp.json",
+      "path": "source/assets/modern/assets/minecraft/blockstates/redstone_lamp.json",
+      "sha256": "92bd146b55d4bf82abf0862a64f67c34f832b2308f617dba7c2601bbb670f0a2",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/models/block/redstone_lamp.json",
+      "path": "source/assets/modern/assets/minecraft/models/block/redstone_lamp.json",
+      "sha256": "00d91880159030512ca31d028544c536b5ed2d72a1450cd65bdbfb3799fd92aa",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/redstone_lamp.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/redstone_lamp.png",
+      "sha256": "60d43bc037630fdf7a770f31e10a59312609f084fcabe73725030036611de84a",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/blockstates/repeater.json",
+      "path": "source/assets/modern/assets/minecraft/blockstates/repeater.json",
+      "sha256": "daece86141222dc185d0c10d543255ea083044320f57ffcd481368f947c6f1bc",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/models/block/repeater_1tick.json",
+      "path": "source/assets/modern/assets/minecraft/models/block/repeater_1tick.json",
+      "sha256": "20d9398c50ce9dce34ad35bd4e94bd66203b6c57a3984ece75c4b0697a90fa47",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/repeater.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/repeater.png",
+      "sha256": "cedee3f6b666a167fa390ca9aae54eb2de98282a5fb5b2957ed54a771baaeefa",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/blockstates/smithing_table.json",
+      "path": "source/assets/modern/assets/minecraft/blockstates/smithing_table.json",
+      "sha256": "17af378c163237774cf0e98c95118f9202eebc28d982f3d06fcb30be95e505e7",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/models/block/smithing_table.json",
+      "path": "source/assets/modern/assets/minecraft/models/block/smithing_table.json",
+      "sha256": "04f167bb833dd86c4b13215fdfeeec48ee4a6c3ba5ba1486cb96985d34e46d02",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/smithing_table_bottom.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/smithing_table_bottom.png",
+      "sha256": "d798dfcfaf39b0cc755bb9c30721c3e20ccccde854b2417cf32a48167178d60c",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/smithing_table_side.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/smithing_table_side.png",
+      "sha256": "de6b8a0f0da0b27b275371a4fec5f2fbb2aa473ef104a1c5abcc41db4dda5f73",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/smithing_table_front.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/smithing_table_front.png",
+      "sha256": "f7a5479a3e1d3e3f604ec1b22634736ea952b676fef20e954a9607f15fb13ba0",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/smithing_table_top.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/smithing_table_top.png",
+      "sha256": "eb33e51c12200f6af3095d4e039c0692568011b7f5160e35aecd81a598d5e6da",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/blockstates/target.json",
+      "path": "source/assets/modern/assets/minecraft/blockstates/target.json",
+      "sha256": "97da83f1b306fa8ac7f9e3533404c2596155ac3bd264b465abdaadde7b723e6e",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/models/block/target.json",
+      "path": "source/assets/modern/assets/minecraft/models/block/target.json",
+      "sha256": "2617d0e0505b0b490da9c646b94f8679077790929048694d309158f5f5090744",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/target_top.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/target_top.png",
+      "sha256": "c37931d2c3b5bacecc74d83b1440c9a65fe1dbbdcdb091e921716cb0fe984c9c",
+      "byte_identical_to_jar": true
+    },
+    {
+      "source": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+      "member": "assets/minecraft/textures/block/target_side.png",
+      "path": "source/assets/modern/assets/minecraft/textures/block/target_side.png",
+      "sha256": "58e9e93f74111c7fbfdb4ef0e8aa4cdf44dd2f4db59ac9347a98d14983ad98bb",
+      "byte_identical_to_jar": true
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "expected": {
+    "center": "crafting_table",
+    "top-left": "redstone_lamp",
+    "top": "note_block",
+    "top-right": "observer",
+    "bottom-left": "target",
+    "bottom": "jukebox",
+    "bottom-right": "lectern"
+  },
+  "actual_from_reopened_scene": {
+    "center": "crafting_table",
+    "top": "note_block",
+    "top-right": "observer",
+    "bottom-right": "lectern",
+    "bottom": "jukebox",
+    "bottom-left": "target",
+    "top-left": "redstone_lamp"
+  },
+  "exact_match": true,
+  "middle_left_and_middle_right_empty": true,
+  "block_count": 7
+}

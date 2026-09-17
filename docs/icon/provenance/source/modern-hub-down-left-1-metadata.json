@@ -1,0 +1,405 @@
+{
+  "name": "modern-hub-down-left-1",
+  "template": "modern",
+  "source": "blender-m/modern-hub-1.png",
+  "blender_version": "5.1.1",
+  "engine": "CYCLES",
+  "device": "CPU",
+  "samples": 32,
+  "render_duration_seconds": 1.506543818002683,
+  "resolution": [
+    1024,
+    1024
+  ],
+  "png_sha256": "f3ddad597d272a10a88dacced52498227fb6e3c791ac201da8d54fc166d499e7",
+  "author_script_sha256": "45fc7ee210fd4c3e2209fa914a1b8423ff4e7298180c17a1c442d06175b5343d",
+  "geometry": {
+    "facing_table": [
+      {
+        "template": "modern",
+        "station": "crafting_table",
+        "position": "center",
+        "position_blender_xyz": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "position_minecraft_xyz": [
+          -0.0,
+          0.0,
+          -0.0
+        ],
+        "facing": "n/a - no facing blockstate",
+        "applied_rotation_degrees_blender_z": 0,
+        "canonical_model_y_degrees": 0,
+        "minecraft_direction_xyz": null,
+        "blender_direction_xyz": null,
+        "camera_relative_direction_xyz": null,
+        "screen_delta_pixels_per_block_xy_y_down": null,
+        "proof": "No facing blockstate. Approved canonical rotation and all child transforms retained.",
+        "blockstate_evidence": {
+          "json": "evidence/modern/crafting_table-blockstate.json",
+          "proof": "Official blockstate contains no facing property; canonical parent rotation remains zero."
+        }
+      },
+      {
+        "template": "modern",
+        "station": "blast_furnace",
+        "position": "top",
+        "position_blender_xyz": [
+          -2.276883840560913,
+          2.276883840560913,
+          0.0
+        ],
+        "position_minecraft_xyz": [
+          -2.276883840560913,
+          0.0,
+          2.276883840560913
+        ],
+        "facing": "east",
+        "applied_rotation_degrees_blender_z": -90,
+        "canonical_model_y_degrees": 90,
+        "minecraft_direction_xyz": [
+          1,
+          0,
+          0
+        ],
+        "blender_direction_xyz": [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        "camera_relative_direction_xyz": [
+          -0.7071068286895752,
+          -0.4082481861114502,
+          0.5773501396179199
+        ],
+        "screen_delta_pixels_per_block_xy_y_down": [
+          -104.93875122070312,
+          60.58636474609375
+        ],
+        "proof": "Minecraft east (+X) -> Blender (0,-1,0); camera-relative X<0 and Y<0, hence left and down. PNG coordinate Y grows downward.",
+        "blockstate_evidence": {
+          "json": "evidence/modern/blast_furnace-blockstate.json",
+          "selected_variant": {
+            "facing=east,lit=false": {
+              "model": "minecraft:block/blast_furnace",
+              "y": 90
+            }
+          }
+        },
+        "visible_front_proof": {
+          "textured_front_polygon_normals": [
+            [
+              -1.1920928955078125e-07,
+              -1.0,
+              -8.742277657347586e-08
+            ]
+          ]
+        }
+      },
+      {
+        "template": "modern",
+        "station": "enchanting_table",
+        "position": "top-right",
+        "position_blender_xyz": [
+          0.30063319206237793,
+          2.577517032623291,
+          0.0
+        ],
+        "position_minecraft_xyz": [
+          -2.577517032623291,
+          0.0,
+          -0.30063319206237793
+        ],
+        "facing": "n/a - no facing blockstate",
+        "applied_rotation_degrees_blender_z": 0,
+        "canonical_model_y_degrees": 0,
+        "minecraft_direction_xyz": null,
+        "blender_direction_xyz": null,
+        "camera_relative_direction_xyz": null,
+        "screen_delta_pixels_per_block_xy_y_down": null,
+        "proof": "No facing blockstate. Approved canonical rotation and all child transforms retained.",
+        "blockstate_evidence": {
+          "json": "evidence/modern/enchanting_table-blockstate.json",
+          "proof": "Official blockstate contains no facing property; canonical parent rotation remains zero."
+        },
+        "note": "The table has no facing blockstate. Its separate book entity retains the approved toward-centre pose, not an invented table facing."
+      },
+      {
+        "template": "modern",
+        "station": "smithing_table",
+        "position": "bottom-right",
+        "position_blender_xyz": [
+          2.577517032623291,
+          0.30063319206237793,
+          0.0
+        ],
+        "position_minecraft_xyz": [
+          -0.30063319206237793,
+          0.0,
+          -2.577517032623291
+        ],
+        "facing": "n/a - no facing blockstate",
+        "applied_rotation_degrees_blender_z": 0,
+        "canonical_model_y_degrees": 0,
+        "minecraft_direction_xyz": null,
+        "blender_direction_xyz": null,
+        "camera_relative_direction_xyz": null,
+        "screen_delta_pixels_per_block_xy_y_down": null,
+        "proof": "No facing blockstate. Approved canonical rotation and all child transforms retained.",
+        "blockstate_evidence": {
+          "json": "evidence/modern/smithing_table-blockstate.json",
+          "proof": "Official blockstate contains no facing property; canonical parent rotation remains zero."
+        }
+      },
+      {
+        "template": "modern",
+        "station": "chest",
+        "position": "bottom",
+        "position_blender_xyz": [
+          2.276883840560913,
+          -2.276883840560913,
+          0.0
+        ],
+        "position_minecraft_xyz": [
+          2.276883840560913,
+          0.0,
+          -2.276883840560913
+        ],
+        "facing": "east",
+        "applied_rotation_degrees_blender_z": -90,
+        "canonical_model_y_degrees": 90,
+        "minecraft_direction_xyz": [
+          1,
+          0,
+          0
+        ],
+        "blender_direction_xyz": [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        "camera_relative_direction_xyz": [
+          -0.7071068286895752,
+          -0.4082481861114502,
+          0.5773501396179199
+        ],
+        "screen_delta_pixels_per_block_xy_y_down": [
+          -104.93878173828125,
+          60.586402893066406
+        ],
+        "proof": "Minecraft east (+X) -> Blender (0,-1,0); camera-relative X<0 and Y<0, hence left and down. PNG coordinate Y grows downward.",
+        "blockstate_evidence": {
+          "kind": "vanilla entity-rendered block",
+          "proof": "The approved canonical north-facing latch has local Minecraft -Z normal; legal cardinal block facing is applied to the whole chest, not inferred from entity blockstate JSON.",
+          "json": "evidence/modern/chest-blockstate.json"
+        },
+        "visible_front_proof": {
+          "latch_horizontal_direction": [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          "normal_points_toward_camera": true
+        }
+      },
+      {
+        "template": "modern",
+        "station": "grindstone",
+        "position": "bottom-left",
+        "position_blender_xyz": [
+          -0.30063319206237793,
+          -2.577517032623291,
+          0.0
+        ],
+        "position_minecraft_xyz": [
+          2.577517032623291,
+          0.0,
+          0.30063319206237793
+        ],
+        "facing": "east",
+        "applied_rotation_degrees_blender_z": -90,
+        "canonical_model_y_degrees": 90,
+        "minecraft_direction_xyz": [
+          1,
+          0,
+          0
+        ],
+        "blender_direction_xyz": [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        "camera_relative_direction_xyz": [
+          -0.7071068286895752,
+          -0.4082481861114502,
+          0.5773501396179199
+        ],
+        "screen_delta_pixels_per_block_xy_y_down": [
+          -104.93875122070312,
+          60.586395263671875
+        ],
+        "proof": "Minecraft east (+X) -> Blender (0,-1,0); camera-relative X<0 and Y<0, hence left and down. PNG coordinate Y grows downward.",
+        "blockstate_evidence": {
+          "json": "evidence/modern/grindstone-blockstate.json",
+          "selected_variant": {
+            "face=floor,facing=east": {
+              "model": "minecraft:block/grindstone",
+              "y": 90
+            }
+          }
+        },
+        "note": "Canonical geometry is symmetric under 180 degrees: semantic east is proven by the legal blockstate/model transform, not a fabricated front marker."
+      },
+      {
+        "template": "modern",
+        "station": "brewing_stand",
+        "position": "top-left",
+        "position_blender_xyz": [
+          -2.577517032623291,
+          -0.30063319206237793,
+          0.0
+        ],
+        "position_minecraft_xyz": [
+          0.30063319206237793,
+          0.0,
+          2.577517032623291
+        ],
+        "facing": "n/a - no facing blockstate",
+        "applied_rotation_degrees_blender_z": 0,
+        "canonical_model_y_degrees": 0,
+        "minecraft_direction_xyz": null,
+        "blender_direction_xyz": null,
+        "camera_relative_direction_xyz": null,
+        "screen_delta_pixels_per_block_xy_y_down": null,
+        "proof": "No facing blockstate. Approved canonical rotation and all child transforms retained.",
+        "blockstate_evidence": {
+          "json": "evidence/modern/brewing_stand-blockstate.json",
+          "proof": "Official blockstate contains no facing property; canonical parent rotation remains zero."
+        }
+      }
+    ],
+    "station_bounds_normalized_xy_y_up": {
+      "crafting_table": [
+        0.39752092957496643,
+        0.3875839114189148,
+        0.6024793982505798,
+        0.6242495775222778
+      ],
+      "blast_furnace": [
+        0.3975209891796112,
+        0.657014012336731,
+        0.6024794578552246,
+        0.893679678440094
+      ],
+      "enchanting_table": [
+        0.6924715638160706,
+        0.5222989320755005,
+        0.8974300622940063,
+        0.7607606053352356
+      ],
+      "smithing_table": [
+        0.6924715042114258,
+        0.25286880135536194,
+        0.8974300026893616,
+        0.489534467458725
+      ],
+      "chest": [
+        0.41033077239990234,
+        0.12554959952831268,
+        0.5896694660186768,
+        0.33263206481933594
+      ],
+      "grindstone": [
+        0.14099998772144318,
+        0.2824521064758301,
+        0.26909902691841125,
+        0.4673471450805664
+      ],
+      "brewing_stand": [
+        0.14100001752376556,
+        0.544486403465271,
+        0.2947188913822174,
+        0.7437793612480164
+      ]
+    },
+    "all_mesh_vertices_topology_uvs_material_assignments_unchanged": true,
+    "all_station_positions_unchanged": true,
+    "all_non_facing_transforms_unchanged_including_book": true,
+    "camera_yaw45_projection_world_color_management_unchanged": true,
+    "lighting_formula_and_parameters_unchanged": true,
+    "packed_texture_bytes_unchanged": true,
+    "station_projected_bounds_disjoint": true,
+    "all_geometry_fully_in_frame": true,
+    "brewing_feet": 3,
+    "brewing_arm_planes": 3,
+    "mesh_count": 23,
+    "packed_texture_count": 22,
+    "camera_relative_east_direction_xyz": [
+      -0.7071068286895752,
+      -0.4082481861114502,
+      0.5773501396179199
+    ]
+  },
+  "png_decoded_after_render": true,
+  "resources": {
+    "cgroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/render-blender.service",
+    "cpu_max": "300000 100000",
+    "cpu_weight": 20,
+    "affinity": [
+      0,
+      2,
+      4
+    ],
+    "threads": 3,
+    "background": true,
+    "display": null,
+    "audio": null,
+    "gpu": null
+  },
+  "lighting_parameters": {
+    "era": "modern",
+    "face_multipliers": {
+      "up": 1,
+      "north": 0.8,
+      "south": 0.8,
+      "east": 0.6,
+      "west": 0.6,
+      "down": 0.5
+    },
+    "sky_level": 15,
+    "sky_color": [
+      1,
+      1,
+      1
+    ],
+    "sun_brightness": 1,
+    "brightness_falloff": "(level/15)/(4-3*level/15)",
+    "block_levels_sampled": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "emission_levels": {
+      "enchanting_table": 7,
+      "ender_chest": 7,
+      "brewing_stand": 1
+    },
+    "torch_flicker": 0,
+    "gamma_setting": 0,
+    "night_vision": 0,
+    "darkness": 0,
+    "boss_overlay": 0,
+    "ao": false,
+    "sampling": "Per-face center offset into air; open-sky 15; unobstructed Manhattan source falloff. Not sampled from a Minecraft world save.",
+    "legacy_lightmap": "EntityRenderer.updateLightmap: torch multiplier1.5; nonlinear RGB torch tint; two .96*x+.03 passes; integer8-bit quantization.",
+    "modern_lightmap": "26.2 lightmap.fsh; SkyFactor=BlockFactor=1; AmbientColor=(.03,.03,.03); BlockLightTint=(1,.9,.75); BrightnessFactor=0.",
+    "entity_ambient": 0.4,
+    "entity_diffuse": 0.6
+  }
+}

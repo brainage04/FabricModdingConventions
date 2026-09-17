@@ -1,0 +1,898 @@
+{
+  "reopened_saved_blend": true,
+  "embedded_author_scripts_match_disk": true,
+  "geometry": {
+    "reference_camera_scale_lighting_background_preserved": true,
+    "camera": {
+      "camera_matrix": [
+        [
+          0.7071067094802856,
+          -0.4082484245300293,
+          0.5773503184318542,
+          8.485280990600586
+        ],
+        [
+          0.70710688829422,
+          0.40824824571609497,
+          -0.5773501992225647,
+          -8.485280990600586
+        ],
+        [
+          6.959331955158632e-08,
+          0.8164965510368347,
+          0.5773503184318542,
+          8.935280799865723
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "camera_location": [
+        8.485280990600586,
+        -8.485280990600586,
+        8.935280799865723
+      ],
+      "camera_target": [
+        0.0,
+        0.0,
+        0.44999998807907104
+      ],
+      "projection": "ORTHO",
+      "orthographic_scale": 6.900000095367432,
+      "measured_yaw_degrees": 45.0,
+      "measured_pitch_degrees": 35.264395259580475,
+      "background_linear_rgba": [
+        0.0024999999441206455,
+        0.0035000001080334187,
+        0.006000000052154064,
+        1.0
+      ],
+      "background_strength": 1.0,
+      "view": [
+        "Standard",
+        "None",
+        0.0,
+        1.0
+      ],
+      "dither": 0.0,
+      "denoising": false
+    },
+    "reference_camera": {
+      "camera_matrix": [
+        [
+          0.7071067094802856,
+          -0.4082484245300293,
+          0.5773503184318542,
+          8.485280990600586
+        ],
+        [
+          0.70710688829422,
+          0.40824824571609497,
+          -0.5773501992225647,
+          -8.485280990600586
+        ],
+        [
+          6.959331955158632e-08,
+          0.8164965510368347,
+          0.5773503184318542,
+          8.935280799865723
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "camera_location": [
+        8.485280990600586,
+        -8.485280990600586,
+        8.935280799865723
+      ],
+      "camera_target": [
+        0.0,
+        0.0,
+        0.44999998807907104
+      ],
+      "projection": "ORTHO",
+      "orthographic_scale": 6.900000095367432,
+      "measured_yaw_degrees": 45.0,
+      "measured_pitch_degrees": 35.264395259580475,
+      "background_linear_rgba": [
+        0.0024999999441206455,
+        0.0035000001080334187,
+        0.006000000052154064,
+        1.0
+      ],
+      "background_strength": 1.0,
+      "view": [
+        "Standard",
+        "None",
+        0.0,
+        1.0
+      ],
+      "dither": 0.0,
+      "denoising": false
+    },
+    "measured_angle_deltas_degrees": [
+      0.0,
+      0.0
+    ],
+    "station_positions_identical_to_reference": true,
+    "uniform_one_minecraft_block_scale": true,
+    "no_floor_architecture_connections_glow_or_text": true,
+    "official_vanilla_models_only": true,
+    "facings": [
+      {
+        "block": "crafting_table",
+        "slot": "center",
+        "position_blender_xyz": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "blockstate": {
+          "variant_key": "",
+          "variant": {
+            "model": "minecraft:block/crafting_table"
+          },
+          "north_variant_key": "",
+          "north_variant": {
+            "model": "minecraft:block/crafting_table"
+          },
+          "directional": false,
+          "facing": "n/a - no facing blockstate"
+        },
+        "applied_blender_z_degrees": -0.0,
+        "scale_xyz": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "official_model_element_count": 1,
+        "canonical_no_facing_rotation_preserved": true
+      },
+      {
+        "block": "note_block",
+        "slot": "top",
+        "position_blender_xyz": [
+          -2.276883840560913,
+          2.276883840560913,
+          0.0
+        ],
+        "blockstate": {
+          "variant_key": "",
+          "variant": {
+            "model": "minecraft:block/note_block"
+          },
+          "north_variant_key": "",
+          "north_variant": {
+            "model": "minecraft:block/note_block"
+          },
+          "directional": false,
+          "facing": "n/a - no facing blockstate"
+        },
+        "applied_blender_z_degrees": -0.0,
+        "scale_xyz": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "official_model_element_count": 1,
+        "canonical_no_facing_rotation_preserved": true
+      },
+      {
+        "block": "observer",
+        "slot": "top-right",
+        "position_blender_xyz": [
+          0.30063319206237793,
+          2.577517032623291,
+          0.0
+        ],
+        "blockstate": {
+          "variant_key": "facing=east,powered=false",
+          "variant": {
+            "model": "minecraft:block/observer",
+            "y": 90
+          },
+          "north_variant_key": "facing=north,powered=false",
+          "north_variant": {
+            "model": "minecraft:block/observer"
+          },
+          "directional": true,
+          "facing": "east"
+        },
+        "applied_blender_z_degrees": -90.00000250447816,
+        "scale_xyz": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "official_model_element_count": 1,
+        "blender_front_xyz": [
+          -4.371138828673793e-08,
+          -1.0,
+          0.0
+        ],
+        "normalized_png_direction": [
+          -0.866025507725602,
+          0.4999998199685808
+        ],
+        "matches_blender_q_east_down_left": true,
+        "observer_textured_front_normals": [
+          [
+            -1.1920928955078125e-07,
+            -1.0,
+            -8.742277657347586e-08
+          ]
+        ]
+      },
+      {
+        "block": "lectern",
+        "slot": "bottom-right",
+        "position_blender_xyz": [
+          2.577517032623291,
+          0.30063319206237793,
+          0.0
+        ],
+        "blockstate": {
+          "variant_key": "facing=east",
+          "variant": {
+            "model": "minecraft:block/lectern",
+            "y": 90
+          },
+          "north_variant_key": "facing=north",
+          "north_variant": {
+            "model": "minecraft:block/lectern"
+          },
+          "directional": true,
+          "facing": "east"
+        },
+        "applied_blender_z_degrees": -90.00000250447816,
+        "scale_xyz": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "official_model_element_count": 3,
+        "blender_front_xyz": [
+          -4.371138828673793e-08,
+          -1.0,
+          0.0
+        ],
+        "normalized_png_direction": [
+          -0.866025507725602,
+          0.4999998199685808
+        ],
+        "matches_blender_q_east_down_left": true
+      },
+      {
+        "block": "jukebox",
+        "slot": "bottom",
+        "position_blender_xyz": [
+          2.276883840560913,
+          -2.276883840560913,
+          0.0
+        ],
+        "blockstate": {
+          "variant_key": "",
+          "variant": {
+            "model": "minecraft:block/jukebox"
+          },
+          "north_variant_key": "",
+          "north_variant": {
+            "model": "minecraft:block/jukebox"
+          },
+          "directional": false,
+          "facing": "n/a - no facing blockstate"
+        },
+        "applied_blender_z_degrees": -0.0,
+        "scale_xyz": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "official_model_element_count": 1,
+        "canonical_no_facing_rotation_preserved": true
+      },
+      {
+        "block": "target",
+        "slot": "bottom-left",
+        "position_blender_xyz": [
+          -0.30063319206237793,
+          -2.577517032623291,
+          0.0
+        ],
+        "blockstate": {
+          "variant_key": "",
+          "variant": {
+            "model": "minecraft:block/target"
+          },
+          "north_variant_key": "",
+          "north_variant": {
+            "model": "minecraft:block/target"
+          },
+          "directional": false,
+          "facing": "n/a - no facing blockstate"
+        },
+        "applied_blender_z_degrees": -0.0,
+        "scale_xyz": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "official_model_element_count": 1,
+        "canonical_no_facing_rotation_preserved": true
+      },
+      {
+        "block": "redstone_lamp",
+        "slot": "top-left",
+        "position_blender_xyz": [
+          -2.577517032623291,
+          -0.30063319206237793,
+          0.0
+        ],
+        "blockstate": {
+          "variant_key": "lit=false",
+          "variant": {
+            "model": "minecraft:block/redstone_lamp"
+          },
+          "north_variant_key": "lit=false",
+          "north_variant": {
+            "model": "minecraft:block/redstone_lamp"
+          },
+          "directional": false,
+          "facing": "n/a - no facing blockstate"
+        },
+        "applied_blender_z_degrees": -0.0,
+        "scale_xyz": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "official_model_element_count": 1,
+        "canonical_no_facing_rotation_preserved": true
+      }
+    ],
+    "world_bounds": {
+      "crafting_table": [
+        [
+          -0.5000000596046448,
+          -0.5000000596046448,
+          -4.371138828673793e-08
+        ],
+        [
+          0.5000001192092896,
+          0.5000000596046448,
+          1.0
+        ]
+      ],
+      "note_block": [
+        [
+          -2.776883840560913,
+          1.776883840560913,
+          -4.371138828673793e-08
+        ],
+        [
+          -1.7768837213516235,
+          2.776883840560913,
+          1.0
+        ]
+      ],
+      "observer": [
+        [
+          -0.19936686754226685,
+          2.077516794204712,
+          -4.371138828673793e-08
+        ],
+        [
+          0.8006332516670227,
+          3.077517032623291,
+          1.0
+        ]
+      ],
+      "lectern": [
+        [
+          2.077517032623291,
+          -0.19936688244342804,
+          -4.371138828673793e-08
+        ],
+        [
+          3.077517032623291,
+          0.8006332516670227,
+          1.1532814502716064
+        ]
+      ],
+      "jukebox": [
+        [
+          1.776883840560913,
+          -2.776883840560913,
+          -4.371138828673793e-08
+        ],
+        [
+          2.776884078979492,
+          -1.776883840560913,
+          1.0
+        ]
+      ],
+      "target": [
+        [
+          -0.8006332516670227,
+          -3.077517032623291,
+          -4.371138828673793e-08
+        ],
+        [
+          0.19936692714691162,
+          -2.077517032623291,
+          1.0
+        ]
+      ],
+      "redstone_lamp": [
+        [
+          -3.077517032623291,
+          -0.8006332516670227,
+          -4.371138828673793e-08
+        ],
+        [
+          -2.077516794204712,
+          0.19936685264110565,
+          1.0
+        ]
+      ]
+    },
+    "station_bounds_normalized_xy_y_up": {
+      "crafting_table": [
+        0.39752092957496643,
+        0.3875839114189148,
+        0.6024793982505798,
+        0.6242495775222778
+      ],
+      "note_block": [
+        0.3975209891796112,
+        0.657014012336731,
+        0.6024795174598694,
+        0.893679678440094
+      ],
+      "observer": [
+        0.6924715638160706,
+        0.5222989320755005,
+        0.8974300622940063,
+        0.7589645981788635
+      ],
+      "lectern": [
+        0.6924715042114258,
+        0.25286880135536194,
+        0.8974300026893616,
+        0.49405360221862793
+      ],
+      "jukebox": [
+        0.39752086997032166,
+        0.11815378814935684,
+        0.6024793982505798,
+        0.3548194468021393
+      ],
+      "target": [
+        0.10257022827863693,
+        0.2528688907623291,
+        0.3075287640094757,
+        0.48953455686569214
+      ],
+      "redstone_lamp": [
+        0.10257033258676529,
+        0.5222989916801453,
+        0.3075288236141205,
+        0.7589646577835083
+      ]
+    },
+    "subject_bounds_normalized_xy_y_up": [
+      0.10257022827863693,
+      0.11815378814935684,
+      0.8974300622940063,
+      0.893679678440094
+    ],
+    "margins_pixels_left_right_top_bottom": [
+      105.03191375732422,
+      105.0316162109375,
+      108.87200927734375,
+      120.9894790649414
+    ],
+    "inter_block_nonintersection_pairs": [
+      {
+        "a": "crafting_table",
+        "b": "note_block",
+        "world_aabb_separating_axes": [
+          0,
+          1
+        ],
+        "projected_aabbs_disjoint": true
+      },
+      {
+        "a": "crafting_table",
+        "b": "observer",
+        "world_aabb_separating_axes": [
+          1
+        ],
+        "projected_aabbs_disjoint": true
+      },
+      {
+        "a": "crafting_table",
+        "b": "lectern",
+        "world_aabb_separating_axes": [
+          0
+        ],
+        "projected_aabbs_disjoint": true
+      },
+      {
+        "a": "crafting_table",
+        "b": "jukebox",
+        "world_aabb_separating_axes": [
+          0,
+          1
+        ],
+        "projected_aabbs_disjoint": true
+      },
+      {
+        "a": "crafting_table",
+        "b": "target",
+        "world_aabb_separating_axes": [
+          1
+        ],
+        "projected_aabbs_disjoint": true
+      },
+      {
+        "a": "crafting_table",
+        "b": "redstone_lamp",
+        "world_aabb_separating_axes": [
+          0
+        ],
+        "projected_aabbs_disjoint": true
+      },
+      {
+        "a": "note_block",
+        "b": "observer",
+        "world_aabb_separating_axes": [
+          0
+        ],
+        "projected_aabbs_disjoint": true
+      },
+      {
+        "a": "note_block",
+        "b": "lectern",
+        "world_aabb_separating_axes": [
+          0,
+          1
+        ],
+        "projected_aabbs_disjoint": true
+      },
+      {
+        "a": "note_block",
+        "b": "jukebox",
+        "world_aabb_separating_axes": [
+          0,
+          1
+        ],
+        "projected_aabbs_disjoint": true
+      },
+      {
+        "a": "note_block",
+        "b": "target",
+        "world_aabb_separating_axes": [
+          0,
+          1
+        ],
+        "projected_aabbs_disjoint": true
+      },
+      {
+        "a": "note_block",
+        "b": "redstone_lamp",
+        "world_aabb_separating_axes": [
+          1
+        ],
+        "projected_aabbs_disjoint": true
+      },
+      {
+        "a": "observer",
+        "b": "lectern",
+        "world_aabb_separating_axes": [
+          0,
+          1
+        ],
+        "projected_aabbs_disjoint": true
+      },
+      {
+        "a": "observer",
+        "b": "jukebox",
+        "world_aabb_separating_axes": [
+          0,
+          1
+        ],
+        "projected_aabbs_disjoint": true
+      },
+      {
+        "a": "observer",
+        "b": "target",
+        "world_aabb_separating_axes": [
+          1
+        ],
+        "projected_aabbs_disjoint": true
+      },
+      {
+        "a": "observer",
+        "b": "redstone_lamp",
+        "world_aabb_separating_axes": [
+          0,
+          1
+        ],
+        "projected_aabbs_disjoint": true
+      },
+      {
+        "a": "lectern",
+        "b": "jukebox",
+        "world_aabb_separating_axes": [
+          1
+        ],
+        "projected_aabbs_disjoint": true
+      },
+      {
+        "a": "lectern",
+        "b": "target",
+        "world_aabb_separating_axes": [
+          0,
+          1
+        ],
+        "projected_aabbs_disjoint": true
+      },
+      {
+        "a": "lectern",
+        "b": "redstone_lamp",
+        "world_aabb_separating_axes": [
+          0
+        ],
+        "projected_aabbs_disjoint": true
+      },
+      {
+        "a": "jukebox",
+        "b": "target",
+        "world_aabb_separating_axes": [
+          0
+        ],
+        "projected_aabbs_disjoint": true
+      },
+      {
+        "a": "jukebox",
+        "b": "redstone_lamp",
+        "world_aabb_separating_axes": [
+          0,
+          1
+        ],
+        "projected_aabbs_disjoint": true
+      },
+      {
+        "a": "target",
+        "b": "redstone_lamp",
+        "world_aabb_separating_axes": [
+          0,
+          1
+        ],
+        "projected_aabbs_disjoint": true
+      }
+    ],
+    "projected_station_bounds_disjoint": true,
+    "packed_textures": [
+      {
+        "image": "crafting_table_front.png",
+        "sha256": "1659c76a33039640e8bd5584af8db04bf626486432a389bcaf1567e1a45c6464",
+        "packed_matches_extracted_vanilla_bytes": true
+      },
+      {
+        "image": "crafting_table_side.png",
+        "sha256": "e9755fc6da763909b285342eae12c5f7d1cc8462fab695bb157504ea207cda8c",
+        "packed_matches_extracted_vanilla_bytes": true
+      },
+      {
+        "image": "crafting_table_top.png",
+        "sha256": "251e8aa014e30d040261022895853db3204bba241b9b44c11762628550986f2d",
+        "packed_matches_extracted_vanilla_bytes": true
+      },
+      {
+        "image": "jukebox_side.png",
+        "sha256": "ce5e56da299713779c49b55fcdb705fbdc1381d4f449615b932877ba13c9fabb",
+        "packed_matches_extracted_vanilla_bytes": true
+      },
+      {
+        "image": "jukebox_top.png",
+        "sha256": "e03e910eeac1f84a5694045902504a9cdd832a143374a2857f9e25a7f83f80a5",
+        "packed_matches_extracted_vanilla_bytes": true
+      },
+      {
+        "image": "lectern_base.png",
+        "sha256": "498b13eb82f8a3079748357885a4ab0a9041b8664c35ca2285c255b2348c9183",
+        "packed_matches_extracted_vanilla_bytes": true
+      },
+      {
+        "image": "lectern_front.png",
+        "sha256": "14025b2d73dc1e6dbdee3c7ee9afa373c953b6b9cbd475b64c30c8e0c6f17339",
+        "packed_matches_extracted_vanilla_bytes": true
+      },
+      {
+        "image": "lectern_sides.png",
+        "sha256": "139d215c1d644dd22efc4c674de1e0a31d1db392b4106774497ee5b6685ada7b",
+        "packed_matches_extracted_vanilla_bytes": true
+      },
+      {
+        "image": "lectern_top.png",
+        "sha256": "591388e68a0629affdc438e1031acb5b7d6b78b72535bf2c3de0a6ca1c73cb2e",
+        "packed_matches_extracted_vanilla_bytes": true
+      },
+      {
+        "image": "note_block.png",
+        "sha256": "ce5e56da299713779c49b55fcdb705fbdc1381d4f449615b932877ba13c9fabb",
+        "packed_matches_extracted_vanilla_bytes": true
+      },
+      {
+        "image": "oak_planks.png",
+        "sha256": "65665943ef9c8bcf63fc67d2083ed0c50243f724106d0e4bb1abea5d921b16d3",
+        "packed_matches_extracted_vanilla_bytes": true
+      },
+      {
+        "image": "observer_back.png",
+        "sha256": "cbed479fc6df6ebc7e3c005cfe571a8237cc83625f377f26b52b59280fe63717",
+        "packed_matches_extracted_vanilla_bytes": true
+      },
+      {
+        "image": "observer_front.png",
+        "sha256": "300c141e244c37922da18a3567ee4d8f4e25b9b514029684e2bd3ae70318ef6f",
+        "packed_matches_extracted_vanilla_bytes": true
+      },
+      {
+        "image": "observer_side.png",
+        "sha256": "fc989d0b6d95672094e1b096f4d298b9ebbd04c0b0c47ffc1cd752948fb54448",
+        "packed_matches_extracted_vanilla_bytes": true
+      },
+      {
+        "image": "observer_top.png",
+        "sha256": "58916b14e87610499cacdb5d2ee5f1bb8cdac2bb658309a6dc03f6263ff4ad06",
+        "packed_matches_extracted_vanilla_bytes": true
+      },
+      {
+        "image": "redstone_lamp.png",
+        "sha256": "60d43bc037630fdf7a770f31e10a59312609f084fcabe73725030036611de84a",
+        "packed_matches_extracted_vanilla_bytes": true
+      },
+      {
+        "image": "target_side.png",
+        "sha256": "58e9e93f74111c7fbfdb4ef0e8aa4cdf44dd2f4db59ac9347a98d14983ad98bb",
+        "packed_matches_extracted_vanilla_bytes": true
+      },
+      {
+        "image": "target_top.png",
+        "sha256": "c37931d2c3b5bacecc74d83b1440c9a65fe1dbbdcdb091e921716cb0fe984c9c",
+        "packed_matches_extracted_vanilla_bytes": true
+      }
+    ]
+  },
+  "png": {
+    "decoded_png": true,
+    "resolution": [
+      1024,
+      1024
+    ],
+    "opaque": true,
+    "background_rgb": [
+      8,
+      11,
+      18
+    ],
+    "background_matches_modern_reference": true,
+    "foreground_bbox_pixels": [
+      104,
+      108,
+      920,
+      904
+    ],
+    "margins_pixels_left_right_top_bottom": [
+      104,
+      104,
+      108,
+      120
+    ],
+    "reference_margins_pixels_left_right_top_bottom": [
+      143,
+      104,
+      108,
+      128
+    ],
+    "seven_visible_block_regions": [
+      {
+        "block": "crafting_table",
+        "projected_region_pixels": [
+          405,
+          382,
+          619,
+          630
+        ],
+        "foreground_pixels": 38832,
+        "foreground_fraction": 0.7316852577630389,
+        "visible_texture_color_count": 3013
+      },
+      {
+        "block": "note_block",
+        "projected_region_pixels": [
+          405,
+          106,
+          619,
+          354
+        ],
+        "foreground_pixels": 38851,
+        "foreground_fraction": 0.7320432619837203,
+        "visible_texture_color_count": 1315
+      },
+      {
+        "block": "observer",
+        "projected_region_pixels": [
+          707,
+          244,
+          921,
+          492
+        ],
+        "foreground_pixels": 38848,
+        "foreground_fraction": 0.7319867350015073,
+        "visible_texture_color_count": 460
+      },
+      {
+        "block": "lectern",
+        "projected_region_pixels": [
+          707,
+          516,
+          921,
+          768
+        ],
+        "foreground_pixels": 32261,
+        "foreground_fraction": 0.5982235573357069,
+        "visible_texture_color_count": 2057
+      },
+      {
+        "block": "jukebox",
+        "projected_region_pixels": [
+          405,
+          658,
+          619,
+          906
+        ],
+        "foreground_pixels": 38849,
+        "foreground_fraction": 0.7320055773289117,
+        "visible_texture_color_count": 1329
+      },
+      {
+        "block": "target",
+        "projected_region_pixels": [
+          103,
+          520,
+          317,
+          768
+        ],
+        "foreground_pixels": 38847,
+        "foreground_fraction": 0.7319678926741031,
+        "visible_texture_color_count": 4124
+      },
+      {
+        "block": "redstone_lamp",
+        "projected_region_pixels": [
+          103,
+          244,
+          317,
+          492
+        ],
+        "foreground_pixels": 38843,
+        "foreground_fraction": 0.731892523364486,
+        "visible_texture_color_count": 1497
+      }
+    ],
+    "no_pixels_outside_projected_blocks": true,
+    "no_floor_shadow_glow_or_overlay": true,
+    "png_sha256": "4354aecbe1d341c23946cadfe205511a3e16907e86bb59e3678744fe460830ce"
+  }
+}

@@ -1,0 +1,165 @@
+{
+  "bookshelf": {
+    "variant_key": "",
+    "variant": {
+      "model": "minecraft:block/bookshelf"
+    },
+    "north_variant_key": "",
+    "north_variant": {
+      "model": "minecraft:block/bookshelf"
+    },
+    "directional": false,
+    "facing": "n/a - no facing blockstate"
+  },
+  "comparator": {
+    "variant_key": "facing=east,mode=compare,powered=false",
+    "variant": {
+      "model": "minecraft:block/comparator",
+      "y": 270
+    },
+    "north_variant_key": "facing=north,mode=compare,powered=false",
+    "north_variant": {
+      "model": "minecraft:block/comparator",
+      "y": 180
+    },
+    "directional": true,
+    "facing": "east"
+  },
+  "crafter": {
+    "variant_key": "crafting=false,orientation=east_up,triggered=false",
+    "variant": {
+      "model": "minecraft:block/crafter",
+      "y": 90
+    },
+    "north_variant_key": "crafting=false,orientation=north_up,triggered=false",
+    "north_variant": {
+      "model": "minecraft:block/crafter"
+    },
+    "directional": true,
+    "facing": "east"
+  },
+  "crafting_table": {
+    "variant_key": "",
+    "variant": {
+      "model": "minecraft:block/crafting_table"
+    },
+    "north_variant_key": "",
+    "north_variant": {
+      "model": "minecraft:block/crafting_table"
+    },
+    "directional": false,
+    "facing": "n/a - no facing blockstate"
+  },
+  "jukebox": {
+    "variant_key": "",
+    "variant": {
+      "model": "minecraft:block/jukebox"
+    },
+    "north_variant_key": "",
+    "north_variant": {
+      "model": "minecraft:block/jukebox"
+    },
+    "directional": false,
+    "facing": "n/a - no facing blockstate"
+  },
+  "lectern": {
+    "variant_key": "facing=east",
+    "variant": {
+      "model": "minecraft:block/lectern",
+      "y": 90
+    },
+    "north_variant_key": "facing=north",
+    "north_variant": {
+      "model": "minecraft:block/lectern"
+    },
+    "directional": true,
+    "facing": "east"
+  },
+  "lodestone": {
+    "variant_key": "",
+    "variant": {
+      "model": "minecraft:block/lodestone"
+    },
+    "north_variant_key": "",
+    "north_variant": {
+      "model": "minecraft:block/lodestone"
+    },
+    "directional": false,
+    "facing": "n/a - no facing blockstate"
+  },
+  "note_block": {
+    "variant_key": "",
+    "variant": {
+      "model": "minecraft:block/note_block"
+    },
+    "north_variant_key": "",
+    "north_variant": {
+      "model": "minecraft:block/note_block"
+    },
+    "directional": false,
+    "facing": "n/a - no facing blockstate"
+  },
+  "observer": {
+    "variant_key": "facing=east,powered=false",
+    "variant": {
+      "model": "minecraft:block/observer",
+      "y": 90
+    },
+    "north_variant_key": "facing=north,powered=false",
+    "north_variant": {
+      "model": "minecraft:block/observer"
+    },
+    "directional": true,
+    "facing": "east"
+  },
+  "redstone_lamp": {
+    "variant_key": "lit=false",
+    "variant": {
+      "model": "minecraft:block/redstone_lamp"
+    },
+    "north_variant_key": "lit=false",
+    "north_variant": {
+      "model": "minecraft:block/redstone_lamp"
+    },
+    "directional": false,
+    "facing": "n/a - no facing blockstate"
+  },
+  "repeater": {
+    "variant_key": "delay=1,facing=east,locked=false,powered=false",
+    "variant": {
+      "model": "minecraft:block/repeater_1tick",
+      "y": 270
+    },
+    "north_variant_key": "delay=1,facing=north,locked=false,powered=false",
+    "north_variant": {
+      "model": "minecraft:block/repeater_1tick",
+      "y": 180
+    },
+    "directional": true,
+    "facing": "east"
+  },
+  "smithing_table": {
+    "variant_key": "",
+    "variant": {
+      "model": "minecraft:block/smithing_table"
+    },
+    "north_variant_key": "",
+    "north_variant": {
+      "model": "minecraft:block/smithing_table"
+    },
+    "directional": false,
+    "facing": "n/a - no facing blockstate"
+  },
+  "target": {
+    "variant_key": "",
+    "variant": {
+      "model": "minecraft:block/target"
+    },
+    "north_variant_key": "",
+    "north_variant": {
+      "model": "minecraft:block/target"
+    },
+    "directional": false,
+    "facing": "n/a - no facing blockstate"
+  }
+}

@@ -1,0 +1,28 @@
+[
+  {
+    "name": "conventions2-selected-owner-layout",
+    "blender_version": "5.1.1",
+    "engine": "CYCLES",
+    "device": "CPU",
+    "samples": 32,
+    "render_duration_seconds": 2.154895480023697,
+    "resolution": [
+      1024,
+      1024
+    ],
+    "resources": {
+      "cgroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/render-blender.service",
+      "cpu_weight": 20,
+      "cpu_max": "300000 100000",
+      "affinity": [
+        0,
+        2
+      ],
+      "threads": 2,
+      "background": true,
+      "display": null,
+      "audio": null,
+      "gpu": null
+    }
+  }
+]

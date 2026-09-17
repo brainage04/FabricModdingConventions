@@ -1,0 +1,186 @@
+{
+  "references": {
+    "legacy": {
+      "camera_matrix": [
+        [
+          0.7071067094802856,
+          -0.4082484245300293,
+          0.5773503184318542,
+          8.485280990600586
+        ],
+        [
+          0.70710688829422,
+          0.40824824571609497,
+          -0.5773501992225647,
+          -8.485280990600586
+        ],
+        [
+          6.959331955158632e-08,
+          0.8164965510368347,
+          0.5773503184318542,
+          8.935280799865723
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "camera_location": [
+        8.485280990600586,
+        -8.485280990600586,
+        8.935280799865723
+      ],
+      "camera_target": [
+        0.0,
+        0.0,
+        0.44999998807907104
+      ],
+      "projection": "ORTHO",
+      "orthographic_scale": 7.150000095367432,
+      "measured_yaw_degrees": 45.0,
+      "measured_pitch_degrees": 35.264395259580475,
+      "background_linear_rgba": [
+        0.004000000189989805,
+        0.003000000026077032,
+        0.0020000000949949026,
+        1.0
+      ],
+      "background_strength": 1.0,
+      "view": [
+        "Standard",
+        "None",
+        0.0,
+        1.0
+      ],
+      "dither": 0.0,
+      "denoising": false
+    },
+    "modern": {
+      "camera_matrix": [
+        [
+          0.7071067094802856,
+          -0.4082484245300293,
+          0.5773503184318542,
+          8.485280990600586
+        ],
+        [
+          0.70710688829422,
+          0.40824824571609497,
+          -0.5773501992225647,
+          -8.485280990600586
+        ],
+        [
+          6.959331955158632e-08,
+          0.8164965510368347,
+          0.5773503184318542,
+          8.935280799865723
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "camera_location": [
+        8.485280990600586,
+        -8.485280990600586,
+        8.935280799865723
+      ],
+      "camera_target": [
+        0.0,
+        0.0,
+        0.44999998807907104
+      ],
+      "projection": "ORTHO",
+      "orthographic_scale": 6.900000095367432,
+      "measured_yaw_degrees": 45.0,
+      "measured_pitch_degrees": 35.264395259580475,
+      "background_linear_rgba": [
+        0.0024999999441206455,
+        0.0035000001080334187,
+        0.006000000052154064,
+        1.0
+      ],
+      "background_strength": 1.0,
+      "view": [
+        "Standard",
+        "None",
+        0.0,
+        1.0
+      ],
+      "dither": 0.0,
+      "denoising": false
+    }
+  },
+  "candidates": {
+    "conventions2-selected-owner-layout": {
+      "camera_matrix": [
+        [
+          0.7071067094802856,
+          -0.4082484245300293,
+          0.5773503184318542,
+          8.485280990600586
+        ],
+        [
+          0.70710688829422,
+          0.40824824571609497,
+          -0.5773501992225647,
+          -8.485280990600586
+        ],
+        [
+          6.959331955158632e-08,
+          0.8164965510368347,
+          0.5773503184318542,
+          8.935280799865723
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "camera_location": [
+        8.485280990600586,
+        -8.485280990600586,
+        8.935280799865723
+      ],
+      "camera_target": [
+        0.0,
+        0.0,
+        0.44999998807907104
+      ],
+      "projection": "ORTHO",
+      "orthographic_scale": 6.900000095367432,
+      "measured_yaw_degrees": 45.0,
+      "measured_pitch_degrees": 35.264395259580475,
+      "background_linear_rgba": [
+        0.0024999999441206455,
+        0.0035000001080334187,
+        0.006000000052154064,
+        1.0
+      ],
+      "background_strength": 1.0,
+      "view": [
+        "Standard",
+        "None",
+        0.0,
+        1.0
+      ],
+      "dither": 0.0,
+      "denoising": false
+    }
+  },
+  "measured_camera_delta_from_modern_degrees": [
+    0,
+    0
+  ],
+  "nominal_yaw_degrees": 45,
+  "nominal_pitch_degrees": 35.264389682754654,
+  "modern_orthographic_scale_preserved": true,
+  "legacy_orthographic_scale_note": "Legacy uses 7.15; candidates use the modern reference 6.90, not a rescaled compromise.",
+  "background_note": "Exact modern near-black linear RGB (0.0025, 0.0035, 0.006), strength 1, preserved per parent clarification; decoded RGB (8, 11, 18)"
+}

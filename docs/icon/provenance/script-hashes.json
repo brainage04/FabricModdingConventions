@@ -1,0 +1,10 @@
+{
+  "conventions2-selected-owner-layout.py": "67b702208fd3b69db63faba8a864e4767bf79b254d124d883122a1c876093569",
+  "inspect-references.py": "ecbc8df075b3690cf28b45f0291674f1cf19ad0564384bb0641f9a5784ed4041",
+  "prepare-assets.py": "040a928cede22652e375cf5ac21bf9fe1331b6be281f85a8bfdaaa3509533b04",
+  "run-blender.py": "1c041684e5739cd824bc250204e7357ab98aee9b1c1680d4fc27200e73547688",
+  "scene.py": "2ee9d7ab9a513824255837d6c003b09f0fc4d3be3d36b2b1b77a37613a280c48",
+  "verify-pngs.py": "eac10260188e23551f2eda4215c36c0882bf506d8c2512ccfc0b557a2572881b",
+  "source/minecraft.py": "7ddc248864d1cdf5704caff7f6e117ff33052b3cfb5915d46e0614fc5a362f5d",
+  "source/render_hubs.py": "ec9015fdf0482c52a76b3076792cff4d4dfd75579dc019d079cf6f2560a7b008"
+}

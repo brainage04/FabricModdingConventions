@@ -1,0 +1,127 @@
+{
+  "images": [
+    {
+      "name": "conventions2-selected-owner-layout",
+      "decoded_png": true,
+      "resolution": [
+        1024,
+        1024
+      ],
+      "opaque": true,
+      "background_rgb": [
+        8,
+        11,
+        18
+      ],
+      "background_matches_modern_reference": true,
+      "foreground_bbox_pixels": [
+        104,
+        108,
+        920,
+        904
+      ],
+      "margins_pixels_left_right_top_bottom": [
+        104,
+        104,
+        108,
+        120
+      ],
+      "reference_margins_pixels_left_right_top_bottom": [
+        143,
+        104,
+        108,
+        128
+      ],
+      "seven_visible_block_regions": [
+        {
+          "block": "crafting_table",
+          "projected_region_pixels": [
+            405,
+            382,
+            619,
+            630
+          ],
+          "foreground_pixels": 38832,
+          "foreground_fraction": 0.7316852577630389,
+          "visible_texture_color_count": 3013
+        },
+        {
+          "block": "note_block",
+          "projected_region_pixels": [
+            405,
+            106,
+            619,
+            354
+          ],
+          "foreground_pixels": 38851,
+          "foreground_fraction": 0.7320432619837203,
+          "visible_texture_color_count": 1315
+        },
+        {
+          "block": "observer",
+          "projected_region_pixels": [
+            707,
+            244,
+            921,
+            492
+          ],
+          "foreground_pixels": 38848,
+          "foreground_fraction": 0.7319867350015073,
+          "visible_texture_color_count": 460
+        },
+        {
+          "block": "lectern",
+          "projected_region_pixels": [
+            707,
+            516,
+            921,
+            768
+          ],
+          "foreground_pixels": 32261,
+          "foreground_fraction": 0.5982235573357069,
+          "visible_texture_color_count": 2057
+        },
+        {
+          "block": "jukebox",
+          "projected_region_pixels": [
+            405,
+            658,
+            619,
+            906
+          ],
+          "foreground_pixels": 38849,
+          "foreground_fraction": 0.7320055773289117,
+          "visible_texture_color_count": 1329
+        },
+        {
+          "block": "target",
+          "projected_region_pixels": [
+            103,
+            520,
+            317,
+            768
+          ],
+          "foreground_pixels": 38847,
+          "foreground_fraction": 0.7319678926741031,
+          "visible_texture_color_count": 4124
+        },
+        {
+          "block": "redstone_lamp",
+          "projected_region_pixels": [
+            103,
+            244,
+            317,
+            492
+          ],
+          "foreground_pixels": 38843,
+          "foreground_fraction": 0.731892523364486,
+          "visible_texture_color_count": 1497
+        }
+      ],
+      "no_pixels_outside_projected_blocks": true,
+      "no_floor_shadow_glow_or_overlay": true,
+      "png_sha256": "4354aecbe1d341c23946cadfe205511a3e16907e86bb59e3678744fe460830ce"
+    }
+  ],
+  "single_owner_selected_candidate": true
+}

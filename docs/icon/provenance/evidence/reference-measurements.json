@@ -1,0 +1,225 @@
+{
+  "resources": {
+    "cgroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/render-blender.service",
+    "cpu_weight": 20,
+    "cpu_max": "300000 100000",
+    "affinity": [
+      0,
+      2
+    ],
+    "threads": 2,
+    "background": true,
+    "display": null,
+    "audio": null,
+    "gpu": null
+  },
+  "references": {
+    "legacy": {
+      "source": "/home/thomas/01_TM/Coding/Websites/brainage04.github.io/.local-icon-variants/round3/blender-q/legacy-hub-down-left-1.blend",
+      "measured": {
+        "camera_matrix": [
+          [
+            0.7071067094802856,
+            -0.4082484245300293,
+            0.5773503184318542,
+            8.485280990600586
+          ],
+          [
+            0.70710688829422,
+            0.40824824571609497,
+            -0.5773501992225647,
+            -8.485280990600586
+          ],
+          [
+            6.959331955158632e-08,
+            0.8164965510368347,
+            0.5773503184318542,
+            8.935280799865723
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "camera_location": [
+          8.485280990600586,
+          -8.485280990600586,
+          8.935280799865723
+        ],
+        "camera_target": [
+          0.0,
+          0.0,
+          0.44999998807907104
+        ],
+        "projection": "ORTHO",
+        "orthographic_scale": 7.150000095367432,
+        "measured_yaw_degrees": 45.0,
+        "measured_pitch_degrees": 35.264395259580475,
+        "background_linear_rgba": [
+          0.004000000189989805,
+          0.003000000026077032,
+          0.0020000000949949026,
+          1.0
+        ],
+        "background_strength": 1.0,
+        "view": [
+          "Standard",
+          "None",
+          0.0,
+          1.0
+        ],
+        "dither": 0.0,
+        "denoising": false
+      },
+      "lighting_parameters": {
+        "era": "legacy",
+        "face_multipliers": {
+          "up": 1,
+          "north": 0.8,
+          "south": 0.8,
+          "east": 0.6,
+          "west": 0.6,
+          "down": 0.5
+        },
+        "sky_level": 15,
+        "sky_color": [
+          1,
+          1,
+          1
+        ],
+        "sun_brightness": 1,
+        "brightness_falloff": "(level/15)/(4-3*level/15)",
+        "block_levels_sampled": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "emission_levels": {
+          "enchanting_table": 7,
+          "ender_chest": 7,
+          "brewing_stand": 1
+        },
+        "torch_flicker": 0,
+        "gamma_setting": 0,
+        "night_vision": 0,
+        "darkness": 0,
+        "boss_overlay": 0,
+        "ao": false,
+        "sampling": "Per-face center offset into air; open-sky 15; unobstructed Manhattan source falloff. Not sampled from a Minecraft world save.",
+        "legacy_lightmap": "EntityRenderer.updateLightmap: torch multiplier1.5; nonlinear RGB torch tint; two .96*x+.03 passes; integer8-bit quantization.",
+        "modern_lightmap": "26.2 lightmap.fsh; SkyFactor=BlockFactor=1; AmbientColor=(.03,.03,.03); BlockLightTint=(1,.9,.75); BrightnessFactor=0.",
+        "entity_ambient": 0.4,
+        "entity_diffuse": 0.6
+      }
+    },
+    "modern": {
+      "source": "/home/thomas/01_TM/Coding/Websites/brainage04.github.io/.local-icon-variants/round3/blender-q/modern-hub-down-left-1.blend",
+      "measured": {
+        "camera_matrix": [
+          [
+            0.7071067094802856,
+            -0.4082484245300293,
+            0.5773503184318542,
+            8.485280990600586
+          ],
+          [
+            0.70710688829422,
+            0.40824824571609497,
+            -0.5773501992225647,
+            -8.485280990600586
+          ],
+          [
+            6.959331955158632e-08,
+            0.8164965510368347,
+            0.5773503184318542,
+            8.935280799865723
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "camera_location": [
+          8.485280990600586,
+          -8.485280990600586,
+          8.935280799865723
+        ],
+        "camera_target": [
+          0.0,
+          0.0,
+          0.44999998807907104
+        ],
+        "projection": "ORTHO",
+        "orthographic_scale": 6.900000095367432,
+        "measured_yaw_degrees": 45.0,
+        "measured_pitch_degrees": 35.264395259580475,
+        "background_linear_rgba": [
+          0.0024999999441206455,
+          0.0035000001080334187,
+          0.006000000052154064,
+          1.0
+        ],
+        "background_strength": 1.0,
+        "view": [
+          "Standard",
+          "None",
+          0.0,
+          1.0
+        ],
+        "dither": 0.0,
+        "denoising": false
+      },
+      "lighting_parameters": {
+        "era": "modern",
+        "face_multipliers": {
+          "up": 1,
+          "north": 0.8,
+          "south": 0.8,
+          "east": 0.6,
+          "west": 0.6,
+          "down": 0.5
+        },
+        "sky_level": 15,
+        "sky_color": [
+          1,
+          1,
+          1
+        ],
+        "sun_brightness": 1,
+        "brightness_falloff": "(level/15)/(4-3*level/15)",
+        "block_levels_sampled": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "emission_levels": {
+          "enchanting_table": 7,
+          "ender_chest": 7,
+          "brewing_stand": 1
+        },
+        "torch_flicker": 0,
+        "gamma_setting": 0,
+        "night_vision": 0,
+        "darkness": 0,
+        "boss_overlay": 0,
+        "ao": false,
+        "sampling": "Per-face center offset into air; open-sky 15; unobstructed Manhattan source falloff. Not sampled from a Minecraft world save.",
+        "legacy_lightmap": "EntityRenderer.updateLightmap: torch multiplier1.5; nonlinear RGB torch tint; two .96*x+.03 passes; integer8-bit quantization.",
+        "modern_lightmap": "26.2 lightmap.fsh; SkyFactor=BlockFactor=1; AmbientColor=(.03,.03,.03); BlockLightTint=(1,.9,.75); BrightnessFactor=0.",
+        "entity_ambient": 0.4,
+        "entity_diffuse": 0.6
+      }
+    }
+  }
+}

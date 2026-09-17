@@ -1,0 +1,12 @@
+{
+  "entries": [
+    {
+      "project": "FabricModdingConventions",
+      "label": "Owner-selected conventions hub",
+      "path": "blender-ab/conventions2-selected-owner-layout.png",
+      "method": "Headless Blender CLI, Cycles CPU, 2 threads, CPUWeight=20, shared quota<=3 cores; exact reference scene camera and shader with canonical client-jar block models",
+      "source": "Minecraft 26.2 client assets from /home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar; blender-q/modern-hub-down-left-1.blend and facing-table.json; see asset-provenance.json and source-snapshot.json",
+      "notes": "Owner-selected exact block layout, replacing and retiring all five earlier conventions2 candidates. Exact owner-specified layout: crafting table in the middle; redstone lamp top-left; note block top-center; observer top-right; target bottom-left; jukebox bottom-center; lectern bottom-right. Middle-left and middle-right remain empty. Preserves the approved modern template camera, scale, seven-slot floating arrangement, background, materials and lighting. Exact modern camera, seven slot positions, unit block scale, vanilla daylight shader and near-black reference background retained; no floor, architecture, connectors, effects or text. Measured yaw 45.000000000 degrees, pitch 35.264395260 degrees; zero camera delta from modern reference. Blender 5.1.1; Cycles CPU; 32 samples; 2.154895s. Saved .py, packed .blend, metadata and verification accompany this 1024x1024 PNG. Scripts are saved untracked and hash-recorded, not committed, per local-only policy."
+    }
+  ]
+}
