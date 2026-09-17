@@ -87,7 +87,11 @@ public final class FabricModConventionsPlugin implements Plugin<Project> {
     private static void configureSourceLayout(Project project, ModSide modSide) {
         LoomGradleExtensionAPI loom = project.getExtensions().getByType(LoomGradleExtensionAPI.class);
         String modId = requiredProperty(project, "mod_id");
-        if (modSide == ModSide.BOTH) {
+        // Idempotent on purpose: the multi-loader plug-in also needs the split, and calling
+        // splitEnvironmentSourceSets twice aborts plugin application with "The value for extension
+        // 'loom' property 'minecraftJarConfiguration' is final and cannot be changed any further".
+        SourceSetContainer existingSourceSets = project.getExtensions().getByType(SourceSetContainer.class);
+        if (modSide == ModSide.BOTH && existingSourceSets.findByName("client") == null) {
             loom.splitEnvironmentSourceSets();
             SourceSetContainer sourceSets = project.getExtensions().getByType(SourceSetContainer.class);
             SourceSet main = sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME);

@@ -197,10 +197,9 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
         fabric.getPluginManager().apply(ARCHITECTURY_LOOM_NO_REMAP);
         fabric.getPluginManager().apply(ARCHITECTURY_LOOM);
         LoomGradleExtensionAPI loom = fabric.getExtensions().getByType(LoomGradleExtensionAPI.class);
-        // Do not split the source sets here: the recorder plug-in applies fabric-mod-conventions,
-        // whose configureSourceLayout already splits them for mod_side=both. Splitting twice
-        // aborts plugin application with "The value for extension 'loom' property
-        // 'minecraftJarConfiguration' is final and cannot be changed any further".
+        if (property(root, "mod_side", "both").equalsIgnoreCase("both")) {
+            loom.splitEnvironmentSourceSets();
+        }
         fabric.getPluginManager().apply(RECORDER_PLUGIN);
         fabric.getPluginManager().apply(PRODUCTION_GAMETESTS_PLUGIN);
         fabric.getPluginManager().apply(WORKSPACE_DEPENDENCIES_PLUGIN);
