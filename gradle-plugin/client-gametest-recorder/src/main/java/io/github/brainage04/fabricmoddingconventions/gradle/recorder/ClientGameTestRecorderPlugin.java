@@ -61,9 +61,22 @@ public final class ClientGameTestRecorderPlugin implements Plugin<Project> {
             task.getOutputs().upToDateWhen(_ -> false);
         });
 
-        project.afterEvaluate(_ -> project.getTasks()
-                .matching(task -> task.getName().equals("runClientGameTest"))
-                .configureEach(task -> configureRunClientGameTest(project, extension, prepareTask, task)));
+        // The multi-loader conventions point the recorder at the production client run instead, and
+        // in that layout loom's own clientGameTest run must keep its directory: re-pointing it at the
+        // recorder directory makes it share the production client run's directory, which Gradle
+        // rejects whenever runClientGameTest selects both tasks.
+        project.afterEvaluate(_ -> {
+            String configuredRun = project.getTasks()
+                    .named("recordClientGameTest", RecordClientGameTestTask.class)
+                    .map(task -> task.getRunTaskName().getOrElse(""))
+                    .getOrElse("");
+            if (!configuredRun.endsWith("runClientGameTest")) {
+                return;
+            }
+            project.getTasks()
+                    .matching(task -> task.getName().equals("runClientGameTest"))
+                    .configureEach(task -> configureRunClientGameTest(project, extension, prepareTask, task));
+        });
     }
 
     static String clientGameTestTaskPath(String projectPath) {
