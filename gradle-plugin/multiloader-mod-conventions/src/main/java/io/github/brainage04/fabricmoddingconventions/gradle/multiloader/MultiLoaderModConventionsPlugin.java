@@ -141,8 +141,14 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
                 repository.patternLayout(layout -> layout.artifact("[artifact]-[revision].[ext]"));
                 repository.metadataSources(metadata -> metadata.artifact());
                 repository.content(content -> {
+                    // The sibling maven publication uses io.github.brainage04, while the
+                    // release-fallback declarations some mods still carry use github.brainage04.
+                    // The ivy pattern ignores the group, so both must stay allowed or one of the
+                    // two paths stops resolving.
                     content.includeModule("io.github.brainage04", "hudrendererlib");
+                    content.includeModule("github.brainage04", "hudrendererlib");
                     content.includeModule("io.github.brainage04", "hudrendererlib-neoforge");
+                    content.includeModule("github.brainage04", "hudrendererlib-neoforge");
                 });
             });
         }
