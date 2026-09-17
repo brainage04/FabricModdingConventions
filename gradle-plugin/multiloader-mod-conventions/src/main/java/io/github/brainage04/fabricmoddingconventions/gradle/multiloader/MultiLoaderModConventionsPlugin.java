@@ -301,13 +301,19 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
 
         fabric.getTasks().named("recordClientGameTest", RecordClientGameTestTask.class)
                 .configure(task -> task.getRunTaskName().set("runProductionClientGameTest"));
-        // matching(...) rather than named(...): loom registers the clientGameTest run later, when the
-        // GameTest source set exists, so named() aborts plugin application with
-        // "RunConfigSettings with name 'clientGameTest' not found".
+        // In this layout the recorder drives :fabric:runProductionClientGameTest, so loom's own
+        // clientGameTest run is unused. It must not exist: the recorder points it at the recorder
+        // directory, which is also the production client run's directory, and Gradle then rejects
+        // the graph ("uses this output of task ':fabric:runProductionClientGameTest' without
+        // declaring an explicit or implicit dependency") whenever `runClientGameTest` selects both
+        // the root task and loom's task. Removing the run config before loom creates the task keeps
+        // only the root task.
         LoomGradleExtensionAPI loom = fabric.getExtensions().getByType(LoomGradleExtensionAPI.class);
-        loom.getRuns().matching(run -> run.getName().equals("clientGameTest")).configureEach(run -> run.setRunDir(
-                fabric.getLayout().getBuildDirectory().dir("run/loomClientGameTest").get().getAsFile().getAbsolutePath()
-        ));
+        if (loom.getRuns().findByName("clientGameTest") != null) {
+            loom.getRuns().named("clientGameTest").configure(run -> run.setRunDir(
+                    fabric.getLayout().getBuildDirectory().dir("run/loomClientGameTest").get().getAsFile().getAbsolutePath()
+            ));
+        }
         fabric.getTasks().named("prepareClientGameTestRun").configure(task ->
                 task.mustRunAfter("prepareProductionGameTestRuns"));
         fabric.getTasks().matching(task -> task.getName().equals("runProductionClientGameTest"))
