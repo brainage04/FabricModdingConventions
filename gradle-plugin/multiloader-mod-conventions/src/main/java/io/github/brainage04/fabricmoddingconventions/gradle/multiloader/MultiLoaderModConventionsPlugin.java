@@ -309,11 +309,18 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
         // the root task and loom's task. Removing the run config before loom creates the task keeps
         // only the root task.
         LoomGradleExtensionAPI loom = fabric.getExtensions().getByType(LoomGradleExtensionAPI.class);
-        if (loom.getRuns().findByName("clientGameTest") != null) {
-            loom.getRuns().named("clientGameTest").configure(run -> run.setRunDir(
-                    fabric.getLayout().getBuildDirectory().dir("run/loomClientGameTest").get().getAsFile().getAbsolutePath()
-            ));
-        }
+        // The recorder re-points loom's clientGameTest run at the recorder directory from its own
+        // afterEvaluate, which runs after this apply block, so the override has to be registered
+        // later as well. Otherwise loom's run task shares the production client run's directory and
+        // Gradle rejects the graph when `runClientGameTest` selects both the root task and loom's.
+        fabric.afterEvaluate(project -> {
+            LoomGradleExtensionAPI loomApi = project.getExtensions().getByType(LoomGradleExtensionAPI.class);
+            if (loomApi.getRuns().findByName("clientGameTest") != null) {
+                String loomRunDir = project.getLayout().getBuildDirectory()
+                        .dir("run/loomClientGameTest").get().getAsFile().getAbsolutePath();
+                loomApi.getRuns().named("clientGameTest").configure(run -> run.setRunDir(loomRunDir));
+            }
+        });
         fabric.getTasks().named("prepareClientGameTestRun").configure(task ->
                 task.mustRunAfter("prepareProductionGameTestRuns"));
         fabric.getTasks().matching(task -> task.getName().equals("runProductionClientGameTest"))
