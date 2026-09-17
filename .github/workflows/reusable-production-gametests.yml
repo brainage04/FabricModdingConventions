@@ -74,6 +74,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v7
         with:
+          retention-days: 3
           name: production-gametest-reports
           path: |
             **/build/reports/

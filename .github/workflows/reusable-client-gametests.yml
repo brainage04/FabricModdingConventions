@@ -134,6 +134,7 @@ jobs:
         if: always() && steps.client-test-support.outputs.present == 'true' && inputs.record_client_gametests
         uses: actions/upload-artifact@v7
         with:
+          retention-days: 3
           name: client-gametest-recordings
           path: build/recordings/
 
@@ -141,6 +142,7 @@ jobs:
         if: failure() && steps.client-test-support.outputs.present == 'true'
         uses: actions/upload-artifact@v7
         with:
+          retention-days: 3
           name: client-gametest-reports
           path: |
             **/build/reports/

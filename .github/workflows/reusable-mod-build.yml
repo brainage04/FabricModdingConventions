@@ -111,6 +111,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v7
         with:
+          retention-days: 3
           name: reports
           path: |
             **/build/reports/
@@ -119,5 +120,6 @@ jobs:
       - name: capture build artifacts
         uses: actions/upload-artifact@v7
         with:
+          retention-days: 3
           name: Artifacts
           path: build/libs/
