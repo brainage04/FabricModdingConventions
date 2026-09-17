@@ -4,7 +4,7 @@
   "baseline": {
     "minecraftVersion": "26.2",
     "loaderVersion": "0.19.3",
-    "fabricApiVersion": "0.155.0+26.2",
+    "fabricApiVersion": "0.156.0+26.2",
     "javaVersion": "25",
     "conventionsVersion": "2.4.1"
   },
@@ -22,7 +22,10 @@
       "platform": "Fabric and NeoForge server",
       "status": "active",
       "managed": true,
-      "recording": {"enabled": true, "profile": "showcase"}
+      "recording": {
+        "enabled": true,
+        "profile": "showcase"
+      }
     },
     {
       "name": "BrainageHUD",
@@ -30,7 +33,10 @@
       "platform": "Fabric and NeoForge client",
       "status": "active",
       "managed": true,
-      "recording": {"enabled": true, "profile": "showcase"}
+      "recording": {
+        "enabled": true,
+        "profile": "showcase"
+      }
     },
     {
       "name": "BrainageLib",
@@ -38,7 +44,10 @@
       "platform": "Fabric and NeoForge server library",
       "status": "active",
       "managed": true,
-      "recording": {"enabled": true, "profile": "showcase"}
+      "recording": {
+        "enabled": true,
+        "profile": "showcase"
+      }
     },
     {
       "name": "BrainageMinigames",
@@ -46,7 +55,10 @@
       "platform": "Fabric and NeoForge server",
       "status": "active",
       "managed": true,
-      "recording": {"enabled": true, "profile": "showcase"}
+      "recording": {
+        "enabled": true,
+        "profile": "showcase"
+      }
     },
     {
       "name": "BrainageServerUtils",
@@ -54,7 +66,10 @@
       "platform": "Fabric and NeoForge server",
       "status": "active",
       "managed": true,
-      "recording": {"enabled": true, "profile": "showcase"}
+      "recording": {
+        "enabled": true,
+        "profile": "showcase"
+      }
     },
     {
       "name": "DimensionStructureVariants",
@@ -62,7 +77,10 @@
       "platform": "Fabric and NeoForge server",
       "status": "active",
       "managed": true,
-      "recording": {"enabled": true, "profile": "showcase"}
+      "recording": {
+        "enabled": true,
+        "profile": "showcase"
+      }
     },
     {
       "name": "FortniteInMinecraft",
@@ -70,7 +88,10 @@
       "platform": "Fabric and NeoForge",
       "status": "active",
       "managed": true,
-      "recording": {"enabled": true, "profile": "showcase"}
+      "recording": {
+        "enabled": true,
+        "profile": "showcase"
+      }
     },
     {
       "name": "GetEnchantInfo",
@@ -78,7 +99,10 @@
       "platform": "Fabric and NeoForge client",
       "status": "active",
       "managed": true,
-      "recording": {"enabled": true, "profile": "showcase"}
+      "recording": {
+        "enabled": true,
+        "profile": "showcase"
+      }
     },
     {
       "name": "HudRendererLib",
@@ -86,7 +110,10 @@
       "platform": "Fabric and NeoForge client library",
       "status": "active",
       "managed": true,
-      "recording": {"enabled": true, "profile": "showcase"}
+      "recording": {
+        "enabled": true,
+        "profile": "showcase"
+      }
     },
     {
       "name": "IceSkates",
@@ -94,7 +121,10 @@
       "platform": "Fabric and NeoForge",
       "status": "active",
       "managed": true,
-      "recording": {"enabled": true, "profile": "showcase"}
+      "recording": {
+        "enabled": true,
+        "profile": "showcase"
+      }
     },
     {
       "name": "MagicCarpet",
@@ -102,7 +132,10 @@
       "platform": "Fabric and NeoForge",
       "status": "active",
       "managed": true,
-      "recording": {"enabled": true, "profile": "showcase"}
+      "recording": {
+        "enabled": true,
+        "profile": "showcase"
+      }
     },
     {
       "name": "BetterVillagerTrades",
@@ -110,7 +143,10 @@
       "platform": "Fabric and NeoForge server",
       "status": "active",
       "managed": true,
-      "recording": {"enabled": true, "profile": "showcase"}
+      "recording": {
+        "enabled": true,
+        "profile": "showcase"
+      }
     },
     {
       "name": "MilkablePlayers",
@@ -118,7 +154,10 @@
       "platform": "Fabric and NeoForge server with Fabric spectator recording fixture",
       "status": "active",
       "managed": true,
-      "recording": {"enabled": true, "profile": "showcase"}
+      "recording": {
+        "enabled": true,
+        "profile": "showcase"
+      }
     },
     {
       "name": "NPCAddons",
@@ -126,7 +165,10 @@
       "platform": "Fabric and NeoForge client",
       "status": "active",
       "managed": true,
-      "recording": {"enabled": true, "profile": "showcase"}
+      "recording": {
+        "enabled": true,
+        "profile": "showcase"
+      }
     },
     {
       "name": "ProceduralDungeon",
@@ -134,7 +176,10 @@
       "platform": "Fabric and NeoForge",
       "status": "active",
       "managed": true,
-      "recording": {"enabled": true, "profile": "showcase"}
+      "recording": {
+        "enabled": true,
+        "profile": "showcase"
+      }
     },
     {
       "name": "SimpleHomes",
@@ -142,7 +187,10 @@
       "platform": "Fabric and NeoForge server",
       "status": "active",
       "managed": true,
-      "recording": {"enabled": true, "profile": "showcase"}
+      "recording": {
+        "enabled": true,
+        "profile": "showcase"
+      }
     },
     {
       "name": "SimpleTPA",
@@ -150,7 +198,10 @@
       "platform": "Fabric and NeoForge server with Fabric spectator recording fixture",
       "status": "active",
       "managed": true,
-      "recording": {"enabled": true, "profile": "showcase"}
+      "recording": {
+        "enabled": true,
+        "profile": "showcase"
+      }
     },
     {
       "name": "SimpleTwitchChat",
@@ -158,7 +209,10 @@
       "platform": "Fabric and NeoForge client",
       "status": "active",
       "managed": true,
-      "recording": {"enabled": true, "profile": "showcase"}
+      "recording": {
+        "enabled": true,
+        "profile": "showcase"
+      }
     },
     {
       "name": "SpawnCommands",
@@ -166,7 +220,10 @@
       "platform": "Fabric and NeoForge server",
       "status": "active",
       "managed": true,
-      "recording": {"enabled": true, "profile": "showcase"}
+      "recording": {
+        "enabled": true,
+        "profile": "showcase"
+      }
     },
     {
       "name": "Telekinesis",
@@ -174,7 +231,10 @@
       "platform": "Fabric and NeoForge server with Fabric client recording fixture",
       "status": "active",
       "managed": true,
-      "recording": {"enabled": true, "profile": "showcase"}
+      "recording": {
+        "enabled": true,
+        "profile": "showcase"
+      }
     },
     {
       "name": "TextureAtlasGenerator",
@@ -182,7 +242,10 @@
       "platform": "Fabric and NeoForge client",
       "status": "active",
       "managed": true,
-      "recording": {"enabled": true, "profile": "showcase"}
+      "recording": {
+        "enabled": true,
+        "profile": "showcase"
+      }
     },
     {
       "name": "TwitchPlaysMinecraft",
@@ -215,7 +278,10 @@
       "platform": "Fabric and NeoForge server with Fabric client recording fixture",
       "status": "active",
       "managed": true,
-      "recording": {"enabled": true, "profile": "showcase"}
+      "recording": {
+        "enabled": true,
+        "profile": "showcase"
+      }
     },
     {
       "name": "baritone",
@@ -223,7 +289,10 @@
       "platform": "Fabric, NeoForge, and Forge upstream fork",
       "status": "upstream-style fork",
       "managed": false,
-      "recording": {"enabled": false, "reason": "Preserve upstream build structure; pathfinding is covered through TwitchPlaysMinecraft fixture scenarios"}
+      "recording": {
+        "enabled": false,
+        "reason": "Preserve upstream build structure; pathfinding is covered through TwitchPlaysMinecraft fixture scenarios"
+      }
     }
   ]
 }

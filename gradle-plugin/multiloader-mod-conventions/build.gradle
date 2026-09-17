@@ -1,0 +1,29 @@
+plugins {
+	id 'java-gradle-plugin'
+	id 'io.github.brainage04.maven-central-publishing' version "${maven_central_publishing_version}"
+}
+
+ext {
+	componentArchivesName = "multiloader-mod-conventions-gradle"
+	componentPluginId = "io.github.brainage04.multiloader-mod-conventions"
+	componentImplementationClass = "io.github.brainage04.fabricmoddingconventions.gradle.multiloader.MultiLoaderModConventionsPlugin"
+	componentDisplayName = "Multi-loader mod conventions Gradle plugin"
+	componentDescription = "Configures the common, Fabric, and NeoForge modules used by the Minecraft mod fleet."
+}
+
+apply from: rootProject.file("gradle/plugin-component.gradle")
+
+repositories {
+	maven { url = uri("https://maven.architectury.dev/") }
+	maven { url = uri("https://maven.fabricmc.net/") }
+	maven { url = uri("https://maven.neoforged.net/releases/") }
+}
+
+dependencies {
+	implementation "dev.architectury:architectury-loom:${rootProject.architectury_loom_version}"
+	implementation project(':gradle-plugin:client-gametest-recorder')
+	implementation project(':gradle-plugin:java-quality-conventions')
+	implementation project(':gradle-plugin:production-gametests')
+	implementation project(':gradle-plugin:workspace-dependencies')
+	implementation project(':gradle-plugin:mod-publishing')
+}

@@ -19,6 +19,7 @@ class PluginComponentIsolationTest {
     private static final String RECORDER_PLUGIN_ID = "io.github.brainage04.client-gametest-recorder";
     private static final String PRODUCTION_PLUGIN_ID = "io.github.brainage04.production-gametests";
     private static final String WORKSPACE_PLUGIN_ID = "io.github.brainage04.workspace-dependencies";
+    private static final String QUALITY_PLUGIN_ID = "io.github.brainage04.java-quality-conventions";
 
     @TempDir
     Path projectDir;
@@ -44,7 +45,7 @@ class PluginComponentIsolationTest {
 
     @Test
     void recorderPluginOwnsOnlyRecorderFeatures() throws IOException {
-        writeLoomFixture(RECORDER_PLUGIN_ID, """
+        writeLoomFixture(BASE_PLUGIN_ID + "'\n    id '" + RECORDER_PLUGIN_ID, """
                 tasks.register('verifyRecorderIsolation') {
                     doLast {
                         assert project.plugins.hasPlugin('net.fabricmc.fabric-loom')
@@ -64,7 +65,7 @@ class PluginComponentIsolationTest {
 
     @Test
     void productionPluginIsStandaloneAndRegistersEnabledTasks() throws IOException {
-        writeLoomFixture(PRODUCTION_PLUGIN_ID, """
+        writeLoomFixture(BASE_PLUGIN_ID + "'\n    id '" + PRODUCTION_PLUGIN_ID, """
 
                 productionGameTests {
                     includeFabricApiDependency = false
@@ -155,11 +156,24 @@ class PluginComponentIsolationTest {
         assertEquals(TaskOutcome.SUCCESS, result.task(":verifyWorkspaceRepository").getOutcome());
     }
 
+    @Test
+    void qualityChecksAreStagedByDefault() throws IOException {
+        writeFixture(QUALITY_PLUGIN_ID, false, "apply plugin: 'java'\nrepositories { mavenCentral() }");
+        Path source = projectDir.resolve("src/main/java/BadlyFormatted.java");
+        Files.createDirectories(source.getParent());
+        Files.writeString(source, "final class BadlyFormatted{}");
+
+        var result = runGradle("check");
+
+        assertEquals(TaskOutcome.SKIPPED, result.task(":spotlessJavaCheck").getOutcome());
+        assertEquals(TaskOutcome.SKIPPED, result.task(":checkstyleMain").getOutcome());
+    }
+
 
 
     @Test
     void leafPluginsApplySharedBaseWithoutDuplicates() throws IOException {
-        writeLoomFixture(RECORDER_PLUGIN_ID + "'\n    id '" + PRODUCTION_PLUGIN_ID, """
+        writeLoomFixture(BASE_PLUGIN_ID + "'\n    id '" + RECORDER_PLUGIN_ID + "'\n    id '" + PRODUCTION_PLUGIN_ID, """
                 tasks.register('verifyIdempotentComponents') {
                     doLast {
                         assert project.plugins.hasPlugin('net.fabricmc.fabric-loom')
@@ -188,7 +202,7 @@ class PluginComponentIsolationTest {
 
     @Test
     void preparationTaskWritesDeterministicOptionsFromExtensionSettings() throws IOException {
-        writeLoomFixture(RECORDER_PLUGIN_ID, """
+        writeLoomFixture(BASE_PLUGIN_ID + "'\n    id '" + RECORDER_PLUGIN_ID, """
                 clientGameTestRecorder {
                     recordingAudioDeviceProperty = 'fixtureRecordingAudioDevice'
                     minecraftOptionsVersion = '9999'

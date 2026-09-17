@@ -23,7 +23,10 @@ from typing import Any, Iterable
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 DEFAULT_MANIFEST = SCRIPT_DIR / "mod-fleet.json"
-CONVENTIONS_PLUGIN = "io.github.brainage04.client-gametest-recorder"
+RECORDER_CAPABLE_PLUGINS = (
+    "io.github.brainage04.client-gametest-recorder",
+    "io.github.brainage04.multiloader-mod-conventions",
+)
 REUSABLE_WORKFLOW_PATTERN = re.compile(
     r"brainage04/FabricModdingConventions/\.github/workflows/[^@\s]+@v([0-9]+(?:\.[0-9]+)*)"
 )
@@ -238,7 +241,7 @@ def recording_audit(
 ) -> dict[str, Any]:
     policy = entry.get("recording", {})
     enabled = bool(policy.get("enabled", False))
-    plugin_applied = CONVENTIONS_PLUGIN in build_text
+    plugin_applied = any(plugin_id in build_text for plugin_id in RECORDER_CAPABLE_PLUGINS)
     client_entrypoint = "fabric-client-gametest" in gametest_text
     handshake = "ClientGameTestRecorder.startRecording" in gametest_text
     workflow_wired = "reusable-client-gametests.yml" in workflow_text

@@ -11,11 +11,15 @@ repositories {
 	mavenLocal()
 	maven { url = uri("https://libraries.minecraft.net") }
 	maven { url = uri("https://maven.fabricmc.net/") }
+	maven { url = uri("https://maven.architectury.dev/") }
+	maven { url = uri("https://maven.neoforged.net/releases/") }
 }
 
 dependencies {
 	implementation project(":gradle-plugin:fabric-mod-conventions")
 	implementation project(":gradle-plugin:client-gametest-recorder")
+	implementation project(":gradle-plugin:java-quality-conventions")
+	implementation project(":gradle-plugin:multiloader-mod-conventions")
 	implementation project(":gradle-plugin:production-gametests")
 	implementation project(":gradle-plugin:workspace-dependencies")
 
@@ -34,6 +38,8 @@ test {
 	dependsOn(
 			":gradle-plugin:fabric-mod-conventions:publishAllPublicationsToLocalRepository",
 			":gradle-plugin:client-gametest-recorder:publishAllPublicationsToLocalRepository",
+			":gradle-plugin:java-quality-conventions:publishAllPublicationsToLocalRepository",
+			":gradle-plugin:multiloader-mod-conventions:publishAllPublicationsToLocalRepository",
 			":gradle-plugin:production-gametests:publishAllPublicationsToLocalRepository",
 			":gradle-plugin:workspace-dependencies:publishAllPublicationsToLocalRepository",
 			":gradle-plugin:maven-central-publishing:publishAllPublicationsToLocalRepository",

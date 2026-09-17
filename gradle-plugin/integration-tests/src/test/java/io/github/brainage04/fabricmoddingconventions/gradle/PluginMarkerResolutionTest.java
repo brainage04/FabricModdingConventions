@@ -23,8 +23,13 @@ class PluginMarkerResolutionTest {
             new PluginCoordinate("io.github.brainage04.production-gametests", "production-gametests-gradle"),
             new PluginCoordinate("io.github.brainage04.workspace-dependencies", "workspace-dependencies-gradle"),
             new PluginCoordinate("io.github.brainage04.maven-central-publishing", "maven-central-publishing-gradle"),
-            new PluginCoordinate("io.github.brainage04.mod-publishing", "mod-publishing-gradle")
+            new PluginCoordinate("io.github.brainage04.mod-publishing", "mod-publishing-gradle"),
+            new PluginCoordinate("io.github.brainage04.java-quality-conventions", "java-quality-conventions-gradle"),
+            new PluginCoordinate("io.github.brainage04.multiloader-mod-conventions", "multiloader-mod-conventions-gradle")
     );
+    private static final List<PluginCoordinate> APPLIED_PLUGINS = PLUGINS.stream()
+            .filter(plugin -> !plugin.id().equals("io.github.brainage04.multiloader-mod-conventions"))
+            .toList();
 
     @TempDir
     Path projectDirectory;
@@ -42,7 +47,7 @@ class PluginMarkerResolutionTest {
                 archives_base_name=publishedmarkerfixture
                 minecraft_version=26.2
                 loader_version=0.19.3
-                fabric_api_version=0.155.0+26.2
+                fabric_api_version=0.156.0+26.2
                 fabricmoddingconventions_version=%s
                 java_version=25
                 """.formatted(VERSION));
@@ -107,6 +112,9 @@ class PluginMarkerResolutionTest {
                         mavenCentral()
                         gradlePluginPortal()
                         maven { url = 'https://maven.fabricmc.net/' }
+                        maven { url = 'https://maven.architectury.dev/' }
+                        maven { url = 'https://maven.minecraftforge.net/' }
+                        maven { url = 'https://maven.neoforged.net/releases/' }
                     }
                 }
                 rootProject.name = 'published-marker-consumer'
@@ -115,11 +123,11 @@ class PluginMarkerResolutionTest {
 
     private static String consumerBuildFile() {
         String pluginDeclarations = PLUGINS.stream()
-                .map(PluginCoordinate::id)
-                .map(id -> "    id '" + id + "' version '" + VERSION + "'")
+                .map(plugin -> "    id '" + plugin.id() + "' version '" + VERSION + "'"
+                        + (APPLIED_PLUGINS.contains(plugin) ? "" : " apply false"))
                 .reduce((left, right) -> left + "\n" + right)
                 .orElseThrow();
-        String pluginAssertions = PLUGINS.stream()
+        String pluginAssertions = APPLIED_PLUGINS.stream()
                 .map(PluginCoordinate::id)
                 .map(id -> "        assert pluginManager.hasPlugin('" + id + "')")
                 .reduce((left, right) -> left + "\n" + right)

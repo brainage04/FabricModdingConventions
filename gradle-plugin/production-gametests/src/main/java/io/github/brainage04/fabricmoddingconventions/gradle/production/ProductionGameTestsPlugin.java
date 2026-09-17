@@ -1,7 +1,5 @@
 package io.github.brainage04.fabricmoddingconventions.gradle.production;
 
-import io.github.brainage04.fabricmoddingconventions.gradle.fabric.FabricModConventionsPlugin;
-import io.github.brainage04.fabricmoddingconventions.gradle.fabric.ModSide;
 import net.fabricmc.loom.api.fabricapi.FabricApiExtension;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
@@ -20,10 +18,11 @@ import java.util.List;
 public final class ProductionGameTestsPlugin implements Plugin<Project> {
     public static final String PLUGIN_ID = "io.github.brainage04.production-gametests";
     private static final String RUNTIME_LIBRARIES_CONFIGURATION = "productionGameTestRuntimeLibraries";
+    private static final String CLIENT_GAMETEST_ENABLED_PROPERTY = "fabricmoddingconventions.clientGameTest";
 
     @Override
     public void apply(Project project) {
-        project.getPluginManager().apply(FabricModConventionsPlugin.class);
+        requireFabricApi(project);
         ModSide modSide = ModSide.from(project);
         configureDevelopmentGameTests(project, modSide);
         ProductionGameTestExtension extension = project.getExtensions().create(
@@ -114,7 +113,7 @@ public final class ProductionGameTestsPlugin implements Plugin<Project> {
                         task.getJvmArgs().add("-Dfabric.client.gametest.disableNetworkSynchronizer=true");
                     }
                     task.getJvmArgs().add(
-                            "-D" + FabricModConventionsPlugin.CLIENT_GAMETEST_ENABLED_PROPERTY + "=true"
+                            "-D" + CLIENT_GAMETEST_ENABLED_PROPERTY + "=true"
                     );
                     task.getJvmArgs().addAll(productionExtension.getClientJvmArgs());
                     task.getProgramArgs().addAll(productionExtension.getClientProgramArgs());
@@ -204,8 +203,9 @@ public final class ProductionGameTestsPlugin implements Plugin<Project> {
 
     private static void addProductionFabricApiDependency(Project project, ProductionGameTestExtension extension) {
         if (project.getConfigurations().findByName("productionRuntimeMods") == null) {
-            throw new GradleException("productionGameTests requires Fabric Loom's productionRuntimeMods configuration. "
-                    + FabricModConventionsPlugin.PLUGIN_ID + " applies Loom automatically; check the configured Loom version.");
+            throw new GradleException(
+                    "productionGameTests requires a Fabric-compatible Loom plugin's productionRuntimeMods configuration."
+            );
         }
         if (extension.getIncludeFabricApiDependency().get()) {
             String propertyName = extension.getFabricApiVersionProperty().get();
@@ -220,5 +220,33 @@ public final class ProductionGameTestsPlugin implements Plugin<Project> {
                 .filter(dependency -> dependency != null && !dependency.isBlank())
                 .map(String::strip)
                 .forEach(dependency -> project.getDependencies().add("productionRuntimeMods", dependency));
+    }
+    private static void requireFabricApi(Project project) {
+        if (project.getExtensions().findByType(FabricApiExtension.class) == null) {
+            throw new GradleException(
+                    PLUGIN_ID + " requires a Fabric-compatible Loom plugin with Fabric API support to be applied first."
+            );
+        }
+    }
+
+    private enum ModSide {
+        CLIENT,
+        SERVER,
+        BOTH;
+
+        private static ModSide from(Project project) {
+            Object configured = project.findProperty("mod_side");
+            if (configured == null || configured.toString().isBlank()) {
+                return BOTH;
+            }
+            return switch (configured.toString().strip().toLowerCase()) {
+                case "client" -> CLIENT;
+                case "server" -> SERVER;
+                case "both" -> BOTH;
+                default -> throw new GradleException(
+                        PLUGIN_ID + " requires 'mod_side' to be client, server, or both."
+                );
+            };
+        }
     }
 }

@@ -9,6 +9,19 @@ from unittest.mock import patch
 import mod_fleet
 
 
+class RecordingAuditTest(unittest.TestCase):
+    def test_multiloader_conventions_supply_recorder_plugin(self) -> None:
+        audit = mod_fleet.recording_audit(
+            {"recording": {"enabled": True}},
+            "id 'io.github.brainage04.multiloader-mod-conventions'",
+            '"fabric-client-gametest": ["Example"]\nClientGameTestRecorder.startRecording()',
+            "uses: brainage04/FabricModdingConventions/.github/workflows/reusable-client-gametests.yml@v2.4.1",
+        )
+
+        self.assertTrue(audit["ready"])
+        self.assertEqual(audit["missing"], [])
+
+
 class RecordingOutputLayoutTest(unittest.TestCase):
     def test_recordings_stay_inside_timestamped_output_directory(self) -> None:
         with TemporaryDirectory() as temporary_directory:

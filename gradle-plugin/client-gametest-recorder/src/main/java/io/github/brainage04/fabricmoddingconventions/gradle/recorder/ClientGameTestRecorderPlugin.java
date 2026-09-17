@@ -1,6 +1,5 @@
 package io.github.brainage04.fabricmoddingconventions.gradle.recorder;
 
-import io.github.brainage04.fabricmoddingconventions.gradle.fabric.FabricModConventionsPlugin;
 import net.fabricmc.loom.api.LoomGradleExtensionAPI;
 import net.fabricmc.loom.task.AbstractRunTask;
 import org.gradle.api.GradleException;
@@ -20,13 +19,14 @@ import java.util.Locale;
 public final class ClientGameTestRecorderPlugin implements Plugin<Project> {
     public static final String PLUGIN_ID = "io.github.brainage04.client-gametest-recorder";
     private static final String PRODUCTION_GAMETESTS_PLUGIN_ID = "io.github.brainage04.production-gametests";
+    private static final String CLIENT_GAMETEST_ENABLED_PROPERTY = "fabricmoddingconventions.clientGameTest";
     private static final String RUNTIME_HELPER_GROUP = "io.github.brainage04";
     private static final String RUNTIME_HELPER_NAME = "fabricmoddingconventions";
     private static final String RUNTIME_PROPERTY_PREFIX = "fabricmoddingconventions.clientGameTestRecorder.";
 
     @Override
     public void apply(Project project) {
-        project.getPluginManager().apply(FabricModConventionsPlugin.class);
+        requireLoom(project);
         ClientGameTestRecorderExtension extension = project.getExtensions().create(
                 "clientGameTestRecorder",
                 ClientGameTestRecorderExtension.class,
@@ -119,7 +119,7 @@ public final class ClientGameTestRecorderPlugin implements Plugin<Project> {
         JavaExec javaExec = requireJavaExec(task);
         javaExec.jvmArgs(List.of(
                 "-Dfabric.client.gametest.disableNetworkSynchronizer=true",
-                "-D" + FabricModConventionsPlugin.CLIENT_GAMETEST_ENABLED_PROPERTY + "=true",
+                "-D" + CLIENT_GAMETEST_ENABLED_PROPERTY + "=true",
                 runtimeProperty("disableUnsecureChatToast", extension.getDisableUnsecureChatToast().get()),
                 runtimeProperty("disableRecipeToasts", extension.getDisableRecipeToasts().get()),
                 runtimeProperty("disableAdvancementToasts", extension.getDisableAdvancementToasts().get()),
@@ -141,6 +141,14 @@ public final class ClientGameTestRecorderPlugin implements Plugin<Project> {
         String managedXvfbValue = project.getProviders().environmentVariable(extension.getManagedXvfbEnv().get()).getOrNull();
         if (truthy(managedXvfbValue)) {
             loomRunTask.getUseXvfb().set(false);
+        }
+    }
+
+    private static void requireLoom(Project project) {
+        if (project.getExtensions().findByType(LoomGradleExtensionAPI.class) == null) {
+            throw new GradleException(
+                    PLUGIN_ID + " requires a Fabric-compatible Loom plugin to be applied first."
+            );
         }
     }
 

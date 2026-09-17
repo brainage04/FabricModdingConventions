@@ -14,11 +14,11 @@ ext {
 apply from: rootProject.file("gradle/plugin-component.gradle")
 
 repositories {
+	maven { url = uri("https://maven.architectury.dev/") }
 	maven { url = uri("https://libraries.minecraft.net") }
 	maven { url = uri("https://maven.fabricmc.net/") }
 }
 
 dependencies {
-	implementation project(":gradle-plugin:fabric-mod-conventions")
-	compileOnly "net.fabricmc:fabric-loom:${rootProject.loom_version}"
+	compileOnly "dev.architectury:architectury-loom:${rootProject.architectury_loom_version}"
 }

@@ -1,15 +1,15 @@
-name: reusable Fabric mod build
+name: reusable multi-loader mod build
 
 on:
   workflow_call:
     inputs:
       java_version:
-        description: JDK version used by the Fabric build
+        description: JDK version used by the multi-loader build
         required: false
         default: '25'
         type: string
       check_scripts:
-        description: Run shellcheck and shfmt against template scripts
+        description: Run shellcheck and shfmt against repository scripts
         required: false
         default: false
         type: boolean
