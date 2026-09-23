@@ -15,6 +15,7 @@ import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ProjectDependency;
 import org.gradle.api.plugins.BasePluginExtension;
 import org.gradle.api.plugins.JavaPluginExtension;
+import org.gradle.api.tasks.JavaExec;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.Sync;
@@ -178,7 +179,16 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
                 "compileOnly",
                 "net.fabricmc:fabric-loader:" + requiredProperty(root, "loader_version")
         );
-        configureAccessWidener(root, common.getExtensions().getByType(LoomGradleExtensionAPI.class));
+        LoomGradleExtensionAPI loom = common.getExtensions().getByType(LoomGradleExtensionAPI.class);
+        configureAccessWidener(root, loom);
+        // Loom gives every project default client and server runs, but common has no loader
+        // metadata, so its game is plain Minecraft without the mod. Removing the runs drops
+        // their IDE run configurations and disables runClient/runServer, which
+        // `./gradlew runClient` would otherwise launch alongside the Fabric and NeoForge
+        // clients. Loom leaves runClientRenderDoc enabled after that, so every task that
+        // launches a JVM is disabled as well.
+        loom.getRuns().clear();
+        common.getTasks().withType(JavaExec.class).configureEach(task -> task.setEnabled(false));
 
         SourceSet commonMain = sourceSets(common).getByName(SourceSet.MAIN_SOURCE_SET_NAME);
         File generatedResources = common.file("src/main/generated");
