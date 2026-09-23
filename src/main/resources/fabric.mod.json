@@ -12,6 +12,7 @@
 		"sources": "https://github.com/brainage04/FabricModdingConventions"
 	},
 	"license": "MIT",
+	"icon": "assets/fabricmoddingconventions/icon.png",
 	"environment": "client",
 	"entrypoints": {
 		"client": [
