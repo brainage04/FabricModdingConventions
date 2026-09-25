@@ -40,7 +40,7 @@ Available components:
 - `io.github.brainage04.fabric-mod-conventions` — applies Fabric Loom and owns project identity, standard Minecraft/Fabric dependencies and repositories, Java compile/test conventions, side-aware Loom source layout, access-widener discovery, sources JAR generation, typed `fabric.mod.json` expansion, and license inclusion.
 - `io.github.brainage04.client-gametest-recorder` — applies the base plugin, owns `clientGameTestRecorder`, `prepareClientGameTestRun`, and `recordClientGameTest`, and wires the runtime helper into GameTest compilation and production runs when the production component is present.
 - `io.github.brainage04.production-gametests` — applies the base plugin, creates and registers the `gametest` source set from `mod_id`, configures Loom's development GameTest runs from `mod_side`, and owns the `productionGameTests` extension and production run tasks without forcing the recorder component.
-- `io.github.brainage04.workspace-dependencies` — declares module-filtered sibling Maven repositories before Maven Central so local publications are preferred without requiring them.
+- `io.github.brainage04.workspace-dependencies` — declares module-filtered sibling Maven repositories before Maven Central so local publications are preferred without requiring them, and optionally gives every development client the same Minecraft options.
 - `io.github.brainage04.maven-central-publishing` — configures shared POM metadata, local and Central publication repositories, GPG-agent or in-memory signing, and Central Portal upload orchestration.
 - `io.github.brainage04.mod-publishing` — configures validated, opt-in GitHub, Modrinth, and CurseForge distribution tasks around the upstream Mod Publish Plugin.
 
@@ -72,6 +72,14 @@ workspaceDependencies {
 ```
 
 Sibling repositories default to `../<name>/build/local-repo`, are restricted to the declared Maven module, and are ordered before Maven Central. Gradle uses the local publication when the requested version is present, falls back to Maven Central when it is absent, and reports an ordinary resolution failure when neither repository contains it. `siblingDirectory` and `localRepository` can override the default layout.
+
+To launch every development client with one machine-wide `options.txt` (keybinds, video, audio), point `fabricmoddingconventions.devClientOptions` at it in `~/.gradle/gradle.properties`:
+
+```properties
+fabricmoddingconventions.devClientOptions=/home/you/.local/share/PrismLauncher/instances/<instance>/minecraft/options.txt
+```
+
+`runClient` (and `runFabricClient` in multiloader projects) then copies that file into the Loom `client` run directory before each launch. The file is the source of truth: settings changed in a development client are overwritten on its next launch. Without the property nothing is copied, and a missing file only logs a warning. The multiloader conventions apply this plugin to every loader project, so Fabric and NeoForge clients share the file.
 
 ### Maven Central publishing
 

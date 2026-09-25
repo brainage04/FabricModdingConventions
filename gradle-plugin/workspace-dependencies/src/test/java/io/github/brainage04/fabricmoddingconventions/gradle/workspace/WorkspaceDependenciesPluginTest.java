@@ -190,6 +190,47 @@ class WorkspaceDependenciesPluginTest {
         assertEquals(TaskOutcome.SUCCESS, result.task(":verifyLateDeclaration").getOutcome());
     }
 
+    @Test
+    void runClientLaunchesWithTheSharedOptionsFile() throws IOException {
+        Path shared = temporaryDirectory.resolve("launcher instance/options.txt");
+        Files.createDirectories(shared.getParent());
+        Files.writeString(shared, "guiScale:3\n");
+        writeRunClientFixture();
+        Files.writeString(projectDirectory.resolve("run/client/options.txt"), "guiScale:0\n");
+
+        BuildResult result = runGradle("runClient", "-P" + DevClientOptions.PROPERTY + "=" + shared);
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":runClient").getOutcome());
+        assertEquals("guiScale:3\n", Files.readString(projectDirectory.resolve("run/client/options.txt")));
+    }
+
+    @Test
+    void runClientKeepsItsOwnOptionsWithoutTheProperty() throws IOException {
+        writeRunClientFixture();
+        Files.writeString(projectDirectory.resolve("run/client/options.txt"), "guiScale:0\n");
+
+        BuildResult result = runGradle("runClient");
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":runClient").getOutcome());
+        assertEquals("guiScale:0\n", Files.readString(projectDirectory.resolve("run/client/options.txt")));
+    }
+
+    /** A stand-in for Loom's development client run: a JavaExec task named runClient in its own run directory. */
+    private void writeRunClientFixture() throws IOException {
+        Files.createDirectories(projectDirectory.resolve("run/client"));
+        Files.createDirectories(projectDirectory.resolve("src/main/java"));
+        Files.writeString(projectDirectory.resolve("src/main/java/Probe.java"),
+                "public class Probe { public static void main(String[] args) { } }\n");
+        writeBuildFile("""
+                apply plugin: 'java'
+
+                tasks.register('runClient', JavaExec) {
+                    workingDir = file('run/client')
+                    classpath = sourceSets.main.runtimeClasspath
+                    mainClass = 'Probe'
+                }
+                """);
+    }
 
     private void writeBuildFile(String configuration) throws IOException {
         Files.writeString(projectDirectory.resolve("build.gradle"), """

@@ -15,7 +15,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Configures local-first sibling Maven repositories with Maven Central fallback. */
+/**
+ * Machine-local development conveniences: local-first sibling Maven repositories with Maven Central fallback, and a
+ * shared Minecraft options file for development clients.
+ */
 public final class WorkspaceDependenciesPlugin implements Plugin<Project> {
     public static final String PLUGIN_ID = "io.github.brainage04.workspace-dependencies";
 
@@ -36,7 +39,7 @@ public final class WorkspaceDependenciesPlugin implements Plugin<Project> {
                     state.repositoriesMayHaveBeenUsed = true;
                 }));
         project.afterEvaluate(_ -> configureRepositories.run());
-
+        DevClientOptions.configure(project);
     }
 
     private static void configureRepositories(
