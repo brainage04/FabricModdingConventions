@@ -1,131 +1,56 @@
 # FabricModdingConventions
 
-Reusable Fabric modding conventions for Minecraft mods.
+Shared Gradle plugins, GitHub workflows and client GameTest helpers for my Minecraft mods.
 
-The library provides:
+## Plugins
 
-- client GameTest recording helpers and a file-signal handshake between the Gradle recorder task and the running test client;
-- a lightweight recording HUD for scenario step/log output;
-- defensive helpers for launching and joining an in-process dedicated server from Fabric client GameTests;
-- a compiled Gradle plugin for deterministic client GameTest run setup;
-- a reusable `recordClientGameTest` Gradle task using `GTR_*` environment variables;
-- opt-in Fabric Loom production GameTest tasks.
+| Plugin (`io.github.brainage04.…`) | Apply to | Purpose |
+| --- | --- | --- |
+| `multiloader-mod-conventions` | root of a `common`/`fabric`/`neoforge` mod | **The standard entry point.** Configures all three modules with Architectury Loom and applies every plugin below except `fabric-mod-conventions` and `maven-central-publishing`. |
+| `fabric-mod-conventions` | single-loader Fabric project | Fabric Loom, project identity, standard dependencies and repositories, Java settings, side-aware source layout, access widener, sources JAR, `fabric.mod.json` expansion, license in the JAR. |
+| `client-gametest-recorder` | Fabric project | `recordClientGameTest`: records client GameTests to MP4 in an isolated Xvfb display and audio sink. Adds the runtime helpers to the `gametest` source set. |
+| `production-gametests` | Fabric project | Creates the `gametest` source set and runs GameTests against the packaged mod through Loom's production client and server. |
+| `workspace-dependencies` | any project | Prefers sibling checkouts' `build/local-repo` over Maven Central, and can share one dev-client `options.txt`. |
+| `java-quality-conventions` | root project | Spotless (google-java-format, AOSP), Checkstyle and javac lint; enforced only with `-PstrictQuality=true`. |
+| `mod-publishing` | Fabric/NeoForge project | Opt-in GitHub, Modrinth and CurseForge release tasks around the Mod Publish Plugin. |
+| `maven-central-publishing` | libraries only | POM metadata, signing and Central Portal upload. |
 
-The recorder task requires `ffmpeg`/`ffprobe` with X11 capture, PulseAudio input, H.264/AAC encoding and mux-packet statistics support, Xvfb/`xdpyinfo`, and `pactl` with access to a PulseAudio-compatible server. Set `PULSE_SERVER` to a private server for a fully isolated recording session.
+Plugins are resolved from `../FabricModdingConventions/build/local-repo` when present, otherwise from this repository's GitHub releases. Consumers map each plugin ID to its module in `settings.gradle`; copy `pluginManagement` from ModernMinecraftModTemplate.
 
-## Dependency
+## Multi-loader mods
 
 ```gradle
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    implementation "io.github.brainage04:fabricmoddingconventions:<version>"
+plugins {
+    id "io.github.brainage04.multiloader-mod-conventions" version "${fabricmoddingconventions_version}"
 }
 ```
 
-For local development with a sibling checkout, publish the library to its local build repository first:
+Requires subprojects `common`, `fabric` and `neoforge`, and these Gradle properties: `mod_id`, `mod_name`, `mod_version`, `maven_group`, `archives_base_name`, `java_version`, `minecraft_version`, `loader_version`, `fabric_api_version`, `neoforge_version`, `fabricmoddingconventions_version`. `mod_side` (`both`, `client` or `server`; default `both`) splits Fabric client sources for `both`, turns off Fabric production server GameTests for `client`, and sets the CurseForge environment.
 
-```shell
-./gradlew --no-daemon publishAllPublicationsToLocalRepository
+- Shared GameTests go in `common/src/gametest/java`; both loaders compile them.
+- The access widener is `<mod_id>.accesswidener` in `common` (or `fabric`); the NeoForge access transformer is `neoforge/src/main/resources/META-INF/accesstransformer.cfg`.
+- Root tasks: `runFabricClient`, `runNeoForgeClient`, `runClientGameTest`, `runNeoForgeGameTests`, `runAllProductionGameTests`, `recordClientGameTest`, `collectReleaseArtifacts`.
+
+Turn off parts that don't apply:
+
+```gradle
+multiLoaderModConventions {
+    fabricClientGameTests = true
+    fabricServerGameTests = true
+    neoForgeGameTests = true
+    publishing = true
+}
 ```
 
-Consumers in this workspace prefer `../FabricModdingConventions/build/local-repo`, then use normal plugin repositories when the component is published there, and finally resolve the Gradle module metadata and artifacts attached to the matching public GitHub Release.
+## Single-loader Fabric mods
 
-## Gradle plugin components
+Apply `fabric-mod-conventions` plus the leaf plugins you need. It requires the multi-loader properties minus `neoforge_version`, and uses this layout:
 
-Available components:
-
-- `io.github.brainage04.fabric-mod-conventions` — applies Fabric Loom and owns project identity, standard Minecraft/Fabric dependencies and repositories, Java compile/test conventions, side-aware Loom source layout, access-widener discovery, sources JAR generation, typed `fabric.mod.json` expansion, and license inclusion.
-- `io.github.brainage04.client-gametest-recorder` — applies the base plugin, owns `clientGameTestRecorder`, `prepareClientGameTestRun`, and `recordClientGameTest`, and wires the runtime helper into GameTest compilation and production runs when the production component is present.
-- `io.github.brainage04.production-gametests` — applies the base plugin, creates and registers the `gametest` source set from `mod_id`, configures Loom's development GameTest runs from `mod_side`, and owns the `productionGameTests` extension and production run tasks without forcing the recorder component.
-- `io.github.brainage04.workspace-dependencies` — declares module-filtered sibling Maven repositories before Maven Central so local publications are preferred without requiring them, and optionally gives every development client the same Minecraft options.
-- `io.github.brainage04.maven-central-publishing` — configures shared POM metadata, local and Central publication repositories, GPG-agent or in-memory signing, and Central Portal upload orchestration.
-- `io.github.brainage04.mod-publishing` — configures validated, opt-in GitHub, Modrinth, and CurseForge distribution tasks around the upstream Mod Publish Plugin.
-
-The recorder and production GameTest components apply the base plugin internally, so consumers apply only the leaf capabilities they need. Workspace dependency policy and both publishing plugins remain explicit consumer opt-ins.
-
-`mod_side` is the stable environment model:
-
-| Value | Main source layout | Development client GameTests | Development server GameTests |
+| `mod_side` | Main source layout | Client GameTests | Server GameTests |
 | --- | --- | --- | --- |
-| `both` | `src/main` plus split `src/client` | enabled | enabled |
-| `client` | client-only code in `src/main` | enabled | disabled |
-| `server` | server/common code in `src/main` | disabled | enabled |
-
-The reusable workflows `reusable-mod-build.yml`, `reusable-client-gametests.yml`, `reusable-production-gametests.yml`, and `reusable-neoforge-gametests.yml` own standard build, client GameTest/recording, Fabric production GameTest, and NeoForge GameTest orchestration. `reusable-multiloader-release.yml` owns the shared Fabric/NeoForge GitHub, Modrinth, and CurseForge release matrix. Consumer workflows provide only trigger policy, profiles, artifact patterns, project identifiers, and genuine dependency preparation.
-
-```gradle
-plugins {
-    id "io.github.brainage04.workspace-dependencies" version "<version>"
-}
-
-workspaceDependencies {
-    siblingMaven("HudRendererLib") {
-        coordinate.set("io.github.brainage04:hudrendererlib:${hudrendererlib_version}")
-    }
-    siblingMaven("baritone") {
-        coordinate.set("io.github.brainage04:baritone-fabric:${baritone_version}")
-    }
-}
-```
-
-Sibling repositories default to `../<name>/build/local-repo`, are restricted to the declared Maven module, and are ordered before Maven Central. Gradle uses the local publication when the requested version is present, falls back to Maven Central when it is absent, and reports an ordinary resolution failure when neither repository contains it. `siblingDirectory` and `localRepository` can override the default layout.
-
-To launch every development client with one machine-wide `options.txt` (keybinds, video, audio), point `fabricmoddingconventions.devClientOptions` at it in `~/.gradle/gradle.properties`:
-
-```properties
-fabricmoddingconventions.devClientOptions=/home/you/.local/share/PrismLauncher/instances/<instance>/minecraft/options.txt
-```
-
-`runClient` (and `runFabricClient` in multiloader projects) then copies that file into the Loom `client` run directory before each launch. The file is the source of truth: settings changed in a development client are overwritten on its next launch. Without the property nothing is copied, and a missing file only logs a warning. The multiloader conventions apply this plugin to every loader project, so Fabric and NeoForge clients share the file.
-
-### Maven Central publishing
-
-The Central component configures existing Maven publications rather than creating project-specific artifacts:
-
-```gradle
-plugins {
-    id "io.github.brainage04.maven-central-publishing" version "<version>"
-}
-
-mavenCentralPublishing {
-    repository.set("brainage04/FabricModdingConventions")
-    publicationName.set("FabricModdingConventions")
-    description.set("Reusable Fabric modding conventions and GameTest helpers.")
-}
-```
-
-It adds `build/local-repo` as the `local` publication repository and the Sonatype staging API as `central`. `publishToMavenCentral` validates metadata, Portal credentials, signing configuration, and `centralPublishingType` before uploading. Local publication needs no Central credentials. Local releases use `-PuseGpgAgentSigning=true`; CI uses `CENTRAL_PORTAL_USERNAME`, `CENTRAL_PORTAL_PASSWORD`, `SIGNING_KEY`, and `SIGNING_PASSWORD`. The release mode defaults to `user_managed` and also accepts `automatic` or `portal_api`.
-
-### Mod distribution publishing
-
-The distribution component derives common release metadata from the existing Fabric build, but every destination remains disabled until its DSL block is configured:
-
-```gradle
-plugins {
-    id "io.github.brainage04.mod-publishing" version "<version>"
-}
-
-modPublishing {
-    github {
-        repository.set("brainage04/example-mod")
-    }
-    modrinth {
-        projectId.set("example-project")
-    }
-    curseforge {
-        projectId.set("123456")
-    }
-}
-```
-
-`publishGithub`, `publishModrinth`, and `publishCurseforge` are independently retryable; `publishMods` runs every enabled destination. Validation rejects malformed booleans, negative retry counts, missing release artifacts, and inconsistent release metadata before network access. Modrinth project metadata and icons are synchronized through typed tasks. Ordinary `build` and `check` execution do not contact publishing endpoints.
-
-Multi-loader release callers use `reusable-multiloader-release.yml`, supplying the NeoForge artifact pattern and destination project identifiers once. The wrapper prepares both exact artifacts, publishes both to one GitHub release, synchronizes Modrinth through the Fabric module before publishing both loader versions, and publishes both CurseForge files. Its boolean destination inputs keep unsupported services disabled without duplicating the release graph.
-
-The base plugin requires `mod_side`, `java_version`, `mod_id`, `mod_version`, `mod_name`, `maven_group`, `archives_base_name`, `loader_version`, `minecraft_version`, and `fabric_api_version` in Gradle properties. Its optional behaviors can be narrowed per consumer:
+| `both` | `src/main` plus `src/client` | yes | yes |
+| `client` | `src/main` | yes | no |
+| `server` | `src/main` | no | yes |
 
 ```gradle
 fabricModConventions {
@@ -138,27 +63,39 @@ fabricModConventions {
 }
 ```
 
-`additionalFabricModJsonProperties` extends the required resource-expansion property set without replacing it. Expansion applies to every `ProcessResources` task, including the plugin-owned GameTest source set. Missing or blank properties fail when metadata is processed. `licenseFile` defaults to the root project's `LICENSE`.
+Every option defaults to `true`. `fabric.mod.json` expansion fails on a missing or blank property.
 
-## Recording task
-
-Apply the base and recorder components, then run the shared task directly:
+## Workspace dependencies
 
 ```gradle
-plugins {
-    id "io.github.brainage04.client-gametest-recorder" version "<version>"
+workspaceDependencies {
+    siblingMaven("HudRendererLib") {
+        coordinate.set("io.github.brainage04:hudrendererlib:${hudrendererlib_version}")
+    }
 }
 ```
+
+The sibling repository (`../<name>/build/local-repo` by default; override with `siblingDirectory` or `localRepository`) serves only that module and is checked before Maven Central. Publish a sibling with `./gradlew publishAllPublicationsToLocalRepository`.
+
+To give every dev client the same keybinds and video settings, set this in `~/.gradle/gradle.properties`:
+
+```properties
+fabricmoddingconventions.devClientOptions=/path/to/options.txt
+```
+
+The file is copied into the client run directory before every launch, overwriting changes made in-game.
+
+## Client GameTest recording
 
 ```shell
 GTR_RECORDING_PROFILE=smoke ./gradlew --no-daemon recordClientGameTest
 ```
 
-The recorder prepares a low-noise client profile by default: GUI scale `1`, the insecure-server and Social Interactions tutorial toasts suppressed, recipe and advancement toasts suppressed, and advancement announcement chat messages suppressed. These settings apply only while the recorder's GameTest JVM property is active; normal clients are unchanged. Override any setting per consumer:
+Needs `ffmpeg`/`ffprobe` (X11 capture, PulseAudio input, H.264/AAC), Xvfb with `xdpyinfo`, and `pactl`. Set `PULSE_SERVER` for a fully isolated session. The desktop's default sink is never changed.
 
 ```gradle
 clientGameTestRecorder {
-    guiScale = "2"
+    guiScale = "2"                          // default "1"
     disableUnsecureChatToast = true
     disableSocialInteractionsToast = true
     disableRecipeToasts = true
@@ -167,29 +104,12 @@ clientGameTestRecorder {
 }
 ```
 
-The recording HUD uses Minecraft's scaled GUI coordinates, so its panel and text follow the configured GUI scale instead of shrinking relative to the framebuffer. The five notification controls default to `true`; set an individual property to `false` when that vanilla notification is part of the scenario.
+- These settings only apply to recording runs; the five `disable…` options default to `true`.
+- `GTR_RECORDING_PROFILE=showcase` shows a title card instead of the diagnostic overlay.
+- `GTR_RECORDING_PRE_PADDING_SECONDS` / `GTR_RECORDING_POST_PADDING_SECONDS`: `0`–`60`, default `0.5`.
+- Each recording writes metadata with tick and frame boundaries, effective padding and any capture gaps. A run fails if game audio is not routed to the recorder's sink or cannot be decoded.
 
-`GTR_RECORDING_PROFILE=showcase` uses a compact “Feature showcase” card with the current title and subtitle, without diagnostic scenario IDs or history. Other profiles retain the diagnostic overlay. This controls presentation, not the consumer's scenario selection.
-
-Prepared clients use Minecraft's `minimized` inactivity policy rather than `afk`: programmatic GameTest input does not reset the ten-minute AFK timer, whose 10-FPS cap would otherwise slow synchronized tests during long recordings.
-
-The recorder uses an isolated Xvfb display and creates its own null audio sink on the selected PulseAudio-compatible server. It pins Minecraft's OpenAL device to that sink, verifies the tagged game stream is routed exclusively there, and records the sink monitor. It does not change the desktop's default sink. Recording readiness requires encoded video and verified game-audio routing; completion additionally requires successful game sound initialization and decoded PCM audio. Silence is reported separately from routing or decoding failures.
-
-Prepared recording clients use master volume `0.7` with music disabled. Raw audio remains PCM; final AAC encoding applies gain `0.5` (approximately 6 dB of headroom) to reduce reconstruction overshoot independently of game-mix peaks.
-
-`GTR_RECORDING_PRE_PADDING_SECONDS` and `GTR_RECORDING_POST_PADDING_SECONDS` accept finite values from `0` through `60`, both defaulting to `0.5`. Pre-padding is measured before the first client-world tick. Positive post-padding extends past actual world exit; zero post-padding ends at the last client-world tick instead. Zero pre-padding starts at the first world tick.
-
-Frame selection rounds outward using captured frame timestamps, so effective padding can exceed the requested value by frame quantization or a capture gap. Metadata reports the tick/present boundaries, selected frames, effective padding, and capture gaps. Present markers bracket CPU calls while a client level exists; they are not GPU-completion timestamps or proof that every world tick was visibly captured. Audio packet coverage is awaited through the selected capture boundary before the encoder is stopped.
-
-Both video encoders preserve the demuxer timebase in passthrough mode instead of rounding irregular timestamps to `1/fps`. Final video selection uses decoded frame indices and rebases the first retained frame to zero; audio retains its offset from the selected wall-clock boundary. This does not eliminate genuine capture gaps or container timestamp quantization.
-
-Boundary PNGs select captured frames at or before the tick boundaries rather than seeking forward from an arbitrary tick time. Neighboring images clamp to retained footage when padding excludes the adjacent frame; `boundaryFrameVideoSeconds` records their actual positions. Failure to decode a requested boundary image fails finalization.
-
-The Java-side helpers live under `io.github.brainage04.fabricmoddingconventions`.
-
-### Dedicated-server client GameTest harness
-
-`ClientGameTestServers.withDedicatedServer` owns recorder preparation before server creation, client connection, connection-state validation, disconnection, recording completion, and server closure. Existing recorder starts inside the callback are idempotent. The simple overload uses `flatServerProperties()`; pass explicit properties only when a fixture changes the default server:
+### Dedicated-server harness
 
 ```java
 ClientGameTestServers.withDedicatedServer(context, "Example GameTest", server -> {
@@ -198,62 +118,52 @@ ClientGameTestServers.withDedicatedServer(context, "Example GameTest", server ->
 });
 ```
 
-The callback may retain a fixture-specific `try`/`finally` for server-state cleanup. Connection cleanup and recording completion belong to the harness and run even when the callback fails. NeoForge consumers use the loader-neutral recording session and recording mixin, disconnect before finishing, and await the recorder's completion acknowledgment before terminating the client.
+The harness starts the server, connects the client, and always disconnects, finishes the recording and stops the server, even when the callback fails. Java helpers live in `io.github.brainage04.fabricmoddingconventions`.
 
-### Fleet audit and recording
+## Production GameTests
 
-`scripts/mod_fleet.py` applies the shared version, structure, workflow, and recording policy in `scripts/mod-fleet.json` to every owned non-Forge mod checkout. It also discovers unlisted sibling Minecraft repositories; add `--github` to reconcile the policy against every authenticated public and private repository available through the `gh` CLI.
+```gradle
+productionGameTests {
+    runtimeModDependencies.add("me.fzzyhmstrs:fzzy_config:${fzzy_config_version}")
+    runtimeLibraryDependencies.add("com.github.twitch4j:twitch4j:${twitch4j_version}")
+}
+```
+
+Loom's production runs do not inherit the dev classpath, so extra mods and libraries must be listed here; Fabric API is added automatically. Tasks: `productionGameTestJar`, `runProductionClientGameTest` (Xvfb by default), `runProductionServerGameTest`, `runAllProductionGameTests`. `includeClient`, `includeServer`, `clientUseXvfb`, `clientJvmArgs` and `serverProgramArgs` override the defaults.
+
+## Publishing
+
+`mod-publishing` enables a destination only when its block is configured:
+
+```gradle
+modPublishing {
+    github { repository.set("brainage04/example-mod") }
+    modrinth { projectId.set("example-project") }
+    curseforge { projectId.set("123456") }
+}
+```
+
+`publishGithub`, `publishModrinth` and `publishCurseforge` can be retried independently; `publishMods` runs all enabled ones. The Modrinth description is synced from `README.md` and the icon from `assets/<mod_id>/icon.png`. `build` and `check` never contact these services.
+
+`maven-central-publishing` is for libraries. See [docs/PUBLISHING.md](docs/PUBLISHING.md) for credentials and the release command.
+
+## Workflows
+
+Consumer workflows call these and only supply triggers, profiles, artifact patterns and project IDs:
+
+- `reusable-mod-build.yml` — build
+- `reusable-client-gametests.yml` — client GameTests and recordings
+- `reusable-production-gametests.yml` — Fabric production GameTests
+- `reusable-neoforge-gametests.yml` — NeoForge GameTests
+- `reusable-multiloader-release.yml` — GitHub, Modrinth and CurseForge release of both loader JARs
+
+## Fleet audit
+
+`scripts/mod_fleet.py` checks every sibling mod against the versions, structure, workflows and recording policy in `scripts/mod-fleet.json`, and can record them all.
 
 ```shell
 ./scripts/mod_fleet.py audit --github --strict
-./scripts/mod_fleet.py record
+./scripts/mod_fleet.py record [--include <repository>] [--dry-run]
 ```
 
-`record` runs each eligible `recordClientGameTest` sequentially, preserves per-repository logs and failure workspaces, and collects successful MP4 files under `recordings/`, normalized JSON metadata under `metadata/`, and fleet reports inside one timestamped `~/Downloads/minecraft-mod-gametest-recordings-*` directory. It does not write individual recordings directly to `~/Downloads`. Limit an iteration with repeated `--include <repository>` arguments or preview every command with `--dry-run`. After correcting a partial failure, pass the existing directory to `--output` with `--resume`; valid passed artifacts are retained and only unfinished repositories run again.
-
-For a new Minecraft release, override the expected baseline without editing the script:
-
-```shell
-./scripts/mod_fleet.py audit --github --strict \
-  --minecraft-version <version> \
-  --loader-version <version> \
-  --fabric-api-version <version> \
-  --java-version <version> \
-  --conventions-version <version>
-```
-
-After migrating the fleet, update the manifest baseline and each new repository's explicit recording or exclusion policy. New GitHub or local Minecraft repositories fail strict reconciliation until classified.
-
-## Production GameTest tasks
-
-Applying `io.github.brainage04.production-gametests` creates the `gametest` source set and configures Loom's development GameTest runs from `mod_side`. It also registers production tasks for the applicable sides; consumers only configure genuine runtime differences:
-
-```gradle
-productionGameTests {
-    runtimeModDependencies.add("me.fzzyhmstrs:fzzy_config:${project.fzzy_config_version}")
-    runtimeLibraryDependencies.add("com.github.twitch4j:twitch4j:${project.twitch4j_version}")
-}
-```
-
-The plugin adds Fabric API to Loom's `productionRuntimeMods` configuration from `fabric_api_version` by default. It packages `sourceSets.gametest.output` into a dedicated mod jar, adds that jar to the enabled production runs, and writes `eula=true` in their isolated run directories. Consumers declare extra Fabric mods through `runtimeModDependencies` and ordinary JVM libraries through `runtimeLibraryDependencies`; Loom's production tasks do not inherit the development runtime classpath. The plugin registers:
-
-- `productionGameTestJar` — packages the processed `gametest` source-set classes and resources as `*-production-gametest.jar`.
-- `prepareProductionGameTestRuns` — writes the client embedded-server and standalone-server EULA files.
-- `runProductionClientGameTest` — runs the packaged GameTest mod through Loom's production client with `-Dfabric.client.gametest`, `-Dfabric.client.gametest.disableNetworkSynchronizer=true`, Xvfb enabled by default, and `build/run/productionClientGameTest` as the run directory.
-- `runProductionServerGameTest` — runs the packaged GameTest mod through Loom's production server with `-Dfabric-api.gametest` and `build/run/productionServerGameTest` as the run directory.
-- `runAllProductionGameTests` — aggregate task depending on the enabled production tasks.
-
-Useful switches:
-
-```gradle
-productionGameTests {
-    // Override the mod_side-derived production task selection only when needed.
-    includeClient = true
-    includeServer = false
-    clientUseXvfb = true
-    runtimeModDependencies.add("me.fzzyhmstrs:fzzy_config:${project.fzzy_config_version}")
-    runtimeLibraryDependencies.add("com.github.twitch4j:twitch4j:${project.twitch4j_version}")
-    clientJvmArgs.add("-Dmy.flag=true")
-    serverProgramArgs.add("nogui")
-}
-```
+`record` writes to a timestamped `~/Downloads/minecraft-mod-gametest-recordings-*` directory; `--output <dir> --resume` reruns only the repositories that failed. For a new Minecraft release, pass `--minecraft-version`, `--loader-version`, `--fabric-api-version`, `--java-version` and `--conventions-version` to `audit`, then update the manifest.
