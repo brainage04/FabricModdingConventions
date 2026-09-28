@@ -228,9 +228,8 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
         configureDefaultRunDirectories(loom);
         configureAccessWidener(root, loom);
         SourceSet fabricGameTest = sourceSets(fabric).findByName("gametest");
-        File sharedGameTests = common.file("src/gametest/java");
-        if (fabricGameTest != null && sharedGameTests.isDirectory()) {
-            fabricGameTest.getJava().srcDir(sharedGameTests);
+        if (fabricGameTest != null) {
+            addSharedGameTests(common, fabricGameTest);
         }
 
         Configuration commonConfiguration = resolvableConfiguration(fabric, "common");
@@ -258,6 +257,17 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
         configureWorkspaceDependency(root, fabric);
         configureFabricPublishing(root, fabric, fleetExtension);
         configureResourceExpansion(root, fabric, "src/main/resources/fabric.mod.json", "fabric.mod.json");
+    }
+
+    private static void addSharedGameTests(Project common, SourceSet gameTest) {
+        File sharedJava = common.file("src/gametest/java");
+        if (sharedJava.isDirectory()) {
+            gameTest.getJava().srcDir(sharedJava);
+        }
+        File sharedResources = common.file("src/gametest/resources");
+        if (sharedResources.isDirectory()) {
+            gameTest.getResources().srcDir(sharedResources);
+        }
     }
 
     private static void configureAccessWidener(Project root, LoomGradleExtensionAPI loom) {
@@ -383,10 +393,7 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
                 .plus(gameTest.getOutput())
                 .plus(gameTest.getCompileClasspath())
                 .plus(neoForge.getConfigurations().getByName("runtimeClasspath")));
-        File sharedGameTests = common.file("src/gametest/java");
-        if (sharedGameTests.isDirectory()) {
-            gameTest.getJava().srcDir(sharedGameTests);
-        }
+        addSharedGameTests(common, gameTest);
 
         LoomGradleExtensionAPI loom = neoForge.getExtensions().getByType(LoomGradleExtensionAPI.class);
         File accessTransformer = neoForge.file("src/main/resources/META-INF/accesstransformer.cfg");
