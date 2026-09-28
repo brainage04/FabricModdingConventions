@@ -6,10 +6,8 @@ Fleet-wide work for the conventions plugins and every Fabric/NeoForge mod that u
 
 ### Multi-loader layout
 
-- [ ] Move the remaining mods to `common`/`fabric`/`neoforge` with `multiloader-mod-conventions`:
-  - ModernMinecraftModTemplate, GenshinInMinecraft, SparringBots: single-loader Fabric (`fabric-mod-conventions`).
-  - AcceleratedDamage: already has the three modules, but with hand-written build logic, and its Fabric module applies `fabric-mod-conventions`.
-  - ActionAssist: its own multi-version layout (`src/core`, `src/client`, `src/fabric`, `src/neoforge`, `targets/<mc>/<loader>`) building 1.21.1 through 26.2. Decide whether it keeps multi-version support, which the conventions don't cover.
+- [ ] ActionAssist: move to `common`/`fabric`/`neoforge` with `multiloader-mod-conventions`. It has its own multi-version layout (`src/core`, `src/client`, `src/fabric`, `src/neoforge`, `targets/<mc>/<loader>`) building 1.21.1 through 26.2; decide whether it keeps multi-version support, which the conventions don't cover.
+- [ ] Release 2.4.13 and pin it in every mod. The plugin now also packages `common/src/gametest/resources` into both loaders' GameTests, which AcceleratedDamage and SparringBots rely on; CI resolves the plugin from the pinned GitHub release, so their CI GameTests fail until then. The tag also publishes to Maven Central.
 
 ### Platform contracts
 

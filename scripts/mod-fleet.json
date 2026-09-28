@@ -6,7 +6,7 @@
     "loaderVersion": "0.19.3",
     "fabricApiVersion": "0.156.0+26.2",
     "javaVersion": "25",
-    "conventionsVersion": "2.4.4"
+    "conventionsVersion": "2.4.12"
   },
   "ignoredRepositories": {
     "ToggleSprint": "Forge-only 1.8.9 mod",
@@ -17,6 +17,28 @@
   "repositories": [
     {
       "name": "AcceleratedDamage",
+      "visibility": "public",
+      "platform": "Fabric and NeoForge server",
+      "status": "active",
+      "managed": true,
+      "recording": {
+        "enabled": true,
+        "profile": "showcase"
+      }
+    },
+    {
+      "name": "baritone",
+      "visibility": "public",
+      "platform": "Fabric, NeoForge, and Forge upstream fork",
+      "status": "upstream-style fork",
+      "managed": false,
+      "recording": {
+        "enabled": false,
+        "reason": "Preserve upstream build structure; pathfinding is covered through TwitchPlaysMinecraft fixture scenarios"
+      }
+    },
+    {
+      "name": "BetterVillagerTrades",
       "visibility": "public",
       "platform": "Fabric and NeoForge server",
       "status": "active",
@@ -82,6 +104,17 @@
       }
     },
     {
+      "name": "FloodedEnd",
+      "visibility": "public",
+      "platform": "Fabric and NeoForge server",
+      "status": "active",
+      "managed": true,
+      "recording": {
+        "enabled": true,
+        "profile": "showcase"
+      }
+    },
+    {
       "name": "FortniteInMinecraft",
       "visibility": "public",
       "platform": "Fabric and NeoForge",
@@ -93,9 +126,9 @@
       }
     },
     {
-      "name": "GetEnchantInfo",
+      "name": "GenshinInMinecraft",
       "visibility": "public",
-      "platform": "Fabric and NeoForge client",
+      "platform": "Fabric and NeoForge",
       "status": "active",
       "managed": true,
       "recording": {
@@ -129,28 +162,6 @@
       "name": "MagicCarpet",
       "visibility": "public",
       "platform": "Fabric and NeoForge",
-      "status": "active",
-      "managed": true,
-      "recording": {
-        "enabled": true,
-        "profile": "showcase"
-      }
-    },
-    {
-      "name": "BetterVillagerTrades",
-      "visibility": "public",
-      "platform": "Fabric and NeoForge server",
-      "status": "active",
-      "managed": true,
-      "recording": {
-        "enabled": true,
-        "profile": "showcase"
-      }
-    },
-    {
-      "name": "MilkablePlayers",
-      "visibility": "public",
-      "platform": "Fabric and NeoForge server with Fabric spectator recording fixture",
       "status": "active",
       "managed": true,
       "recording": {
@@ -211,6 +222,17 @@
       "recording": {
         "enabled": true,
         "profile": "showcase"
+      }
+    },
+    {
+      "name": "SparringBots",
+      "visibility": "private",
+      "platform": "Fabric and NeoForge server",
+      "status": "active",
+      "managed": true,
+      "recording": {
+        "enabled": false,
+        "reason": "Server-only bots without client GameTests; tools/showcase records live UHC matches instead"
       }
     },
     {
@@ -280,17 +302,6 @@
       "recording": {
         "enabled": true,
         "profile": "showcase"
-      }
-    },
-    {
-      "name": "baritone",
-      "visibility": "public",
-      "platform": "Fabric, NeoForge, and Forge upstream fork",
-      "status": "upstream-style fork",
-      "managed": false,
-      "recording": {
-        "enabled": false,
-        "reason": "Preserve upstream build structure; pathfinding is covered through TwitchPlaysMinecraft fixture scenarios"
       }
     }
   ]
