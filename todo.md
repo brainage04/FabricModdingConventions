@@ -23,8 +23,9 @@ Common holds the gameplay code; loader modules only adapt it. No mod's `common` 
 
 ### Loader parity
 
-- [ ] For every multi-loader mod, run a real NeoForge client (or server, for server-side mods) and exercise initialization, representative commands and feedback, ticks, reconnect, HUDs, keybindings, config and mixins.
-- [ ] For every multi-loader mod, inspect both release jars: correct loader metadata and entrypoints, the expected common classes and resources (including translations), nothing from the other loader, and no development-only dependencies.
+Checked on 2026-09-29 for all 26 Fabric/NeoForge mods (25 on `multiloader-mod-conventions` plus ActionAssist): both release jars have correct metadata, entrypoints, common classes and resources and nothing from the other loader (only TwitchPlaysMinecraft's NeoForge jar lacks translations), and every NeoForge jar was run on a real NeoForge 26.2 server and client. Mod-specific findings are in each mod's `todo.md`. Repeat these checks before each release:
+
+- [ ] Before releasing a mod, run its release NeoForge jar on a real NeoForge server and client and compare both jars' contents. NeoForge-only regressions found so far came from mixins targeting a method NeoForge patches (BrainageServerUtils) and loader-specific ids (FortniteInMinecraft), which Fabric GameTests cannot catch.
 
 ### Conventions fixes
 
