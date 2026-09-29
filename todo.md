@@ -22,9 +22,10 @@ Common holds the gameplay code; loader modules only adapt it. No mod's `common` 
 
 ### Loader parity
 
-Checked on 2026-09-29 for all 26 Fabric/NeoForge mods (25 on `multiloader-mod-conventions` plus ActionAssist): both release jars have correct metadata, entrypoints, common classes and resources and nothing from the other loader (only TwitchPlaysMinecraft's NeoForge jar lacks translations), and every NeoForge jar was run on a real NeoForge 26.2 server and client. Mod-specific findings are in each mod's `todo.md`. Repeat these checks before each release:
+Checked on 2026-09-29 for all 26 Fabric/NeoForge mods (25 on `multiloader-mod-conventions` plus ActionAssist): both release jars have correct metadata, entrypoints, common classes and resources and nothing from the other loader, and every NeoForge jar was run on a real NeoForge 26.2 server and client. The high and medium findings are fixed; low ones remain in each mod's `todo.md`. Every mod now builds against NeoForge 26.2.0.88 and uses `iconFile` (NeoForge 26.2.0.88 warns about `logoFile`). Repeat these checks before each release:
 
 - [ ] Before releasing a mod, run its release NeoForge jar on a real NeoForge server and client and compare both jars' contents. NeoForge-only regressions found so far came from mixins targeting a method NeoForge patches (BrainageServerUtils) and loader-specific ids (FortniteInMinecraft), which Fabric GameTests cannot catch.
+- [ ] NeoForge GameTest instances in AcceleratedDamage, BetterVillagerTrades, BrainageLib, BrainageMinigames, BrainageServerUtils, DimensionStructureVariants, FloodedEnd, GenshinInMinecraft, IceSkates, MagicCarpet, ModernMinecraftModTemplate, ProceduralDungeon, SimpleHomes, SimpleTPA, SpawnCommands and Telekinesis use `minecraft:empty`, which is 1x1x1 (Fabric's default is 8x8x8). Blocks and drops a test places beyond that one block sit outside its force-loaded area, where a neighbouring test's cleanup can delete them; this made VeinMiner flaky on CI until it switched to an 8x8x8 `vein_miner:empty`. Give each mod (or the conventions, once) an 8x8x8 empty structure and use it.
 
 ### Conventions fixes
 
