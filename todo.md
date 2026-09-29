@@ -7,7 +7,6 @@ Fleet-wide work for the conventions plugins and every Fabric/NeoForge mod that u
 ### Multi-loader layout
 
 - [ ] ActionAssist: move to `common`/`fabric`/`neoforge` with `multiloader-mod-conventions`. It has its own multi-version layout (`src/core`, `src/client`, `src/fabric`, `src/neoforge`, `targets/<mc>/<loader>`) building 1.21.1 through 26.2; decide whether it keeps multi-version support, which the conventions don't cover.
-- [ ] Release 2.4.13 and pin it in every mod. The plugin now also packages `common/src/gametest/resources` into both loaders' GameTests, which AcceleratedDamage and SparringBots rely on; CI resolves the plugin from the pinned GitHub release, so their CI GameTests fail until then. The tag also publishes to Maven Central.
 
 ### Platform contracts
 
@@ -30,7 +29,7 @@ Checked on 2026-09-29 for all 26 Fabric/NeoForge mods (25 on `multiloader-mod-co
 ### Conventions fixes
 
 - [ ] `multiloader-mod-conventions` keeps Loom's development `clientGameTest` run and only moves its directory, although the comment in `MultiLoaderModConventionsPlugin.configureFabricGameTests` says it must not exist. An unqualified `./gradlew runClientGameTest` therefore also runs `:fabric:runClientGameTest` outside Xvfb, which watchdog-crashed twice in TwitchPlaysMinecraft (render thread stuck in `glfwSwapBuffers`). Remove the run.
-- [ ] Publish every owned library to Maven Central at the versions mods use, then remove the GitHub-release Ivy repositories from every `settings.gradle` and from `MultiLoaderModConventionsPlugin.configureReleaseRepositories`. Central currently has `fabricmoddingconventions` 2.3.0 (mods use 2.4.12) and HudRendererLib 1.0.6 (mods use 1.0.7 to 1.0.11), and has no BrainageLib, Baritone fork or `multiloader-mod-conventions` plugin at all.
+- [ ] Publish every owned library to Maven Central at the versions mods use, then remove the GitHub-release Ivy repositories from every `settings.gradle` and from `MultiLoaderModConventionsPlugin.configureReleaseRepositories`. Central has `fabricmoddingconventions` 2.3.0 (mods use 2.4.13) and HudRendererLib 1.0.6, and no BrainageLib, Baritone fork or `multiloader-mod-conventions` plugin at all. The release workflows skip Central because no repository has the Central Portal or signing secrets (the 2.4.13 run logged "Skipping Maven Central publish"); add `CENTRAL_PORTAL_USERNAME`, `CENTRAL_PORTAL_PASSWORD`, `SIGNING_KEY` and `SIGNING_PASSWORD` first.
 - [ ] Move repositories only some mods need (Cloth Config, Mod Menu, Modrinth Maven, Nucleoid, Baritone's `babbaj.github.io`) out of `MultiLoaderModConventionsPlugin.configureRepositories` into those mods, and drop the `mavenLocal()` it declares first, which can shadow both the sibling repositories and Central.
 
 ### Kotlin migration (deferred)
