@@ -3,6 +3,11 @@ name: reusable CurseForge publication
 on:
   workflow_call:
     inputs:
+      runner:
+        description: JSON runs-on value, a runner label or an array of labels
+        required: false
+        default: '"ubuntu-24.04"'
+        type: string
       artifact_file:
         description: Exact release JAR file name from release preparation
         required: true
@@ -40,7 +45,7 @@ permissions:
 
 jobs:
   publish:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(inputs.runner) }}
     steps:
       - name: check CurseForge configuration
         id: config

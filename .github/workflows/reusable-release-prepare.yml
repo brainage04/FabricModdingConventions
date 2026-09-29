@@ -3,6 +3,11 @@ name: reusable release preparation
 on:
   workflow_call:
     inputs:
+      runner:
+        description: JSON runs-on value, a runner label or an array of labels
+        required: false
+        default: '"ubuntu-24.04"'
+        type: string
       java_version:
         description: JDK version used by the Fabric build
         required: false
@@ -38,7 +43,7 @@ permissions:
 
 jobs:
   prepare:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(inputs.runner) }}
     permissions:
       contents: write
     outputs:

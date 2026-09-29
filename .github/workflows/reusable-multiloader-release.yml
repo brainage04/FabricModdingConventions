@@ -3,6 +3,11 @@ name: reusable multi-loader release
 on:
   workflow_call:
     inputs:
+      runner:
+        description: JSON runs-on value, a runner label or an array of labels
+        required: false
+        default: '"ubuntu-24.04"'
+        type: string
       java_version:
         description: JDK version used by release builds
         required: false
@@ -102,6 +107,7 @@ jobs:
       contents: write
     uses: brainage04/FabricModdingConventions/.github/workflows/reusable-release-prepare.yml@v2.4.13
     with:
+      runner: ${{ inputs.runner }}
       java_version: ${{ inputs.java_version }}
       additional_artifact_pattern: ${{ inputs.additional_artifact_pattern }}
       resolve_release_notes_with_gradle: false
@@ -114,6 +120,7 @@ jobs:
       contents: write
     uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-github.yml@v2.4.13
     with:
+      runner: ${{ inputs.runner }}
       artifact_file: ${{ needs.prepare.outputs.artifact_file }}
       additional_artifact_file: ${{ needs.prepare.outputs.additional_artifact_file }}
       release_body: ${{ needs.prepare.outputs.release_body }}
@@ -130,6 +137,7 @@ jobs:
       contents: read
     uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-modrinth.yml@v2.4.13
     with:
+      runner: ${{ inputs.runner }}
       artifact_file: ${{ needs.prepare.outputs.artifact_file }}
       release_body: ${{ needs.prepare.outputs.release_body }}
       java_version: ${{ inputs.java_version }}
@@ -149,6 +157,7 @@ jobs:
       contents: read
     uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-modrinth.yml@v2.4.13
     with:
+      runner: ${{ inputs.runner }}
       artifact_file: ${{ needs.prepare.outputs.additional_artifact_file }}
       release_body: ${{ needs.prepare.outputs.release_body }}
       java_version: ${{ inputs.java_version }}
@@ -165,6 +174,7 @@ jobs:
       contents: read
     uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-curseforge.yml@v2.4.13
     with:
+      runner: ${{ inputs.runner }}
       artifact_file: ${{ needs.prepare.outputs.artifact_file }}
       release_body: ${{ needs.prepare.outputs.release_body }}
       java_version: ${{ inputs.java_version }}
@@ -183,6 +193,7 @@ jobs:
       contents: read
     uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-curseforge.yml@v2.4.13
     with:
+      runner: ${{ inputs.runner }}
       artifact_file: ${{ needs.prepare.outputs.additional_artifact_file }}
       release_body: ${{ needs.prepare.outputs.release_body }}
       java_version: ${{ inputs.java_version }}

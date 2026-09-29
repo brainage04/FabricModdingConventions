@@ -157,6 +157,13 @@ Consumer workflows call these and only supply triggers, profiles, artifact patte
 - `reusable-neoforge-gametests.yml` — NeoForge GameTests
 - `reusable-multiloader-release.yml` — GitHub, Modrinth and CurseForge release of both loader JARs
 
+Every reusable workflow takes a `runner` input, a JSON `runs-on` value defaulting to `"ubuntu-24.04"`; private mods pass their self-hosted runner labels:
+
+```yaml
+    with:
+      runner: '["self-hosted","minecraft"]'
+```
+
 ## Fleet audit
 
 `scripts/mod_fleet.py` checks every sibling mod against the versions, structure, workflows and recording policy in `scripts/mod-fleet.json`, and can record them all.

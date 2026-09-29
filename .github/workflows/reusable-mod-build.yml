@@ -3,6 +3,11 @@ name: reusable multi-loader mod build
 on:
   workflow_call:
     inputs:
+      runner:
+        description: JSON runs-on value, a runner label or an array of labels
+        required: false
+        default: '"ubuntu-24.04"'
+        type: string
       java_version:
         description: JDK version used by the multi-loader build
         required: false
@@ -29,7 +34,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(inputs.runner) }}
     timeout-minutes: 20
     steps:
       - name: checkout repository
@@ -81,6 +86,7 @@ jobs:
         if: inputs.prepare_baritone
         run: |
           MINECRAFT_VERSION="$(sed -n 's/^minecraft_version=//p' gradle.properties)"
+          rm -rf ../baritone
           git clone --depth 1 --branch "minecraft-${MINECRAFT_VERSION}" https://github.com/brainage04/baritone.git ../baritone
           chmod +x ../baritone/gradlew
           ../baritone/gradlew -p ../baritone \
@@ -97,6 +103,7 @@ jobs:
       - name: prepare template smoke dependencies
         if: inputs.run_template_smoke
         run: |
+          rm -rf ../FabricModdingConventions
           git clone --depth 1 https://github.com/brainage04/FabricModdingConventions.git ../FabricModdingConventions
           chmod +x ../FabricModdingConventions/gradlew
           ../FabricModdingConventions/gradlew -p ../FabricModdingConventions \
