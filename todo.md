@@ -6,7 +6,7 @@ Fleet-wide work for the conventions plugins and every Fabric/NeoForge mod that u
 
 ### Multi-loader layout
 
-- [ ] ActionAssist: move to `common`/`fabric`/`neoforge` with `multiloader-mod-conventions`. It has its own multi-version layout (`src/core`, `src/client`, `src/fabric`, `src/neoforge`, `targets/<mc>/<loader>`) building 1.21.1 through 26.2; decide whether it keeps multi-version support, which the conventions don't cover.
+ActionAssist keeps its own multi-version layout (owner decision, 2026-10-01); the conformance checklist gives it a separate section.
 
 ### Platform contracts
 
@@ -25,6 +25,10 @@ Common holds the gameplay code; loader modules only adapt it. No mod's `common` 
 Checked on 2026-09-29 for all 26 Fabric/NeoForge mods (25 on `multiloader-mod-conventions` plus ActionAssist): both release jars have correct metadata, entrypoints, common classes and resources and nothing from the other loader, and every NeoForge jar was run on a real NeoForge 26.2 server and client. The high and medium findings are fixed; low ones remain in each mod's `todo.md`. Every mod now builds against NeoForge 26.2.0.88 and uses `iconFile` (NeoForge 26.2.0.88 warns about `logoFile`). Repeat these checks before each release:
 
 - [ ] Before releasing a mod, run its release NeoForge jar on a real NeoForge server and client and compare both jars' contents. NeoForge-only regressions found so far came from mixins targeting a method NeoForge patches (BrainageServerUtils) and loader-specific ids (FortniteInMinecraft), which Fabric GameTests cannot catch.
+
+### Release workflows
+
+- [ ] `reusable-multiloader-release.yml` and the release-prepare/publish workflows it calls need a `prepare_baritone` input, like the build and GameTest workflows have. TwitchPlaysMinecraft jar-in-jars the Baritone fork (built from branch `minecraft-26.2`, not on Central), so it keeps its own inline `release.yml` until then; `prepare_siblings: baritone` can't replace it because that clones the default branch and runs a different publish task.
 
 ### Kotlin migration (deferred)
 
