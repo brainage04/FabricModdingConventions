@@ -10,6 +10,7 @@ public abstract class MultiLoaderModConventionsExtension {
     private final Property<Boolean> fabricServerGameTests;
     private final Property<Boolean> neoForgeGameTests;
     private final Property<Boolean> publishing;
+    private final Property<Boolean> devAuth;
 
     @Inject
     public MultiLoaderModConventionsExtension(ObjectFactory objects) {
@@ -17,6 +18,7 @@ public abstract class MultiLoaderModConventionsExtension {
         fabricServerGameTests = objects.property(Boolean.class).convention(true);
         neoForgeGameTests = objects.property(Boolean.class).convention(true);
         publishing = objects.property(Boolean.class).convention(true);
+        devAuth = objects.property(Boolean.class);
     }
 
     public Property<Boolean> getFabricClientGameTests() {
@@ -33,5 +35,10 @@ public abstract class MultiLoaderModConventionsExtension {
 
     public Property<Boolean> getPublishing() {
         return publishing;
+    }
+
+    /** Adds DevAuth to the Fabric and NeoForge development runtime; defaults to true unless {@code mod_side=server}. */
+    public Property<Boolean> getDevAuth() {
+        return devAuth;
     }
 }

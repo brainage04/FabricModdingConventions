@@ -77,6 +77,11 @@ on:
         required: false
         default: :neoforge:publishCurseforge
         type: string
+      prepare_siblings:
+        description: Space-separated brainage04 repositories to clone into ../<name> and publish to their build/local-repo before each Gradle build
+        required: false
+        default: ''
+        type: string
     secrets:
       release_token:
         description: GitHub token with contents write permission
@@ -105,10 +110,11 @@ jobs:
   prepare:
     permissions:
       contents: write
-    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-release-prepare.yml@v2.4.14
+    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-release-prepare.yml@v2.4.15
     with:
       runner: ${{ inputs.runner }}
       java_version: ${{ inputs.java_version }}
+      prepare_siblings: ${{ inputs.prepare_siblings }}
       additional_artifact_pattern: ${{ inputs.additional_artifact_pattern }}
       resolve_release_notes_with_gradle: false
     secrets:
@@ -118,7 +124,7 @@ jobs:
     needs: prepare
     permissions:
       contents: write
-    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-github.yml@v2.4.14
+    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-github.yml@v2.4.15
     with:
       runner: ${{ inputs.runner }}
       artifact_file: ${{ needs.prepare.outputs.artifact_file }}
@@ -135,12 +141,13 @@ jobs:
     if: inputs.publish_modrinth
     permissions:
       contents: read
-    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-modrinth.yml@v2.4.14
+    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-modrinth.yml@v2.4.15
     with:
       runner: ${{ inputs.runner }}
       artifact_file: ${{ needs.prepare.outputs.artifact_file }}
       release_body: ${{ needs.prepare.outputs.release_body }}
       java_version: ${{ inputs.java_version }}
+      prepare_siblings: ${{ inputs.prepare_siblings }}
       project_id: ${{ inputs.modrinth_project_id }}
       gradle_task: ${{ inputs.fabric_modrinth_task }}
       sync_gradle_task: ${{ inputs.fabric_modrinth_sync_task }}
@@ -155,12 +162,13 @@ jobs:
     if: inputs.publish_modrinth
     permissions:
       contents: read
-    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-modrinth.yml@v2.4.14
+    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-modrinth.yml@v2.4.15
     with:
       runner: ${{ inputs.runner }}
       artifact_file: ${{ needs.prepare.outputs.additional_artifact_file }}
       release_body: ${{ needs.prepare.outputs.release_body }}
       java_version: ${{ inputs.java_version }}
+      prepare_siblings: ${{ inputs.prepare_siblings }}
       project_id: ${{ needs.modrinth-fabric.outputs.project_id }}
       gradle_task: ${{ inputs.neoforge_modrinth_task }}
       sync_project: false
@@ -172,12 +180,13 @@ jobs:
     if: inputs.publish_curseforge
     permissions:
       contents: read
-    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-curseforge.yml@v2.4.14
+    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-curseforge.yml@v2.4.15
     with:
       runner: ${{ inputs.runner }}
       artifact_file: ${{ needs.prepare.outputs.artifact_file }}
       release_body: ${{ needs.prepare.outputs.release_body }}
       java_version: ${{ inputs.java_version }}
+      prepare_siblings: ${{ inputs.prepare_siblings }}
       project_id: ${{ inputs.curseforge_project_id }}
       project_slug: ${{ inputs.curseforge_project_slug }}
       gradle_task: ${{ inputs.fabric_curseforge_task }}
@@ -191,12 +200,13 @@ jobs:
     if: inputs.publish_curseforge
     permissions:
       contents: read
-    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-curseforge.yml@v2.4.14
+    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-curseforge.yml@v2.4.15
     with:
       runner: ${{ inputs.runner }}
       artifact_file: ${{ needs.prepare.outputs.additional_artifact_file }}
       release_body: ${{ needs.prepare.outputs.release_body }}
       java_version: ${{ inputs.java_version }}
+      prepare_siblings: ${{ inputs.prepare_siblings }}
       project_id: ${{ inputs.curseforge_project_id }}
       project_slug: ${{ inputs.curseforge_project_slug }}
       gradle_task: ${{ inputs.neoforge_curseforge_task }}

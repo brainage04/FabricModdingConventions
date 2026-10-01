@@ -61,20 +61,16 @@ public final class ClientGameTestRecorderPlugin implements Plugin<Project> {
             task.getOutputs().upToDateWhen(_ -> false);
         });
 
-        // The multi-loader conventions point the recorder at the production client run instead, and
-        // in that layout loom's own clientGameTest run must keep its directory: re-pointing it at the
-        // recorder directory makes it share the production client run's directory, which Gradle
-        // rejects whenever runClientGameTest selects both tasks.
+        // Loom's development runClientGameTest only exists when the production-gametests plugin keeps the
+        // development client run (the multi-loader conventions drop it and record the production client run).
         project.afterEvaluate(_ -> project.getTasks()
                 .matching(task -> task.getName().equals("runClientGameTest"))
                 .configureEach(task -> configureRunClientGameTest(project, extension, prepareTask, task)));
     }
 
     /**
-     * True when the recorder runs loom's own {@code runClientGameTest} task. The multi-loader
-     * conventions point it at {@code runProductionClientGameTest} instead, and in that layout the
-     * dev run must keep its own directory — but it still executes client GameTests, so it gets the
-     * recorder properties either way.
+     * True when the recorder runs loom's own {@code runClientGameTest} task rather than another run task such as
+     * {@code runProductionClientGameTest}; only then is that run pointed at the recorder directory.
      */
     static boolean drivesLoomClientGameTestRun(Project project) {
         String configuredRun = project.getTasks()

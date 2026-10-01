@@ -4,6 +4,7 @@ import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.dsl.RepositoryHandler;
+import org.gradle.api.artifacts.repositories.ArtifactRepository;
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository;
 import org.gradle.api.file.Directory;
 
@@ -73,10 +74,20 @@ public final class WorkspaceDependenciesPlugin implements Plugin<Project> {
             }
         }
 
+        // Only move repositories that are not already in the leading block of local repositories.
+        // Re-adding a repository fires every repositories.all hook again, and Gradle's exclusiveContent
+        // hook then mutates its content filter, which fails once the repository has been used.
+        int leading = 0;
+        while (leading < repositories.size() && localRepositories.contains(repositories.get(leading))) {
+            leading++;
+        }
+        List<ArtifactRepository> positioned = new ArrayList<>(repositories.subList(0, leading));
         for (int index = localRepositories.size() - 1; index >= 0; index--) {
             MavenArtifactRepository repository = localRepositories.get(index);
-            repositories.remove(repository);
-            repositories.addFirst(repository);
+            if (!positioned.contains(repository)) {
+                repositories.remove(repository);
+                repositories.addFirst(repository);
+            }
         }
 
         boolean centralPresent = repositories.withType(MavenArtifactRepository.class).stream()

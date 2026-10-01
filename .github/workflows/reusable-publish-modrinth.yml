@@ -46,6 +46,11 @@ on:
         required: false
         default: build/mod-publishing/modrinth-project-state.json
         type: string
+      prepare_siblings:
+        description: Space-separated brainage04 repositories to clone into ../<name> and publish to their build/local-repo before the consumer
+        required: false
+        default: ''
+        type: string
     secrets:
       modrinth_token:
         description: Modrinth personal access token
@@ -97,6 +102,22 @@ jobs:
       - name: setup gradle
         if: steps.config.outputs.enabled == 'true'
         uses: gradle/actions/setup-gradle@v5
+
+      - name: prepare sibling libraries
+        if: steps.config.outputs.enabled == 'true' && inputs.prepare_siblings != ''
+        env:
+          PREPARE_SIBLINGS: ${{ inputs.prepare_siblings }}
+        run: |
+          for name in ${PREPARE_SIBLINGS}; do
+            if [[ ! "${name}" =~ ^[A-Za-z0-9._-]+$ ]]; then
+              echo "Invalid sibling repository name: ${name}"
+              exit 1
+            fi
+            rm -rf "../${name}"
+            git clone --depth 1 "https://github.com/brainage04/${name}.git" "../${name}"
+            chmod +x "../${name}/gradlew"
+            "../${name}/gradlew" -p "../${name}" --no-daemon publishAllPublicationsToLocalRepository
+          done
 
       - name: make gradle wrapper executable
         if: steps.config.outputs.enabled == 'true'

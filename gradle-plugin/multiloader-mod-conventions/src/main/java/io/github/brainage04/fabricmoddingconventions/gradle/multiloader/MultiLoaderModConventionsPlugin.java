@@ -2,6 +2,7 @@ package io.github.brainage04.fabricmoddingconventions.gradle.multiloader;
 
 import io.github.brainage04.fabricmoddingconventions.gradle.modpublishing.ModPublishingExtension;
 import io.github.brainage04.fabricmoddingconventions.gradle.production.ProductionGameTestExtension;
+import io.github.brainage04.fabricmoddingconventions.gradle.production.ProductionGameTestsPlugin;
 import io.github.brainage04.fabricmoddingconventions.gradle.recorder.ClientGameTestRecorderExtension;
 import io.github.brainage04.fabricmoddingconventions.gradle.recorder.RecordClientGameTestTask;
 import io.github.brainage04.fabricmoddingconventions.gradle.workspace.WorkspaceDependenciesExtension;
@@ -13,6 +14,7 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ProjectDependency;
+import org.gradle.api.artifacts.dsl.RepositoryHandler;
 import org.gradle.api.plugins.BasePluginExtension;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.tasks.JavaExec;
@@ -47,6 +49,10 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
     private static final String WORKSPACE_DEPENDENCIES_PLUGIN = "io.github.brainage04.workspace-dependencies";
     private static final String MOD_PUBLISHING_PLUGIN = "io.github.brainage04.mod-publishing";
     private static final String JAVA_QUALITY_PLUGIN = "io.github.brainage04.java-quality-conventions";
+    private static final String DEVAUTH_GROUP = "me.djtheredstoner";
+    private static final String DEVAUTH_VERSION = "1.2.2";
+    private static final String DEVAUTH_REPOSITORY =
+            "https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1";
 
     @Override
     public void apply(Project root) {
@@ -62,6 +68,7 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
                 MultiLoaderModConventionsExtension.class,
                 root.getObjects()
         );
+        extension.getDevAuth().convention(hasClientSide(root));
 
         root.getPluginManager().apply("base");
         configureIdentity(root, common, fabric, neoForge);
@@ -85,74 +92,29 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
         }
     }
 
+    /**
+     * Declares only the repositories every mod needs. Owned libraries come from Maven Central (or a sibling
+     * {@code build/local-repo} via workspace-dependencies); repositories only some mods need are declared by
+     * those mods with {@code exclusiveContent} next to the dependency.
+     */
     private static void configureRepositories(Project project) {
-        project.getRepositories().mavenLocal();
-        for (String url : List.of(
-                "https://maven.architectury.dev/",
-                "https://maven.neoforged.net/releases/",
-                "https://maven.fabricmc.net/",
-                "https://maven.minecraftforge.net/",
-                "https://maven.shedaniel.me/",
-                "https://maven.terraformersmc.com/releases/",
-                "https://api.modrinth.com/maven/",
-                "https://maven.nucleoid.xyz/",
-                "https://babbaj.github.io/maven/"
-        )) {
-            project.getRepositories().maven(repository -> repository.setUrl(url));
-        }
-        project.getRepositories().mavenCentral();
-        configureReleaseRepositories(project);
-    }
-
-    private static void configureReleaseRepositories(Project project) {
-        Project root = project.getRootProject();
-        Object conventionsVersion = root.findProperty("fabricmoddingconventions_version");
-        if (conventionsVersion != null && !conventionsVersion.toString().isBlank()) {
-            project.getRepositories().ivy(repository -> {
-                repository.setName("FabricModdingConventionsGitHubReleases");
-                repository.setUrl("https://github.com/brainage04/FabricModdingConventions/releases/download");
-                repository.patternLayout(layout ->
-                        layout.artifact("v[revision]/[artifact]-[revision].[ext]"));
-                repository.metadataSources(metadata -> metadata.artifact());
-                repository.content(content -> content.includeModule("io.github.brainage04", "fabricmoddingconventions"));
-            });
-        }
-        Object brainageLibVersion = root.findProperty("brainagelib_version");
-        if (brainageLibVersion != null && !brainageLibVersion.toString().isBlank()) {
-            project.getRepositories().ivy(repository -> {
-                repository.setName("BrainageLibGitHubReleases");
-                repository.setUrl("https://github.com/brainage04/BrainageLib/releases/download");
-                repository.patternLayout(layout ->
-                        layout.artifact("v[revision]/[artifact]-[revision].[ext]"));
-                repository.metadataSources(metadata -> metadata.artifact());
-                repository.content(content -> {
-                    content.includeModule("io.github.brainage04", "brainagelib");
-                    content.includeModule("io.github.brainage04", "brainagelib-neoforge");
-                });
-            });
-        }
-        Object hudRendererLibVersion = root.findProperty("hudrendererlib_version");
-        if (hudRendererLibVersion != null && !hudRendererLibVersion.toString().isBlank()) {
-            project.getRepositories().ivy(repository -> {
-                repository.setName("HudRendererLibGitHubRelease");
-                repository.setUrl(
-                        "https://github.com/brainage04/HudRendererLib/releases/download/v"
-                                + hudRendererLibVersion.toString().strip()
-                );
-                repository.patternLayout(layout -> layout.artifact("[artifact]-[revision].[ext]"));
-                repository.metadataSources(metadata -> metadata.artifact());
-                repository.content(content -> {
-                    // The sibling maven publication uses io.github.brainage04, while the
-                    // release-fallback declarations some mods still carry use github.brainage04.
-                    // The ivy pattern ignores the group, so both must stay allowed or one of the
-                    // two paths stops resolving.
-                    content.includeModule("io.github.brainage04", "hudrendererlib");
-                    content.includeModule("github.brainage04", "hudrendererlib");
-                    content.includeModule("io.github.brainage04", "hudrendererlib-neoforge");
-                    content.includeModule("github.brainage04", "hudrendererlib-neoforge");
-                });
-            });
-        }
+        RepositoryHandler repositories = project.getRepositories();
+        repositories.mavenCentral();
+        repositories.maven(repository -> {
+            repository.setName("FabricMC");
+            repository.setUrl("https://maven.fabricmc.net/");
+            repository.content(content -> content.includeGroupAndSubgroups("net.fabricmc"));
+        });
+        repositories.maven(repository -> {
+            repository.setName("NeoForged");
+            repository.setUrl("https://maven.neoforged.net/releases/");
+            repository.content(content -> content.includeGroupAndSubgroups("net.neoforged"));
+        });
+        repositories.maven(repository -> {
+            repository.setName("Architectury");
+            repository.setUrl("https://maven.architectury.dev/");
+            repository.content(content -> content.includeGroupAndSubgroups("dev.architectury"));
+        });
     }
 
     private static void configureJava(Project project, int release) {
@@ -211,6 +173,11 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
             loom.splitEnvironmentSourceSets();
         }
         fabric.getPluginManager().apply(RECORDER_PLUGIN);
+        // The recorder drives :fabric:runProductionClientGameTest, so loom's development clientGameTest run
+        // (and its :fabric:runClientGameTest task) must never be created: an unqualified
+        // `./gradlew runClientGameTest` would otherwise also launch it outside Xvfb.
+        fabric.getExtensions().getExtraProperties()
+                .set(ProductionGameTestsPlugin.DEVELOPMENT_CLIENT_GAMETEST_RUN_PROPERTY, false);
         fabric.getPluginManager().apply(PRODUCTION_GAMETESTS_PLUGIN);
         fabric.getPluginManager().apply(WORKSPACE_DEPENDENCIES_PLUGIN);
         fabric.getPluginManager().apply(MOD_PUBLISHING_PLUGIN);
@@ -229,7 +196,7 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
         configureAccessWidener(root, loom);
         SourceSet fabricGameTest = sourceSets(fabric).findByName("gametest");
         if (fabricGameTest != null) {
-            addSharedGameTests(common, fabricGameTest);
+            addSharedGameTests(fabric, common, fabricGameTest);
         }
 
         Configuration commonConfiguration = resolvableConfiguration(fabric, "common");
@@ -252,6 +219,7 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
         );
 
         configureMergedOutputs(common, fabric);
+        configureDevAuth(root, fabric, "DevAuth-fabric", fleetExtension);
         configureFabricTests(root, fabric);
         configureFabricGameTests(root, fabric, fleetExtension);
         configureWorkspaceDependency(root, fabric);
@@ -259,7 +227,7 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
         configureResourceExpansion(root, fabric, "src/main/resources/fabric.mod.json", "fabric.mod.json");
     }
 
-    private static void addSharedGameTests(Project common, SourceSet gameTest) {
+    private static void addSharedGameTests(Project loader, Project common, SourceSet gameTest) {
         File sharedJava = common.file("src/gametest/java");
         if (sharedJava.isDirectory()) {
             gameTest.getJava().srcDir(sharedJava);
@@ -268,6 +236,44 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
         if (sharedResources.isDirectory()) {
             gameTest.getResources().srcDir(sharedResources);
         }
+        TaskProvider<GenerateSharedGameTestResourcesTask> sharedStructures = loader.getTasks().register(
+                "generateSharedGameTestResources",
+                GenerateSharedGameTestResourcesTask.class,
+                task -> task.getOutputDirectory().convention(
+                        loader.getLayout().getBuildDirectory().dir("generated/fabricmoddingconventions/gametest-resources")
+                )
+        );
+        gameTest.getResources().srcDir(sharedStructures.flatMap(GenerateSharedGameTestResourcesTask::getOutputDirectory));
+    }
+
+    /**
+     * Adds DevAuth to the development runtime only ({@code localRuntime} is neither packaged, published nor part
+     * of the production runs). DevAuth stays inactive until the developer enables it.
+     */
+    private static void configureDevAuth(
+            Project root,
+            Project loader,
+            String artifact,
+            MultiLoaderModConventionsExtension fleetExtension
+    ) {
+        if (!hasClientSide(root)) {
+            return;
+        }
+        loader.getRepositories().exclusiveContent(exclusive -> exclusive
+                .forRepository(() -> loader.getRepositories().maven(repository -> {
+                    repository.setName("DevAuth");
+                    repository.setUrl(DEVAUTH_REPOSITORY);
+                }))
+                .filter(filter -> filter.includeGroup(DEVAUTH_GROUP)));
+        String coordinate = DEVAUTH_GROUP + ":" + artifact + ":" + property(root, "devauth_version", DEVAUTH_VERSION);
+        loader.getConfigurations().named("localRuntime").configure(configuration ->
+                configuration.getDependencies().addAllLater(fleetExtension.getDevAuth().map(enabled -> enabled
+                        ? List.of(loader.getDependencies().create(coordinate))
+                        : List.of())));
+    }
+
+    private static boolean hasClientSide(Project root) {
+        return !property(root, "mod_side", "both").equalsIgnoreCase("server");
     }
 
     private static void configureAccessWidener(Project root, LoomGradleExtensionAPI loom) {
@@ -318,27 +324,9 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
                         .orElse(true)
         );
 
-        fabric.getTasks().named("recordClientGameTest", RecordClientGameTestTask.class)
-                .configure(task -> task.getRunTaskName().set("runProductionClientGameTest"));
-        // In this layout the recorder drives :fabric:runProductionClientGameTest, so loom's own
-        // clientGameTest run is unused. It must not exist: the recorder points it at the recorder
-        // directory, which is also the production client run's directory, and Gradle then rejects
-        // the graph ("uses this output of task ':fabric:runProductionClientGameTest' without
-        // declaring an explicit or implicit dependency") whenever `runClientGameTest` selects both
-        // the root task and loom's task. Removing the run config before loom creates the task keeps
-        // only the root task.
-        LoomGradleExtensionAPI loom = fabric.getExtensions().getByType(LoomGradleExtensionAPI.class);
-        // The recorder re-points loom's clientGameTest run at the recorder directory from its own
-        // afterEvaluate, which runs after this apply block, so the override has to be registered
-        // later as well. Otherwise loom's run task shares the production client run's directory and
-        // Gradle rejects the graph when `runClientGameTest` selects both the root task and loom's.
-        fabric.afterEvaluate(project -> {
-            LoomGradleExtensionAPI loomApi = project.getExtensions().getByType(LoomGradleExtensionAPI.class);
-            if (loomApi.getRuns().findByName("clientGameTest") != null) {
-                String loomRunDir = project.getLayout().getBuildDirectory()
-                        .dir("run/loomClientGameTest").get().getAsFile().getAbsolutePath();
-                loomApi.getRuns().named("clientGameTest").configure(run -> run.setRunDir(loomRunDir));
-            }
+        fabric.getTasks().named("recordClientGameTest", RecordClientGameTestTask.class).configure(task -> {
+            task.getRunTaskName().set("runProductionClientGameTest");
+            task.onlyIf("Fabric client GameTests are enabled", spec -> fleetExtension.getFabricClientGameTests().get());
         });
         fabric.getTasks().named("prepareClientGameTestRun").configure(task ->
                 task.mustRunAfter("prepareProductionGameTestRuns"));
@@ -393,7 +381,7 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
                 .plus(gameTest.getOutput())
                 .plus(gameTest.getCompileClasspath())
                 .plus(neoForge.getConfigurations().getByName("runtimeClasspath")));
-        addSharedGameTests(common, gameTest);
+        addSharedGameTests(neoForge, common, gameTest);
 
         LoomGradleExtensionAPI loom = neoForge.getExtensions().getByType(LoomGradleExtensionAPI.class);
         File accessTransformer = neoForge.file("src/main/resources/META-INF/accesstransformer.cfg");
@@ -421,6 +409,7 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
         neoForge.getDependencies().add("common", projectDependency(neoForge, common));
 
         configureMergedOutputs(common, neoForge);
+        configureDevAuth(root, neoForge, "DevAuth-neoforge", fleetExtension);
         configureNeoForgePublishing(root, fabric, neoForge, fleetExtension);
         configureResourceExpansion(
                 root,
@@ -565,8 +554,10 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
         });
         root.getTasks().register("runClientGameTest", task -> {
             task.setGroup("verification");
-            task.setDescription("Runs the Fabric production client GameTests.");
-            task.dependsOn(":fabric:runProductionClientGameTest");
+            task.setDescription("Runs the Fabric production client GameTests; does nothing when fabricClientGameTests is off.");
+            task.dependsOn(extension.getFabricClientGameTests().map(enabled -> enabled
+                    ? List.of(":fabric:runProductionClientGameTest")
+                    : List.of()));
         });
         root.getTasks().register("recordClientGameTest", task -> {
             task.setGroup("verification");

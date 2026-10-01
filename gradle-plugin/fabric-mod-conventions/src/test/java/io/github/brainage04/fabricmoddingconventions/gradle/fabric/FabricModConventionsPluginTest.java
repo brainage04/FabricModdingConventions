@@ -52,7 +52,6 @@ class FabricModConventionsPluginTest {
                         assert repositoryUrls.contains('https://repo.maven.apache.org/maven2/')
                         assert repositoryUrls.contains('https://libraries.minecraft.net')
                         assert repositoryUrls.contains('https://maven.fabricmc.net/')
-                        assert repositoryUrls.contains('https://github.com/brainage04/FabricModdingConventions/releases/download')
                         assert project.version == '1.2.3'
                         assert project.group == 'io.github.brainage04.fixturemod'
                         assert base.archivesName.get() == 'fixturemod'

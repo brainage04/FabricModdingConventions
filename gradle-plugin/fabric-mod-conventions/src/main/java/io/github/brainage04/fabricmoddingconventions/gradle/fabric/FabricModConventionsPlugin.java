@@ -9,7 +9,6 @@ import org.gradle.api.Project;
 import org.gradle.api.artifacts.ArtifactRepositoryContainer;
 import org.gradle.api.artifacts.dsl.RepositoryHandler;
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository;
-import org.gradle.api.artifacts.repositories.IvyArtifactRepository;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.plugins.BasePluginExtension;
 import org.gradle.api.plugins.JavaPluginExtension;
@@ -37,8 +36,6 @@ public final class FabricModConventionsPlugin implements Plugin<Project> {
 
     private static final URI MINECRAFT_LIBRARIES = URI.create("https://libraries.minecraft.net");
     private static final URI FABRIC_MAVEN = URI.create("https://maven.fabricmc.net/");
-    private static final URI CONVENTIONS_RELEASES =
-            URI.create("https://github.com/brainage04/FabricModdingConventions/releases/download");
 
     @Override
     public void apply(Project project) {
@@ -147,23 +144,6 @@ public final class FabricModConventionsPlugin implements Plugin<Project> {
         }
         addMavenRepository(repositories, "MinecraftLibraries", MINECRAFT_LIBRARIES);
         addMavenRepository(repositories, "Fabric", FABRIC_MAVEN);
-        addConventionsReleaseRepository(repositories);
-    }
-
-    private static void addConventionsReleaseRepository(RepositoryHandler repositories) {
-        boolean alreadyPresent = repositories.withType(IvyArtifactRepository.class).stream()
-                .anyMatch(repository -> repository.getUrl().equals(CONVENTIONS_RELEASES));
-        if (!alreadyPresent) {
-            repositories.ivy(repository -> {
-                repository.setName("FabricModdingConventionsGitHubReleases");
-                repository.setUrl(CONVENTIONS_RELEASES);
-                repository.patternLayout(layout ->
-                        layout.artifact("v[revision]/[artifact]-[revision].[ext]"));
-                repository.metadataSources(metadata -> metadata.artifact());
-                repository.content(content ->
-                        content.includeModule("io.github.brainage04", "fabricmoddingconventions"));
-            });
-        }
     }
 
     private static void addMavenRepository(RepositoryHandler repositories, String name, URI url) {

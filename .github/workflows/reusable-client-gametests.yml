@@ -43,6 +43,11 @@ on:
         required: false
         default: false
         type: boolean
+      prepare_siblings:
+        description: Space-separated brainage04 repositories to clone into ../<name> and publish to their build/local-repo before the consumer
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
@@ -113,6 +118,22 @@ jobs:
             --no-daemon \
             -Pmaven_group=io.github.brainage04 \
             publishAllPublicationsToLocalBaritoneRepository
+
+      - name: prepare sibling libraries
+        if: steps.client-test-support.outputs.present == 'true' && inputs.prepare_siblings != ''
+        env:
+          PREPARE_SIBLINGS: ${{ inputs.prepare_siblings }}
+        run: |
+          for name in ${PREPARE_SIBLINGS}; do
+            if [[ ! "${name}" =~ ^[A-Za-z0-9._-]+$ ]]; then
+              echo "Invalid sibling repository name: ${name}"
+              exit 1
+            fi
+            rm -rf "../${name}"
+            git clone --depth 1 "https://github.com/brainage04/${name}.git" "../${name}"
+            chmod +x "../${name}/gradlew"
+            "../${name}/gradlew" -p "../${name}" --no-daemon publishAllPublicationsToLocalRepository
+          done
 
       - name: make gradle wrapper executable
         if: steps.client-test-support.outputs.present == 'true'

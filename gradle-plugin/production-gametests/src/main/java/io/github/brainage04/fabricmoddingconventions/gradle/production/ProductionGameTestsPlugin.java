@@ -19,6 +19,12 @@ public final class ProductionGameTestsPlugin implements Plugin<Project> {
     public static final String PLUGIN_ID = "io.github.brainage04.production-gametests";
     private static final String RUNTIME_LIBRARIES_CONFIGURATION = "productionGameTestRuntimeLibraries";
     private static final String CLIENT_GAMETEST_ENABLED_PROPERTY = "fabricmoddingconventions.clientGameTest";
+    /**
+     * Set to {@code false} (as an extra property, before applying this plugin) to skip Loom's development
+     * {@code clientGameTest} run and its {@code runClientGameTest} task while keeping the production client run.
+     */
+    public static final String DEVELOPMENT_CLIENT_GAMETEST_RUN_PROPERTY =
+            "fabricmoddingconventions.developmentClientGameTestRun";
 
     @Override
     public void apply(Project project) {
@@ -42,12 +48,15 @@ public final class ProductionGameTestsPlugin implements Plugin<Project> {
         if (modId == null || modId.toString().isBlank()) {
             throw new GradleException(PLUGIN_ID + " requires project property 'mod_id'.");
         }
+        boolean developmentClientRun = !"false".equalsIgnoreCase(
+                String.valueOf(project.findProperty(DEVELOPMENT_CLIENT_GAMETEST_RUN_PROPERTY)).strip()
+        );
         fabricApi.configureTests(settings -> {
             settings.getCreateSourceSet().set(true);
             settings.getModId().set(modId.toString().strip() + "-gametest");
             settings.getEnableGameTests().set(modSide != ModSide.CLIENT);
-            settings.getEnableClientGameTests().set(modSide != ModSide.SERVER);
-            settings.getEula().set(modSide != ModSide.SERVER);
+            settings.getEnableClientGameTests().set(modSide != ModSide.SERVER && developmentClientRun);
+            settings.getEula().set(modSide != ModSide.SERVER && developmentClientRun);
         });
     }
 

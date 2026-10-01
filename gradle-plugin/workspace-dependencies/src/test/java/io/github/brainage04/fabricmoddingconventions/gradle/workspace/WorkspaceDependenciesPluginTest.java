@@ -191,6 +191,48 @@ class WorkspaceDependenciesPluginTest {
     }
 
     @Test
+    void keepsWorkingAlongsideExclusiveContentAcrossRepeatedResolutions() throws IOException {
+        writeMavenModule("Sibling", "example.fixture", "sibling-library", "1.0.0");
+        writeMavenModule("Niche", "example.niche", "niche-library", "3.0.0");
+        writeBuildFile("""
+                workspaceDependencies {
+                    siblingMaven('Sibling') {
+                        coordinate.set('example.fixture:sibling-library:1.0.0')
+                    }
+                }
+
+                repositories {
+                    exclusiveContent {
+                        forRepository { maven { url = uri('%s') } }
+                        filter { includeGroup 'example.niche' }
+                    }
+                }
+
+                configurations {
+                    firstProbe
+                    secondProbe
+                }
+                dependencies {
+                    firstProbe 'example.fixture:sibling-library:1.0.0'
+                    secondProbe 'example.niche:niche-library:3.0.0'
+                }
+
+                def firstArtifact = configurations.firstProbe.singleFile
+
+                tasks.register('verifyRepeatedResolution') {
+                    doLast {
+                        assert firstArtifact.name == 'sibling-library-1.0.0.jar'
+                        assert configurations.secondProbe.singleFile.name == 'niche-library-3.0.0.jar'
+                    }
+                }
+                """.formatted(temporaryDirectory.resolve("Niche/build/local-repo").toUri()));
+
+        BuildResult result = runGradle("verifyRepeatedResolution");
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":verifyRepeatedResolution").getOutcome());
+    }
+
+    @Test
     void runClientLaunchesWithTheSharedOptionsFile() throws IOException {
         Path shared = temporaryDirectory.resolve("launcher instance/options.txt");
         Files.createDirectories(shared.getParent());

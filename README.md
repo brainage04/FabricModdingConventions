@@ -15,7 +15,7 @@ Shared Gradle plugins, GitHub workflows and client GameTest helpers for my Minec
 | `mod-publishing` | Fabric/NeoForge project | Opt-in GitHub, Modrinth and CurseForge release tasks around the Mod Publish Plugin. |
 | `maven-central-publishing` | libraries only | POM metadata, signing and Central Portal upload. |
 
-Plugins are resolved from `../FabricModdingConventions/build/local-repo` when present, otherwise from this repository's GitHub releases. Consumers map each plugin ID to its module in `settings.gradle`; copy `pluginManagement` from ModernMinecraftModTemplate.
+Plugins are resolved from `../FabricModdingConventions/build/local-repo` when present, otherwise from Maven Central. Consumers map each plugin ID to its module in `settings.gradle`; copy `pluginManagement` from ModernMinecraftModTemplate.
 
 ## Multi-loader mods
 
@@ -28,8 +28,10 @@ plugins {
 Requires subprojects `common`, `fabric` and `neoforge`, and these Gradle properties: `mod_id`, `mod_name`, `mod_version`, `maven_group`, `archives_base_name`, `java_version`, `minecraft_version`, `loader_version`, `fabric_api_version`, `neoforge_version`, `fabricmoddingconventions_version`. `mod_side` (`both`, `client` or `server`; default `both`) splits Fabric client sources for `both`, turns off Fabric production server GameTests for `client`, and sets the CurseForge environment.
 
 - Shared GameTests go in `common/src/gametest/java` and `common/src/gametest/resources`; both loaders compile and package them.
+- Both loaders' `gametest` source sets also get the structure `fabricmoddingconventions:empty`, 8x8x8 blocks of air (`minecraft:empty` is 1x1x1). Use it in test instances with `"structure": "fabricmoddingconventions:empty"`; it is never packaged into the release JARs.
 - The access widener is `<mod_id>.accesswidener` in `common` (or `fabric`); the NeoForge access transformer is `neoforge/src/main/resources/META-INF/accesstransformer.cfg`.
-- Root tasks: `runFabricClient`, `runNeoForgeClient`, `runClientGameTest`, `runNeoForgeGameTests`, `runAllProductionGameTests`, `recordClientGameTest`, `collectReleaseArtifacts`.
+- Root tasks: `runFabricClient`, `runNeoForgeClient`, `runClientGameTest`, `runNeoForgeGameTests`, `runAllProductionGameTests`, `recordClientGameTest`, `collectReleaseArtifacts`. `runClientGameTest` runs `:fabric:runProductionClientGameTest`; Loom's development `clientGameTest` run is not created, so there is no `:fabric:runClientGameTest`. With `fabricClientGameTests = false`, `runClientGameTest` and `recordClientGameTest` do nothing.
+- For `mod_side` `client` or `both`, [DevAuth](https://github.com/DJtheRedstoner/DevAuth) (`DevAuth-fabric`/`DevAuth-neoforge`, version `1.2.2` or the `devauth_version` property) is on the development runtime of both loaders (Loom's `localRuntime`). It is not in the JARs, publications or production runs, and stays inactive until you enable it (`-Ddevauth.enabled=true` or its config file). Turn it off with `devAuth = false`.
 
 Turn off parts that don't apply:
 
@@ -39,6 +41,20 @@ multiLoaderModConventions {
     fabricServerGameTests = true
     neoForgeGameTests = true
     publishing = true
+    devAuth = true                  // default: true unless mod_side=server
+}
+```
+
+### Repositories
+
+Every module gets only Maven Central, `https://maven.fabricmc.net/` (`net.fabricmc` groups), `https://maven.neoforged.net/releases/` (`net.neoforged` groups) and `https://maven.architectury.dev/` (`dev.architectury` groups); owned libraries (the conventions runtime, HudRendererLib, BrainageLib) come from Maven Central or a sibling `build/local-repo` (see [Workspace dependencies](#workspace-dependencies)). There is no `mavenLocal()` and no GitHub-release repository. A mod that needs another repository declares it in the module that declares the dependency, restricted to that dependency's group:
+
+```gradle
+repositories {
+    exclusiveContent {
+        forRepository { maven { url = "https://maven.shedaniel.me/" } }
+        filter { includeGroup "me.shedaniel.cloth" }
+    }
 }
 ```
 
@@ -162,6 +178,13 @@ Every reusable workflow takes a `runner` input, a JSON `runs-on` value defaultin
 ```yaml
     with:
       runner: '["self-hosted","minecraft"]'
+```
+
+A mod that depends on an owned library that is not on Maven Central (BrainageLib) passes `prepare_siblings`, a space-separated list of brainage04 repositories, to `reusable-mod-build.yml`, the three GameTest workflows and `reusable-multiloader-release.yml`. Each one is cloned (default branch) into `../<name>` and published with `publishAllPublicationsToLocalRepository`, so its `siblingMaven(...)` declaration resolves from `../<name>/build/local-repo`:
+
+```yaml
+    with:
+      prepare_siblings: BrainageLib
 ```
 
 ## Fleet audit

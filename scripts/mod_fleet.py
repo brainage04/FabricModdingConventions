@@ -205,8 +205,10 @@ def audit_repository(entry: dict[str, Any], workspace: Path, baseline: dict[str,
 
         if "io.github.brainage04." not in build_text:
             deviations.append("No FabricModdingConventions plugin is applied")
-        if "FabricModdingConventionsGitHubReleases" not in settings_text:
-            deviations.append("Settings omit the FabricModdingConventions GitHub release repository")
+        if "FabricModdingConventionsGitHubReleases" in settings_text or "ivy {" in settings_text:
+            deviations.append("Settings still declare a GitHub-release Ivy repository (plugins are on Maven Central)")
+        if "mavenCentral()" not in settings_text:
+            deviations.append("Settings omit Maven Central from pluginManagement")
         if "includeBuild(\"../FabricModdingConventions\")" not in settings_text and "includeBuild('../FabricModdingConventions')" not in settings_text:
             deviations.append("Settings omit the local FabricModdingConventions composite build")
         if not workflow_versions:
