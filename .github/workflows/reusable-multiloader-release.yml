@@ -115,7 +115,7 @@ jobs:
   prepare:
     permissions:
       contents: write
-    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-release-prepare.yml@v2.4.16
+    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-release-prepare.yml@v2.4.17
     with:
       runner: ${{ inputs.runner }}
       prepare_baritone: ${{ inputs.prepare_baritone }}
@@ -130,7 +130,7 @@ jobs:
     needs: prepare
     permissions:
       contents: write
-    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-github.yml@v2.4.16
+    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-github.yml@v2.4.17
     with:
       runner: ${{ inputs.runner }}
       prepare_baritone: ${{ inputs.prepare_baritone }}
@@ -148,7 +148,7 @@ jobs:
     if: inputs.publish_modrinth
     permissions:
       contents: read
-    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-modrinth.yml@v2.4.16
+    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-modrinth.yml@v2.4.17
     with:
       runner: ${{ inputs.runner }}
       prepare_baritone: ${{ inputs.prepare_baritone }}
@@ -170,7 +170,7 @@ jobs:
     if: inputs.publish_modrinth
     permissions:
       contents: read
-    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-modrinth.yml@v2.4.16
+    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-modrinth.yml@v2.4.17
     with:
       runner: ${{ inputs.runner }}
       prepare_baritone: ${{ inputs.prepare_baritone }}
@@ -189,7 +189,7 @@ jobs:
     if: inputs.publish_curseforge
     permissions:
       contents: read
-    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-curseforge.yml@v2.4.16
+    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-curseforge.yml@v2.4.17
     with:
       runner: ${{ inputs.runner }}
       prepare_baritone: ${{ inputs.prepare_baritone }}
@@ -210,7 +210,7 @@ jobs:
     if: inputs.publish_curseforge
     permissions:
       contents: read
-    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-curseforge.yml@v2.4.16
+    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-publish-curseforge.yml@v2.4.17
     with:
       runner: ${{ inputs.runner }}
       prepare_baritone: ${{ inputs.prepare_baritone }}

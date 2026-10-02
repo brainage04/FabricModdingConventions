@@ -1,8 +1,10 @@
 package io.github.brainage04.fabricmoddingconventions.gradle.multiloader;
 
 import io.github.brainage04.fabricmoddingconventions.gradle.modpublishing.ModPublishingExtension;
+import io.github.brainage04.fabricmoddingconventions.gradle.production.ClientGameTestProductionRunTask;
 import io.github.brainage04.fabricmoddingconventions.gradle.production.ProductionGameTestExtension;
 import io.github.brainage04.fabricmoddingconventions.gradle.production.ProductionGameTestsPlugin;
+import io.github.brainage04.fabricmoddingconventions.gradle.production.ServerGameTestProductionRunTask;
 import io.github.brainage04.fabricmoddingconventions.gradle.recorder.ClientGameTestRecorderExtension;
 import io.github.brainage04.fabricmoddingconventions.gradle.recorder.RecordClientGameTestTask;
 import io.github.brainage04.fabricmoddingconventions.gradle.workspace.WorkspaceDependenciesExtension;
@@ -53,6 +55,8 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
     private static final String DEVAUTH_VERSION = "1.2.2";
     private static final String DEVAUTH_REPOSITORY =
             "https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1";
+    private static final String NEOFORGE_GAMETEST_TASK = "runGameTest";
+    private static final String PRODUCTION_CLIENT_GAMETEST_TASK = "runProductionClientGameTest";
 
     @Override
     public void apply(Project root) {
@@ -76,7 +80,7 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
         configureCommon(root, common);
         configureFabric(root, common, fabric, extension);
         configureNeoForge(root, common, fabric, neoForge, extension);
-        configureRootTasks(root, fabric, neoForge, extension);
+        configureRootTasks(root, fabric, neoForge);
     }
 
     private static void configureIdentity(Project root, Project... subprojects) {
@@ -145,12 +149,22 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
         configureAccessWidener(root, loom);
         // Loom gives every project default client and server runs, but common has no loader
         // metadata, so its game is plain Minecraft without the mod. Removing the runs drops
-        // their IDE run configurations and disables runClient/runServer, which
-        // `./gradlew runClient` would otherwise launch alongside the Fabric and NeoForge
-        // clients. Loom leaves runClientRenderDoc enabled after that, so every task that
-        // launches a JVM is disabled as well.
+        // their IDE run configurations. Loom registers runClient, runServer and
+        // runClientRenderDoc while it is applied and Gradle cannot remove tasks, so they stay
+        // listed: every task that launches a JVM is disabled and stops the build before
+        // anything runs, pointing at the loader projects instead.
         loom.getRuns().clear();
-        common.getTasks().withType(JavaExec.class).configureEach(task -> task.setEnabled(false));
+        common.getTasks().withType(JavaExec.class).configureEach(task -> {
+            task.setEnabled(false);
+            task.setDescription("Does nothing: common has no loader. Use " + loaderTaskPaths(task.getName()) + ".");
+        });
+        common.getGradle().getTaskGraph().whenReady(graph -> graph.getAllTasks().stream()
+                .filter(task -> task instanceof JavaExec && task.getProject().getPath().equals(common.getPath()))
+                .findFirst()
+                .ifPresent(task -> {
+                    throw new GradleException(task.getPath() + " does nothing: common has no loader. Run "
+                            + loaderTaskPaths(task.getName()) + " instead.");
+                }));
 
         SourceSet commonMain = sourceSets(common).getByName(SourceSet.MAIN_SOURCE_SET_NAME);
         File generatedResources = common.file("src/main/generated");
@@ -174,10 +188,13 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
         }
         fabric.getPluginManager().apply(RECORDER_PLUGIN);
         // The recorder drives :fabric:runProductionClientGameTest, so loom's development clientGameTest run
-        // (and its :fabric:runClientGameTest task) must never be created: an unqualified
-        // `./gradlew runClientGameTest` would otherwise also launch it outside Xvfb.
+        // (and its :fabric:runClientGameTest task) must never be created.
+        // The root runAllGameTests aggregates the Fabric production runs with the NeoForge GameTests, so the
+        // production plugin's :fabric:runAllProductionGameTests would only duplicate part of it.
         fabric.getExtensions().getExtraProperties()
                 .set(ProductionGameTestsPlugin.DEVELOPMENT_CLIENT_GAMETEST_RUN_PROPERTY, false);
+        fabric.getExtensions().getExtraProperties()
+                .set(ProductionGameTestsPlugin.AGGREGATE_TASK_PROPERTY, false);
         fabric.getPluginManager().apply(PRODUCTION_GAMETESTS_PLUGIN);
         fabric.getPluginManager().apply(WORKSPACE_DEPENDENCIES_PLUGIN);
         fabric.getPluginManager().apply(MOD_PUBLISHING_PLUGIN);
@@ -330,8 +347,18 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
         });
         fabric.getTasks().named("prepareClientGameTestRun").configure(task ->
                 task.mustRunAfter("prepareProductionGameTestRuns"));
-        fabric.getTasks().matching(task -> task.getName().equals("runProductionClientGameTest"))
+        fabric.getTasks().withType(ClientGameTestProductionRunTask.class)
                 .configureEach(task -> task.dependsOn("prepareClientGameTestRun"));
+        // CI always calls :fabric:runProductionClientGameTest; with client GameTests off it has to exist and
+        // do nothing. This runs after the production plugin's afterEvaluate, which registers the real task.
+        fabric.afterEvaluate(_ -> {
+            if (!fabric.getTasks().getNames().contains(PRODUCTION_CLIENT_GAMETEST_TASK)) {
+                fabric.getTasks().register(PRODUCTION_CLIENT_GAMETEST_TASK, task -> {
+                    task.setGroup("verification");
+                    task.setDescription("Does nothing: Fabric client GameTests are off.");
+                });
+            }
+        });
     }
 
     private static void configureWorkspaceDependency(Project root, Project fabric) {
@@ -393,8 +420,9 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
         loom.getMods().maybeCreate("main").sourceSet(main);
         loom.getMods().getByName("main").sourceSet(sourceSets(common).getByName(SourceSet.MAIN_SOURCE_SET_NAME));
         loom.getMods().getByName("main").sourceSet(gameTest);
-        loom.getRuns().maybeCreate("gameTestServer").server();
-        loom.getRuns().named("gameTestServer").configure(run -> {
+        // Named like Fabric API's dev server GameTest run, so both loaders have :<loader>:runGameTest.
+        loom.getRuns().maybeCreate("gameTest").server();
+        loom.getRuns().named("gameTest").configure(run -> {
             run.forgeTemplate("gameTestServer");
             run.name("NeoForge Game Tests");
             run.source(gameTest);
@@ -417,7 +445,7 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
                 "src/main/resources/META-INF/neoforge.mods.toml",
                 "META-INF/neoforge.mods.toml"
         );
-        neoForge.getTasks().matching(task -> task.getName().equals("runGameTestServer"))
+        neoForge.getTasks().matching(task -> task.getName().equals(NEOFORGE_GAMETEST_TASK))
                 .configureEach(task -> task.onlyIf(spec -> fleetExtension.getNeoForgeGameTests().get()));
     }
 
@@ -525,45 +553,15 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
         return Map.copyOf(values);
     }
 
-    private static void configureRootTasks(
-            Project root,
-            Project fabric,
-            Project neoForge,
-            MultiLoaderModConventionsExtension extension
-    ) {
-        root.getTasks().register("runNeoForgeGameTests", task -> {
+    private static void configureRootTasks(Project root, Project fabric, Project neoForge) {
+        // Only tasks that span both loaders live at the root; single-loader tasks are run as
+        // :fabric:<task> or :neoforge:<task>.
+        root.getTasks().register("runAllGameTests", task -> {
             task.setGroup("verification");
-            task.setDescription("Runs the NeoForge server GameTest suite.");
-            task.dependsOn(neoForge.getTasks().named("runGameTestServer"));
-            task.onlyIf(spec -> extension.getNeoForgeGameTests().get());
-        });
-        root.getTasks().register("runAllProductionGameTests", task -> {
-            task.setGroup("verification");
-            task.setDescription("Runs Fabric and NeoForge production GameTests.");
-            task.dependsOn(fabric.getTasks().named("runAllProductionGameTests"));
-            task.dependsOn(neoForge.getTasks().named("runGameTestServer"));
-        });
-        root.getTasks().register("runFabricClient", task -> {
-            task.setGroup("application");
-            task.setDescription("Runs the Fabric development client.");
-            task.dependsOn(":fabric:runClient");
-        });
-        root.getTasks().register("runNeoForgeClient", task -> {
-            task.setGroup("application");
-            task.setDescription("Runs the NeoForge development client.");
-            task.dependsOn(":neoforge:runClient");
-        });
-        root.getTasks().register("runClientGameTest", task -> {
-            task.setGroup("verification");
-            task.setDescription("Runs the Fabric production client GameTests; does nothing when fabricClientGameTests is off.");
-            task.dependsOn(extension.getFabricClientGameTests().map(enabled -> enabled
-                    ? List.of(":fabric:runProductionClientGameTest")
-                    : List.of()));
-        });
-        root.getTasks().register("recordClientGameTest", task -> {
-            task.setGroup("verification");
-            task.setDescription("Records the Fabric production client GameTests.");
-            task.dependsOn(":fabric:recordClientGameTest");
+            task.setDescription("Runs the Fabric production server and client GameTests and the NeoForge GameTests.");
+            task.dependsOn(fabric.getTasks().withType(ServerGameTestProductionRunTask.class));
+            task.dependsOn(fabric.getTasks().withType(ClientGameTestProductionRunTask.class));
+            task.dependsOn(neoForge.getTasks().named(NEOFORGE_GAMETEST_TASK));
         });
 
         TaskProvider<Jar> fabricJar = fabric.getTasks().named("jar", Jar.class);
@@ -580,6 +578,10 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
             root.getSubprojects().forEach(project -> task.dependsOn(project.getTasks().named("build")));
             task.dependsOn(collect);
         });
+    }
+
+    private static String loaderTaskPaths(String taskName) {
+        return ":fabric:" + taskName + " or :neoforge:" + taskName;
     }
 
     private static SourceSetContainer sourceSets(Project project) {

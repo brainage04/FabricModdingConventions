@@ -1,6 +1,7 @@
 package io.github.brainage04.fabricmoddingconventions.gradle;
 
 import org.gradle.testkit.runner.BuildResult;
+import org.gradle.testkit.runner.BuildTask;
 import org.gradle.testkit.runner.GradleRunner;
 import org.gradle.testkit.runner.TaskOutcome;
 import org.junit.jupiter.api.Test;
@@ -10,11 +11,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MultiLoaderModConventionsTest {
@@ -46,6 +50,14 @@ class MultiLoaderModConventionsTest {
                         assert !project(':fabric').configurations.productionRuntimeMods.allDependencies
                                 .any { it.group == 'me.djtheredstoner' }
                         assert project(':fabric').tasks.findByName('runClientGameTest') == null
+                        assert project(':fabric').tasks.findByName('runAllProductionGameTests') == null
+                        assert project(':neoforge').tasks.findByName('runGameTest') != null
+                        assert project(':neoforge').tasks.findByName('runGameTestServer') == null
+                        assert tasks.findByName('runAllGameTests').taskDependencies.getDependencies(null)*.path.toSet() ==
+                                [':fabric:runProductionServerGameTest', ':fabric:runProductionClientGameTest',
+                                 ':neoforge:runGameTest'].toSet()
+                        ['runFabricClient', 'runNeoForgeClient', 'runClientGameTest', 'recordClientGameTest',
+                         'runNeoForgeGameTests', 'runAllProductionGameTests'].each { assert tasks.findByName(it) == null }
                     }
                 }
                 """);
@@ -76,7 +88,7 @@ class MultiLoaderModConventionsTest {
     }
 
     @Test
-    void serverModWithoutClientGameTestsHasNoDevAuthAndANoOpRootClientGameTestTask() throws IOException {
+    void serverModWithoutClientGameTestsHasNoDevAuthAndANoOpProductionClientGameTestTask() throws IOException {
         writeFixture("server", """
                 multiLoaderModConventions {
                     fabricClientGameTests = false
@@ -93,11 +105,34 @@ class MultiLoaderModConventionsTest {
                 }
                 """);
 
-        BuildResult result = runGradle("runClientGameTest", "recordClientGameTest", "verifyNoDevAuth");
+        BuildResult result = runGradle(
+                ":fabric:runProductionClientGameTest",
+                ":fabric:recordClientGameTest",
+                "verifyNoDevAuth"
+        );
 
-        assertEquals(TaskOutcome.UP_TO_DATE, result.task(":runClientGameTest").getOutcome());
+        // Only the placeholder and the skipped recorder run: no GameTest JAR, run preparation or client launch.
+        assertEquals(
+                Set.of(":fabric:runProductionClientGameTest", ":fabric:recordClientGameTest"),
+                result.getTasks().stream()
+                        .map(BuildTask::getPath)
+                        .filter(path -> path.contains("GameTest"))
+                        .collect(Collectors.toSet())
+        );
         assertEquals(TaskOutcome.SKIPPED, result.task(":fabric:recordClientGameTest").getOutcome());
         assertEquals(TaskOutcome.SUCCESS, result.task(":verifyNoDevAuth").getOutcome());
+    }
+
+    @Test
+    void commonRunTasksStopTheBuildAndPointAtTheLoaders() throws IOException {
+        writeFixture("both", "");
+
+        BuildResult result = runner(":common:runClient").buildAndFail();
+
+        assertTrue(result.getOutput().contains(
+                ":common:runClient does nothing: common has no loader. Run :fabric:runClient or :neoforge:runClient instead."
+        ), result.getOutput());
+        assertNull(result.task(":common:runClient"));
     }
 
     /** NBT bytes of the structure's {@code size} int list: [8, 8, 8]. */
@@ -122,12 +157,15 @@ class MultiLoaderModConventionsTest {
     }
 
     private BuildResult runGradle(String... arguments) {
+        return runner(arguments).build();
+    }
+
+    private GradleRunner runner(String... arguments) {
         // The published plugin is used rather than withPluginClasspath(): the test classpath also carries
         // fabric-mod-conventions' Fabric Loom, which shadows the Architectury Loom this plugin needs.
         return GradleRunner.create()
                 .withProjectDir(projectDir.toFile())
-                .withArguments(arguments)
-                .build();
+                .withArguments(arguments);
     }
 
     private void writeFixture(String modSide, String configuration) throws IOException {

@@ -30,7 +30,20 @@ Requires subprojects `common`, `fabric` and `neoforge`, and these Gradle propert
 - Shared GameTests go in `common/src/gametest/java` and `common/src/gametest/resources`; both loaders compile and package them.
 - Both loaders' `gametest` source sets also get the structure `fabricmoddingconventions:empty`, 8x8x8 blocks of air (`minecraft:empty` is 1x1x1). Use it in test instances with `"structure": "fabricmoddingconventions:empty"`; it is never packaged into the release JARs.
 - The access widener is `<mod_id>.accesswidener` in `common` (or `fabric`); the NeoForge access transformer is `neoforge/src/main/resources/META-INF/accesstransformer.cfg`.
-- Root tasks: `runFabricClient`, `runNeoForgeClient`, `runClientGameTest`, `runNeoForgeGameTests`, `runAllProductionGameTests`, `recordClientGameTest`, `collectReleaseArtifacts`. `runClientGameTest` runs `:fabric:runProductionClientGameTest`; Loom's development `clientGameTest` run is not created, so there is no `:fabric:runClientGameTest`. With `fabricClientGameTests = false`, `runClientGameTest` and `recordClientGameTest` do nothing.
+- Tasks that run one loader live in that loader's project under the same name on both; the root only has tasks spanning both loaders. Loom's development `clientGameTest` run is not created (there is no `:fabric:runClientGameTest`); client GameTests run in Loom's production client.
+
+  | Task | Runs |
+  | --- | --- |
+  | `:fabric:runClient`, `:neoforge:runClient` | development client |
+  | `:fabric:runServer`, `:neoforge:runServer` | development dedicated server |
+  | `:fabric:runGameTest`, `:neoforge:runGameTest` | development server GameTests |
+  | `:fabric:runProductionServerGameTest` | Fabric server GameTests against the packaged mod |
+  | `:fabric:runProductionClientGameTest` | Fabric client GameTests against the packaged mod, in Xvfb |
+  | `:fabric:recordClientGameTest` | the production client GameTests, recorded to MP4 |
+  | `runAllGameTests` | Fabric production server and client GameTests and `:neoforge:runGameTest` |
+  | `collectReleaseArtifacts` | copies both loader JARs to `build/libs` |
+
+  With `fabricClientGameTests = false`, `:fabric:runProductionClientGameTest` and `:fabric:recordClientGameTest` do nothing; with `neoForgeGameTests = false`, neither does `:neoforge:runGameTest`. `common` has no loader: Loom still lists `:common:runClient`, `:common:runServer` and `:common:runClientRenderDoc`, but they stop the build and name the loader tasks to run instead.
 - For `mod_side` `client` or `both`, [DevAuth](https://github.com/DJtheRedstoner/DevAuth) (`DevAuth-fabric`/`DevAuth-neoforge`, version `1.2.2` or the `devauth_version` property) is on the development runtime of both loaders (Loom's `localRuntime`). It is not in the JARs, publications or production runs, and stays inactive until you enable it (`-Ddevauth.enabled=true` or its config file). Turn it off with `devAuth = false`.
 - `neoforge.mods.toml` can use `${minecraft_version_range}`, which the plugin computes from `minecraft_version` to match Fabric's `"minecraft": "~${minecraft_version}"`: from that version up to, not including, the next minor version (`26.2` → `[26.2,26.3)`, `26.2.1` → `[26.2.1,26.3)`, `26.3-pre1` → `[26.3-pre1,26.4)`). Any other shape, such as a weekly snapshot (`26w14a`), fails the build. Minecraft is the only bounded dependency: on both loaders, the loader and libraries are open-ended (`>=x` in `fabric.mod.json`, `[x,)` in `neoforge.mods.toml`).
 
@@ -105,7 +118,7 @@ The file is copied into the client run directory before every launch, overwritin
 ## Client GameTest recording
 
 ```shell
-GTR_RECORDING_PROFILE=smoke ./gradlew --no-daemon recordClientGameTest
+GTR_RECORDING_PROFILE=smoke ./gradlew --no-daemon :fabric:recordClientGameTest
 ```
 
 Needs `ffmpeg`/`ffprobe` (X11 capture, PulseAudio input, H.264/AAC), Xvfb with `xdpyinfo`, and `pactl`. Set `PULSE_SERVER` for a fully isolated session. The desktop's default sink is never changed.
@@ -146,7 +159,7 @@ productionGameTests {
 }
 ```
 
-Loom's production runs do not inherit the dev classpath, so extra mods and libraries must be listed here; Fabric API is added automatically. Tasks: `productionGameTestJar`, `runProductionClientGameTest` (Xvfb by default), `runProductionServerGameTest`, `runAllProductionGameTests`. `includeClient`, `includeServer`, `clientUseXvfb`, `clientJvmArgs` and `serverProgramArgs` override the defaults.
+Loom's production runs do not inherit the dev classpath, so extra mods and libraries must be listed here; Fabric API is added automatically. Tasks: `productionGameTestJar`, `runProductionClientGameTest` (Xvfb by default), `runProductionServerGameTest`, and in single-loader builds `runAllProductionGameTests` (multi-loader builds use the root `runAllGameTests`). `includeClient`, `includeServer`, `clientUseXvfb`, `clientJvmArgs` and `serverProgramArgs` override the defaults.
 
 ## Publishing
 
@@ -169,9 +182,9 @@ modPublishing {
 Consumer workflows call these and only supply triggers, profiles, artifact patterns and project IDs:
 
 - `reusable-mod-build.yml` — build
-- `reusable-client-gametests.yml` — client GameTests and recordings
-- `reusable-production-gametests.yml` — Fabric production GameTests
-- `reusable-neoforge-gametests.yml` — NeoForge GameTests
+- `reusable-client-gametests.yml` — Fabric client GameTests and recordings (`:fabric:runProductionClientGameTest`, `:fabric:recordClientGameTest`)
+- `reusable-production-gametests.yml` — `runAllGameTests` (`gradle_task` overrides it)
+- `reusable-neoforge-gametests.yml` — `:neoforge:runGameTest` alone
 - `reusable-multiloader-release.yml` — GitHub, Modrinth and CurseForge release of both loader JARs
 
 Every reusable workflow takes a `runner` input, a JSON `runs-on` value defaulting to `"ubuntu-24.04"`; private mods pass their self-hosted runner labels:
@@ -189,6 +202,8 @@ A mod that depends on an owned library that is not on Maven Central (BrainageLib
 ```
 
 A mod that jar-in-jars the Baritone fork (TwitchPlaysMinecraft) passes `prepare_baritone: true` to the same workflows. Each Gradle build then first clones the fork's `minecraft-<minecraft_version>` branch into `../baritone` and runs its `publishAllPublicationsToLocalBaritoneRepository`.
+
+Self-hosted runners keep their work tree between jobs, so every reusable workflow job deletes everything beside its checkout (`..`) right after checking out, before any `prepare_*` step; a stale `../FabricModdingConventions` would otherwise be picked up by `settings.gradle`'s `includeBuild` in place of the released plugin.
 
 ## Fleet audit
 

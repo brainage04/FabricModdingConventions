@@ -26,10 +26,6 @@ Checked on 2026-09-29 for all 26 Fabric/NeoForge mods (25 on `multiloader-mod-co
 
 - [ ] Before releasing a mod, run its release NeoForge jar on a real NeoForge server and client and compare both jars' contents. NeoForge-only regressions found so far came from mixins targeting a method NeoForge patches (BrainageServerUtils) and loader-specific ids (FortniteInMinecraft), which Fabric GameTests cannot catch.
 
-### CI on self-hosted runners
-
-- [ ] The self-hosted runners keep their `_work` tree between jobs, and `actions/checkout` only cleans the repository itself. A sibling left by an older workflow (TwitchPlaysMinecraft had `../FabricModdingConventions` at 2.4.15) is picked up by `settings.gradle`'s `includeBuild("../FabricModdingConventions")` and silently replaces the released plugin; on 2026-10-02 that broke TwitchPlaysMinecraft's 2.4.16 build until the directory was deleted by hand. Every reusable workflow should delete everything beside the checkout at job start, before the `prepare_*` steps clone what they need.
-
 ### Kotlin migration (deferred)
 
 - [ ] Migrate the Gradle plugins, tests, and shipped Fabric runtime helpers to Kotlin as a separate delivery.

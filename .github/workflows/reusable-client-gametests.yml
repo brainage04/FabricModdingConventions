@@ -60,6 +60,14 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@v5
 
+      - name: remove stale sibling checkouts
+        shell: bash
+        run: |
+          # Self-hosted runners keep their work tree between jobs; a leftover sibling such as
+          # ../FabricModdingConventions would be picked up by settings.gradle's includeBuild.
+          checkout="$(basename "${GITHUB_WORKSPACE}")"
+          find "${GITHUB_WORKSPACE}/.." -mindepth 1 -maxdepth 1 ! -name "${checkout}" -exec rm -rf -- {} +
+
       - name: detect client test support
         id: client-test-support
         shell: bash
@@ -78,6 +86,18 @@ jobs:
             echo 'present=true' >> "$GITHUB_OUTPUT"
           else
             echo 'present=false' >> "$GITHUB_OUTPUT"
+          fi
+          # Multi-loader builds run the Fabric production client from the fabric project; a
+          # single-loader Fabric build runs Loom's development client GameTest at its root.
+          if grep -R \
+            --include='build.gradle' \
+            --include='build.gradle.kts' \
+            --quiet -e 'io.github.brainage04.multiloader-mod-conventions' .; then
+            echo 'run_task=:fabric:runProductionClientGameTest' >> "$GITHUB_OUTPUT"
+            echo 'record_task=:fabric:recordClientGameTest' >> "$GITHUB_OUTPUT"
+          else
+            echo 'run_task=runClientGameTest' >> "$GITHUB_OUTPUT"
+            echo 'record_task=recordClientGameTest' >> "$GITHUB_OUTPUT"
           fi
 
       - name: install client test tools
@@ -145,11 +165,12 @@ jobs:
           ALSOFT_DRIVERS: 'null'
           LIBGL_ALWAYS_SOFTWARE: '1'
           REQUESTED_CLIENT_GAMETEST_PROFILE: ${{ inputs.client_gametest_profile }}
+          GRADLE_TASK: ${{ steps.client-test-support.outputs.run_task }}
         run: |
           if [ -n "$REQUESTED_CLIENT_GAMETEST_PROFILE" ]; then
             export CLIENT_GAMETEST_PROFILE="$REQUESTED_CLIENT_GAMETEST_PROFILE"
           fi
-          xvfb-run -a --server-args="-screen 0 1280x720x24" ./gradlew --no-daemon --refresh-dependencies runClientGameTest
+          xvfb-run -a --server-args="-screen 0 1280x720x24" ./gradlew --no-daemon --refresh-dependencies "${GRADLE_TASK}"
 
       - name: record client GameTests
         if: steps.client-test-support.outputs.present == 'true' && inputs.record_client_gametests
@@ -159,7 +180,8 @@ jobs:
           GTR_RECORDING_NAME: ${{ inputs.recording_profile || 'client-gametest' }}
           GTR_RECORDING_PROFILE: ${{ inputs.recording_profile }}
           GTR_RECORDING_TRACE: ${{ inputs.recording_trace && 'true' || 'false' }}
-        run: ./gradlew --no-daemon recordClientGameTest
+          GRADLE_TASK: ${{ steps.client-test-support.outputs.record_task }}
+        run: ./gradlew --no-daemon "${GRADLE_TASK}"
 
       - name: store client GameTest recordings
         if: always() && steps.client-test-support.outputs.present == 'true' && inputs.record_client_gametests

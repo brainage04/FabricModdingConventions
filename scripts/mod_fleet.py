@@ -450,7 +450,7 @@ def run_recordings(
                 else:
                     run_streaming(command, cwd, env, log_path)
 
-            command = ["./gradlew", "--no-daemon", str(policy.get("task", "recordClientGameTest"))]
+            command = ["./gradlew", "--no-daemon", str(policy.get("task", ":fabric:recordClientGameTest"))]
             if dry_run:
                 print(f"[{name}] record: {command} (cwd={root})")
                 results.append({"name": name, "status": "dry-run", "log": str(log_path)})

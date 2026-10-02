@@ -25,6 +25,11 @@ public final class ProductionGameTestsPlugin implements Plugin<Project> {
      */
     public static final String DEVELOPMENT_CLIENT_GAMETEST_RUN_PROPERTY =
             "fabricmoddingconventions.developmentClientGameTestRun";
+    /**
+     * Set to {@code false} (as an extra property, before applying this plugin) to skip the
+     * {@code runAllProductionGameTests} aggregate, for builds that aggregate the production runs elsewhere.
+     */
+    public static final String AGGREGATE_TASK_PROPERTY = "fabricmoddingconventions.productionGameTestsAggregate";
 
     @Override
     public void apply(Project project) {
@@ -48,9 +53,7 @@ public final class ProductionGameTestsPlugin implements Plugin<Project> {
         if (modId == null || modId.toString().isBlank()) {
             throw new GradleException(PLUGIN_ID + " requires project property 'mod_id'.");
         }
-        boolean developmentClientRun = !"false".equalsIgnoreCase(
-                String.valueOf(project.findProperty(DEVELOPMENT_CLIENT_GAMETEST_RUN_PROPERTY)).strip()
-        );
+        boolean developmentClientRun = !isDisabled(project, DEVELOPMENT_CLIENT_GAMETEST_RUN_PROPERTY);
         fabricApi.configureTests(settings -> {
             settings.getCreateSourceSet().set(true);
             settings.getModId().set(modId.toString().strip() + "-gametest");
@@ -90,6 +93,9 @@ public final class ProductionGameTestsPlugin implements Plugin<Project> {
             ));
         }
 
+        if (isDisabled(project, AGGREGATE_TASK_PROPERTY)) {
+            return;
+        }
         project.getTasks().register("runAllProductionGameTests", task -> {
             task.setGroup("verification");
             task.setDescription("Runs every configured production GameTest task.");
@@ -230,6 +236,11 @@ public final class ProductionGameTestsPlugin implements Plugin<Project> {
                 .map(String::strip)
                 .forEach(dependency -> project.getDependencies().add("productionRuntimeMods", dependency));
     }
+
+    private static boolean isDisabled(Project project, String property) {
+        return "false".equalsIgnoreCase(String.valueOf(project.findProperty(property)).strip());
+    }
+
     private static void requireFabricApi(Project project) {
         if (project.getExtensions().findByType(FabricApiExtension.class) == null) {
             throw new GradleException(
