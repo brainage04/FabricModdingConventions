@@ -26,10 +26,6 @@ Checked on 2026-09-29 for all 26 Fabric/NeoForge mods (25 on `multiloader-mod-co
 
 - [ ] Before releasing a mod, run its release NeoForge jar on a real NeoForge server and client and compare both jars' contents. NeoForge-only regressions found so far came from mixins targeting a method NeoForge patches (BrainageServerUtils) and loader-specific ids (FortniteInMinecraft), which Fabric GameTests cannot catch.
 
-### Release workflows
-
-- [ ] `reusable-multiloader-release.yml` and the release-prepare/publish workflows it calls need a `prepare_baritone` input, like the build and GameTest workflows have. TwitchPlaysMinecraft jar-in-jars the Baritone fork (built from branch `minecraft-26.2`, not on Central), so it keeps its own inline `release.yml` until then; `prepare_siblings: baritone` can't replace it because that clones the default branch and runs a different publish task.
-
 ### Kotlin migration (deferred)
 
 - [ ] Migrate the Gradle plugins, tests, and shipped Fabric runtime helpers to Kotlin as a separate delivery.

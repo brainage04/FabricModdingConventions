@@ -514,6 +514,7 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
             String name = matcher.group(1);
             Object value = switch (name) {
                 case "version", "mod_version" -> project.getVersion();
+                case MinecraftVersionRange.PROPERTY -> MinecraftVersionRange.of(requiredProperty(root, "minecraft_version"));
                 default -> root.findProperty(name);
             };
             if (value == null || value.toString().isBlank()) {

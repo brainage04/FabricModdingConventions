@@ -32,6 +32,7 @@ Requires subprojects `common`, `fabric` and `neoforge`, and these Gradle propert
 - The access widener is `<mod_id>.accesswidener` in `common` (or `fabric`); the NeoForge access transformer is `neoforge/src/main/resources/META-INF/accesstransformer.cfg`.
 - Root tasks: `runFabricClient`, `runNeoForgeClient`, `runClientGameTest`, `runNeoForgeGameTests`, `runAllProductionGameTests`, `recordClientGameTest`, `collectReleaseArtifacts`. `runClientGameTest` runs `:fabric:runProductionClientGameTest`; Loom's development `clientGameTest` run is not created, so there is no `:fabric:runClientGameTest`. With `fabricClientGameTests = false`, `runClientGameTest` and `recordClientGameTest` do nothing.
 - For `mod_side` `client` or `both`, [DevAuth](https://github.com/DJtheRedstoner/DevAuth) (`DevAuth-fabric`/`DevAuth-neoforge`, version `1.2.2` or the `devauth_version` property) is on the development runtime of both loaders (Loom's `localRuntime`). It is not in the JARs, publications or production runs, and stays inactive until you enable it (`-Ddevauth.enabled=true` or its config file). Turn it off with `devAuth = false`.
+- `neoforge.mods.toml` can use `${minecraft_version_range}`, which the plugin computes from `minecraft_version` to match Fabric's `"minecraft": "~${minecraft_version}"`: from that version up to, not including, the next minor version (`26.2` → `[26.2,26.3)`, `26.2.1` → `[26.2.1,26.3)`, `26.3-pre1` → `[26.3-pre1,26.4)`). Any other shape, such as a weekly snapshot (`26w14a`), fails the build. Minecraft is the only bounded dependency: on both loaders, the loader and libraries are open-ended (`>=x` in `fabric.mod.json`, `[x,)` in `neoforge.mods.toml`).
 
 Turn off parts that don't apply:
 
@@ -186,6 +187,8 @@ A mod that depends on an owned library that is not on Maven Central (BrainageLib
     with:
       prepare_siblings: BrainageLib
 ```
+
+A mod that jar-in-jars the Baritone fork (TwitchPlaysMinecraft) passes `prepare_baritone: true` to the same workflows. Each Gradle build then first clones the fork's `minecraft-<minecraft_version>` branch into `../baritone` and runs its `publishAllPublicationsToLocalBaritoneRepository`.
 
 ## Fleet audit
 

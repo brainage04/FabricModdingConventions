@@ -36,6 +36,11 @@ on:
         required: false
         default: ''
         type: string
+      prepare_baritone:
+        description: Build the required local Baritone fork before the Gradle publication
+        required: false
+        default: false
+        type: boolean
     secrets:
       release_token:
         description: GitHub token with contents write permission
@@ -65,6 +70,18 @@ jobs:
 
       - name: setup gradle
         uses: gradle/actions/setup-gradle@v5
+
+      - name: prepare required local Baritone fork
+        if: inputs.publish_with_gradle && inputs.prepare_baritone
+        run: |
+          MINECRAFT_VERSION="$(sed -n 's/^minecraft_version=//p' gradle.properties)"
+          rm -rf ../baritone
+          git clone --depth 1 --branch "minecraft-${MINECRAFT_VERSION}" https://github.com/brainage04/baritone.git ../baritone
+          chmod +x ../baritone/gradlew
+          ../baritone/gradlew -p ../baritone \
+            --no-daemon \
+            -Pmaven_group=io.github.brainage04 \
+            publishAllPublicationsToLocalBaritoneRepository
 
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew

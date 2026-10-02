@@ -23,6 +23,11 @@ on:
         required: false
         default: ''
         type: string
+      prepare_baritone:
+        description: Build the required local Baritone fork before the build
+        required: false
+        default: false
+        type: boolean
       prepare_siblings:
         description: Space-separated brainage04 repositories to clone into ../<name> and publish to their build/local-repo before the consumer
         required: false
@@ -73,6 +78,18 @@ jobs:
 
       - name: setup gradle
         uses: gradle/actions/setup-gradle@v5
+
+      - name: prepare required local Baritone fork
+        if: inputs.prepare_baritone
+        run: |
+          MINECRAFT_VERSION="$(sed -n 's/^minecraft_version=//p' gradle.properties)"
+          rm -rf ../baritone
+          git clone --depth 1 --branch "minecraft-${MINECRAFT_VERSION}" https://github.com/brainage04/baritone.git ../baritone
+          chmod +x ../baritone/gradlew
+          ../baritone/gradlew -p ../baritone \
+            --no-daemon \
+            -Pmaven_group=io.github.brainage04 \
+            publishAllPublicationsToLocalBaritoneRepository
 
       - name: prepare sibling libraries
         if: inputs.prepare_siblings != ''
