@@ -41,10 +41,10 @@ Requires subprojects `common`, `fabric` and `neoforge`, and these Gradle propert
   | `:neoforge:runProductionServerGameTest` | NeoForge server GameTests against the packaged mod, on a NeoForge server installed with the official installer |
   | `:fabric:runProductionClientGameTest` | Fabric client GameTests against the packaged mod, in Xvfb |
   | `:fabric:recordClientGameTest` | the production client GameTests, recorded to MP4 |
-  | `runAllGameTests` | the three production GameTest runs: Fabric server and client, NeoForge server |
+  | `runAllGameTests` | every GameTest run, one at a time: `:fabric:runGameTest` and `:neoforge:runGameTest`, then the Fabric production server and client runs and `:neoforge:runProductionServerGameTest` |
   | `collectReleaseArtifacts` | copies both loader JARs to `build/libs` |
 
-  With `fabricClientGameTests = false`, `:fabric:runProductionClientGameTest` and `:fabric:recordClientGameTest` do nothing; with `neoForgeGameTests = false`, neither do `:neoforge:runGameTest` and `:neoforge:runProductionServerGameTest` (no server is installed). `common` has no loader: Loom still lists `:common:runClient`, `:common:runServer` and `:common:runClientRenderDoc`, but they do nothing useful; run the loader tasks instead.
+  With `fabricClientGameTests = false`, `:fabric:runProductionClientGameTest` and `:fabric:recordClientGameTest` do nothing; with `neoForgeGameTests = false`, neither do `:neoforge:runGameTest` and `:neoforge:runProductionServerGameTest` (no server is installed). `runAllGameTests` leaves out `:fabric:runGameTest` and `:fabric:runProductionServerGameTest` for `mod_side=client` and with `fabricServerGameTests = false`. `common` has no loader: Loom still lists `:common:runClient`, `:common:runServer` and `:common:runClientRenderDoc`, but they do nothing useful; run the loader tasks instead.
 
   [docs/GRADLE_RUN_TASKS.md](docs/GRADLE_RUN_TASKS.md) lists every `run*` and `record*` task in one place.
 - `:neoforge:runProductionServerGameTest` is the NeoForge counterpart of Loom's Fabric production server run (Loom's production run tasks only launch Fabric). `:neoforge:installProductionServer` runs the official installer for `neoforge_version` (resolved and cached by Gradle as `net.neoforged:neoforge:<version>:installer`) with `--install-server` into `neoforge/build/fabricmoddingconventions/neoforge-server/<version>`, once per version. The run then starts that installation's own launcher arguments with FML's `GameTestServer` entrypoint, which runs every GameTest and exits with the number of failed required tests; any failure or crash fails the task.
@@ -198,7 +198,7 @@ Consumer workflows call these and only supply triggers, profiles, artifact patte
 
 - `reusable-mod-build.yml` — build
 - `reusable-client-gametests.yml` — Fabric client GameTests and recordings (`:fabric:runProductionClientGameTest`, `:fabric:recordClientGameTest`)
-- `reusable-production-gametests.yml` — `runAllGameTests`, every production GameTest run (`gradle_task` overrides it)
+- `reusable-production-gametests.yml` — `runAllGameTests`, every development and production GameTest run (`gradle_task` overrides it)
 - `reusable-neoforge-gametests.yml` — `:neoforge:runProductionServerGameTest` alone (`gradle_task` overrides it, for example with `:neoforge:runGameTest`)
 - `reusable-multiloader-release.yml` — GitHub, Modrinth and CurseForge release of both loader JARs
 

@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
@@ -55,8 +56,8 @@ class MultiLoaderModConventionsTest {
                         assert project(':neoforge').tasks.findByName('runGameTest') != null
                         assert project(':neoforge').tasks.findByName('runGameTestServer') == null
                         assert tasks.findByName('runAllGameTests').taskDependencies.getDependencies(null)*.path.toSet() ==
-                                [':fabric:runProductionServerGameTest', ':fabric:runProductionClientGameTest',
-                                 ':neoforge:runProductionServerGameTest'].toSet()
+                                [':fabric:runGameTest', ':neoforge:runGameTest', ':fabric:runProductionServerGameTest',
+                                 ':fabric:runProductionClientGameTest', ':neoforge:runProductionServerGameTest'].toSet()
                         ['runFabricClient', 'runNeoForgeClient', 'runClientGameTest', 'recordClientGameTest',
                          'runNeoForgeGameTests', 'runAllProductionGameTests'].each { assert tasks.findByName(it) == null }
                     }
@@ -86,6 +87,12 @@ class MultiLoaderModConventionsTest {
             assertArrayEquals(EMPTY_8X8X8_SIZE_TAG, sizeTag(structure));
             assertFalse(Files.exists(projectDir.resolve(loader + "/build/resources/main/" + STRUCTURE)));
         }
+
+        assertEquals(
+                List.of(":fabric:runGameTest", ":neoforge:runGameTest", ":fabric:runProductionServerGameTest",
+                        ":fabric:runProductionClientGameTest", ":neoforge:runProductionServerGameTest"),
+                plannedGameTestRuns()
+        );
     }
 
     @Test
@@ -122,6 +129,11 @@ class MultiLoaderModConventionsTest {
         );
         assertEquals(TaskOutcome.SKIPPED, result.task(":fabric:recordClientGameTest").getOutcome());
         assertEquals(TaskOutcome.SUCCESS, result.task(":verifyNoDevAuth").getOutcome());
+        assertEquals(
+                List.of(":fabric:runGameTest", ":neoforge:runGameTest", ":fabric:runProductionServerGameTest",
+                        ":neoforge:runProductionServerGameTest"),
+                plannedGameTestRuns()
+        );
     }
 
     @Test
@@ -163,6 +175,27 @@ class MultiLoaderModConventionsTest {
         assertEquals(TaskOutcome.SKIPPED, result.task(":neoforge:installProductionServer").getOutcome());
         assertEquals(TaskOutcome.SKIPPED, result.task(":neoforge:runProductionServerGameTest").getOutcome());
         assertFalse(Files.exists(projectDir.resolve("neoforge/build/fabricmoddingconventions/neoforge-server")));
+        // No Fabric server GameTests for a client mod; the NeoForge runs stay in the plan and are skipped.
+        assertEquals(
+                List.of(":neoforge:runGameTest", ":fabric:runProductionClientGameTest",
+                        ":neoforge:runProductionServerGameTest"),
+                plannedGameTestRuns()
+        );
+    }
+
+    @Test
+    void runAllGameTestsLeavesOutTheFabricDevelopmentRunWithFabricServerGameTestsOff() throws IOException {
+        writeFixture("both", """
+                multiLoaderModConventions {
+                    fabricServerGameTests = false
+                }
+                """);
+
+        assertEquals(
+                List.of(":neoforge:runGameTest", ":fabric:runProductionClientGameTest",
+                        ":neoforge:runProductionServerGameTest"),
+                plannedGameTestRuns()
+        );
     }
 
     /** A NeoForge mod whose GameTest source set registers one passing and one failing test. */
@@ -249,6 +282,17 @@ class MultiLoaderModConventionsTest {
             }
         }
         return new byte[0];
+    }
+
+    /**
+     * The GameTest runs {@code runAllGameTests} plans, in execution order. With {@code --parallel} the runs of
+     * both loaders could start together; the plan has to keep them one at a time, development runs first.
+     */
+    private List<String> plannedGameTestRuns() {
+        return runGradle("runAllGameTests", "--dry-run", "--parallel").getOutput().lines()
+                .map(line -> line.split(" ")[0])
+                .filter(path -> path.matches(":(fabric|neoforge):run\\w*GameTest"))
+                .toList();
     }
 
     private BuildResult runGradle(String... arguments) {

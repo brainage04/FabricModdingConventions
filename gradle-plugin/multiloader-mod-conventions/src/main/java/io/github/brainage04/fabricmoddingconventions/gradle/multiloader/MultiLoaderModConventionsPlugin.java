@@ -14,6 +14,7 @@ import org.gradle.api.GradleException;
 import org.gradle.api.JavaVersion;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ProjectDependency;
 import org.gradle.api.artifacts.dsl.RepositoryHandler;
@@ -35,6 +36,7 @@ import org.gradle.language.jvm.tasks.ProcessResources;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +59,8 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
     private static final String DEVAUTH_VERSION = "1.2.2";
     private static final String DEVAUTH_REPOSITORY =
             "https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1";
-    private static final String NEOFORGE_GAMETEST_TASK = "runGameTest";
+    /** Fabric API's development server GameTest run task; the NeoForge one is given the same name. */
+    private static final String DEVELOPMENT_GAMETEST_TASK = "runGameTest";
     private static final String PRODUCTION_CLIENT_GAMETEST_TASK = "runProductionClientGameTest";
     private static final String PRODUCTION_SERVER_GAMETEST_TASK = "runProductionServerGameTest";
     private static final String PRODUCTION_GAMETEST_JAR_TASK = "productionGameTestJar";
@@ -84,7 +87,7 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
         configureCommon(root, common);
         configureFabric(root, common, fabric, extension);
         configureNeoForge(root, common, fabric, neoForge, extension);
-        configureRootTasks(root, fabric, neoForge);
+        configureRootTasks(root, fabric, neoForge, extension);
     }
 
     private static void configureIdentity(Project root, Project... subprojects) {
@@ -179,8 +182,8 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
         fabric.getPluginManager().apply(RECORDER_PLUGIN);
         // The recorder drives :fabric:runProductionClientGameTest, so loom's development clientGameTest run
         // (and its :fabric:runClientGameTest task) must never be created.
-        // The root runAllGameTests aggregates the Fabric production runs with the NeoForge GameTests, so the
-        // production plugin's :fabric:runAllProductionGameTests would only duplicate part of it.
+        // The root runAllGameTests aggregates every Fabric and NeoForge GameTest run, so the production
+        // plugin's :fabric:runAllProductionGameTests would only duplicate part of it.
         fabric.getExtensions().getExtraProperties()
                 .set(ProductionGameTestsPlugin.DEVELOPMENT_CLIENT_GAMETEST_RUN_PROPERTY, false);
         fabric.getExtensions().getExtraProperties()
@@ -435,7 +438,7 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
                 "src/main/resources/META-INF/neoforge.mods.toml",
                 "META-INF/neoforge.mods.toml"
         );
-        neoForge.getTasks().matching(task -> task.getName().equals(NEOFORGE_GAMETEST_TASK))
+        neoForge.getTasks().matching(task -> task.getName().equals(DEVELOPMENT_GAMETEST_TASK))
                 .configureEach(task -> task.onlyIf(spec -> fleetExtension.getNeoForgeGameTests().get()));
         configureNeoForgeProductionGameTests(root, neoForge, gameTest, fleetExtension);
     }
@@ -626,20 +629,61 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
         return Map.copyOf(values);
     }
 
-    private static void configureRootTasks(Project root, Project fabric, Project neoForge) {
+    private static void configureRootTasks(
+            Project root,
+            Project fabric,
+            Project neoForge,
+            MultiLoaderModConventionsExtension fleetExtension
+    ) {
         // Only tasks that span both loaders live at the root; single-loader tasks are run as
-        // :fabric:<task> or :neoforge:<task>. Like the Fabric side, the aggregate runs only the production
-        // runs: :neoforge:runProductionServerGameTest runs the same test instances as :neoforge:runGameTest,
-        // against the release JAR on an installed NeoForge server.
-        root.getTasks().register("runAllGameTests", task -> {
+        // :fabric:<task> or :neoforge:<task>.
+        TaskProvider<Task> runAllGameTests = root.getTasks().register("runAllGameTests", task -> {
             task.setGroup("verification");
-            task.setDescription("Runs the Fabric production server and client GameTests and the NeoForge production"
-                    + " server GameTests.");
-            task.dependsOn(fabric.getTasks().withType(ServerGameTestProductionRunTask.class));
-            task.dependsOn(fabric.getTasks().withType(ClientGameTestProductionRunTask.class));
-            task.dependsOn(neoForge.getTasks().named(PRODUCTION_SERVER_GAMETEST_TASK));
+            task.setDescription("Runs every GameTest: the Fabric and NeoForge development server GameTests, then the"
+                    + " Fabric production server and client GameTests and the NeoForge production server GameTests.");
         });
+        // The Fabric production runs are registered in :fabric's afterEvaluate and the extension is final only
+        // once every build script ran, so the runs are collected when all projects are evaluated.
+        root.getGradle().projectsEvaluated(_ -> {
+            List<TaskProvider<? extends Task>> runs = gameTestRuns(fabric, neoForge, fleetExtension);
+            runAllGameTests.configure(task -> task.dependsOn(runs));
+            // Every run starts a Minecraft server or client; with --parallel they would otherwise launch side by
+            // side. Running them one at a time, development runs first, keeps a failing source-level test from
+            // waiting behind the production installs and runs.
+            for (int index = 1; index < runs.size(); index++) {
+                List<TaskProvider<? extends Task>> earlier = runs.subList(0, index);
+                runs.get(index).configure(task -> task.mustRunAfter(earlier));
+            }
+        });
+        configureReleaseArtifacts(root, fabric, neoForge);
+    }
 
+    /**
+     * The GameTest runs of {@code runAllGameTests}, in run order. {@code :fabric:runGameTest} exists only when
+     * Fabric API's server GameTests are on (not for {@code mod_side=client}), and is left out with
+     * {@code fabricServerGameTests = false} like the production server run. Both NeoForge runs are always
+     * included: with {@code neoForgeGameTests = false} they are skipped.
+     */
+    private static List<TaskProvider<? extends Task>> gameTestRuns(
+            Project fabric,
+            Project neoForge,
+            MultiLoaderModConventionsExtension fleetExtension
+    ) {
+        List<TaskProvider<? extends Task>> runs = new ArrayList<>();
+        if (fleetExtension.getFabricServerGameTests().get()
+                && fabric.getTasks().getNames().contains(DEVELOPMENT_GAMETEST_TASK)) {
+            runs.add(fabric.getTasks().named(DEVELOPMENT_GAMETEST_TASK));
+        }
+        runs.add(neoForge.getTasks().named(DEVELOPMENT_GAMETEST_TASK));
+        fabric.getTasks().withType(ServerGameTestProductionRunTask.class).getNames()
+                .forEach(name -> runs.add(fabric.getTasks().named(name)));
+        fabric.getTasks().withType(ClientGameTestProductionRunTask.class).getNames()
+                .forEach(name -> runs.add(fabric.getTasks().named(name)));
+        runs.add(neoForge.getTasks().named(PRODUCTION_SERVER_GAMETEST_TASK));
+        return runs;
+    }
+
+    private static void configureReleaseArtifacts(Project root, Project fabric, Project neoForge) {
         TaskProvider<Jar> fabricJar = fabric.getTasks().named("jar", Jar.class);
         TaskProvider<Jar> neoForgeJar = neoForge.getTasks().named("jar", Jar.class);
         TaskProvider<Sync> collect = root.getTasks().register("collectReleaseArtifacts", Sync.class, task -> {

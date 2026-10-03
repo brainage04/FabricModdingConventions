@@ -115,3 +115,4 @@ jobs:
             **/build/reports/
             **/build/test-results/
             **/build/run/*/logs/
+            **/run/gametest/logs/

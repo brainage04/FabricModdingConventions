@@ -26,7 +26,9 @@ There is no NeoForge client GameTest task: NeoForge has no client GameTest frame
 
 | Task | What it runs |
 |---|---|
-| `runAllGameTests` | `:fabric:runProductionServerGameTest`, `:fabric:runProductionClientGameTest` (when enabled) and `:neoforge:runProductionServerGameTest` |
+| `runAllGameTests` | Every GameTest run, one at a time even with `--parallel`: `:fabric:runGameTest`, `:neoforge:runGameTest`, `:fabric:runProductionServerGameTest`, `:fabric:runProductionClientGameTest` (when enabled) and `:neoforge:runProductionServerGameTest`. The Fabric server runs are left out for `mod_side=client` and with `fabricServerGameTests = false`; the NeoForge runs are skipped with `neoForgeGameTests = false`. |
+
+Each run has its own run directory: `fabric/build/run/gameTest`, `neoforge/run/gametest`, `fabric/build/run/productionServerGameTest`, `fabric/build/run/clientGameTest` and `neoforge/build/run/productionServerGameTest`.
 
 ## Tasks that do nothing
 
