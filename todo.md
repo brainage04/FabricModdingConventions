@@ -24,7 +24,7 @@ Common holds the gameplay code; loader modules only adapt it. No mod's `common` 
 
 Checked on 2026-09-29 for all 26 Fabric/NeoForge mods (25 on `multiloader-mod-conventions` plus ActionAssist): both release jars have correct metadata, entrypoints, common classes and resources and nothing from the other loader, and every NeoForge jar was run on a real NeoForge 26.2 server and client. The high and medium findings are fixed; low ones remain in each mod's `todo.md`. Every mod now builds against NeoForge 26.2.0.88 and uses `iconFile` (NeoForge 26.2.0.88 warns about `logoFile`). Repeat these checks before each release:
 
-- [ ] Before releasing a mod, run its release NeoForge jar on a real NeoForge server and client and compare both jars' contents. NeoForge-only regressions found so far came from mixins targeting a method NeoForge patches (BrainageServerUtils) and loader-specific ids (FortniteInMinecraft), which Fabric GameTests cannot catch.
+- [ ] Before releasing a mod, run its release NeoForge jar on a real NeoForge client and compare both jars' contents. NeoForge-only regressions found so far came from mixins targeting a method NeoForge patches (BrainageServerUtils) and loader-specific ids (FortniteInMinecraft), which Fabric GameTests cannot catch. The server half is automated since 2.4.18: `:neoforge:runProductionServerGameTest` (part of `runAllGameTests`) runs the NeoForge GameTests against the release jar on a server installed with the official installer, so it catches these only where a mod's NeoForge GameTests exercise the affected code.
 
 ### Kotlin migration (deferred)
 

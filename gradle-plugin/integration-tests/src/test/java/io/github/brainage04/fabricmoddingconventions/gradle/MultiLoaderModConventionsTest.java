@@ -18,7 +18,6 @@ import java.util.zip.GZIPInputStream;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MultiLoaderModConventionsTest {
@@ -47,15 +46,17 @@ class MultiLoaderModConventionsTest {
                             assert !loader.configurations.runtimeElements.allDependencies.any(isDevAuth)
                             assert !loader.configurations.apiElements.allDependencies.any(isDevAuth)
                         }
-                        assert !project(':fabric').configurations.productionRuntimeMods.allDependencies
-                                .any { it.group == 'me.djtheredstoner' }
+                        ['fabric', 'neoforge'].each { path ->
+                            assert !project(":$path").configurations.productionRuntimeMods.allDependencies
+                                    .any { it.group == 'me.djtheredstoner' }
+                        }
                         assert project(':fabric').tasks.findByName('runClientGameTest') == null
                         assert project(':fabric').tasks.findByName('runAllProductionGameTests') == null
                         assert project(':neoforge').tasks.findByName('runGameTest') != null
                         assert project(':neoforge').tasks.findByName('runGameTestServer') == null
                         assert tasks.findByName('runAllGameTests').taskDependencies.getDependencies(null)*.path.toSet() ==
                                 [':fabric:runProductionServerGameTest', ':fabric:runProductionClientGameTest',
-                                 ':neoforge:runGameTest'].toSet()
+                                 ':neoforge:runProductionServerGameTest'].toSet()
                         ['runFabricClient', 'runNeoForgeClient', 'runClientGameTest', 'recordClientGameTest',
                          'runNeoForgeGameTests', 'runAllProductionGameTests'].each { assert tasks.findByName(it) == null }
                     }
@@ -124,15 +125,109 @@ class MultiLoaderModConventionsTest {
     }
 
     @Test
-    void commonRunTasksStopTheBuildAndPointAtTheLoaders() throws IOException {
-        writeFixture("both", "");
+    void neoForgeProductionServerRunsTheGameTestsAgainstTheReleaseJarAndFailsOnAFailedTest() throws IOException {
+        writeFixture("server", "");
+        writeNeoForgeMod();
 
-        BuildResult result = runner(":common:runClient").buildAndFail();
+        BuildResult result = runner(":neoforge:runProductionServerGameTest").buildAndFail();
 
-        assertTrue(result.getOutput().contains(
-                ":common:runClient does nothing: common has no loader. Run :fabric:runClient or :neoforge:runClient instead."
-        ), result.getOutput());
-        assertNull(result.task(":common:runClient"));
+        assertEquals(TaskOutcome.SUCCESS, result.task(":neoforge:installProductionServer").getOutcome());
+        assertEquals(TaskOutcome.FAILED, result.task(":neoforge:runProductionServerGameTest").getOutcome());
+        String output = result.getOutput();
+        assertTrue(output.contains("1 required tests failed"), output);
+        assertTrue(output.contains("fixturemod:fails: deliberately broken"), output);
+        assertTrue(output.contains("NeoForge production server GameTests failed with exit code 1"), output);
+
+        // The server loaded the release JAR and the GameTest JAR as one mod and ran both of its tests.
+        String report = Files.readString(projectDir.resolve(
+                "neoforge/build/test-results/runProductionServerGameTest/TEST-gametest.xml"));
+        assertTrue(report.matches("(?s).*name=\"fixturemod:passes\" time=\"[0-9.]+\"/>.*"), report);
+        assertTrue(report.matches("(?s).*name=\"fixturemod:fails\" time=\"[0-9.]+\"><failure message=\"[^\"]*deliberately broken.*"),
+                report);
+        assertTrue(Files.isRegularFile(projectDir.resolve(
+                "neoforge/build/run/productionServerGameTest/mod-under-test/fixturemod-neoforge-1.2.3.jar")));
+        assertTrue(Files.isRegularFile(projectDir.resolve(
+                "neoforge/build/run/productionServerGameTest/logs/latest.log")));
+    }
+
+    @Test
+    void clientModWithoutNeoForgeGameTestsSkipsTheProductionServerRunWithoutInstallingAServer() throws IOException {
+        writeFixture("client", """
+                multiLoaderModConventions {
+                    neoForgeGameTests = false
+                }
+                """);
+
+        BuildResult result = runGradle(":neoforge:runProductionServerGameTest");
+
+        assertEquals(TaskOutcome.SKIPPED, result.task(":neoforge:installProductionServer").getOutcome());
+        assertEquals(TaskOutcome.SKIPPED, result.task(":neoforge:runProductionServerGameTest").getOutcome());
+        assertFalse(Files.exists(projectDir.resolve("neoforge/build/fabricmoddingconventions/neoforge-server")));
+    }
+
+    /** A NeoForge mod whose GameTest source set registers one passing and one failing test. */
+    private void writeNeoForgeMod() throws IOException {
+        write("neoforge/src/main/resources/META-INF/neoforge.mods.toml", """
+                modLoader = "javafml"
+                loaderVersion = "[1,)"
+                license = "MIT"
+
+                [[mods]]
+                modId = "fixturemod"
+                version = "${version}"
+                displayName = "Fixture Mod"
+                """);
+        write("neoforge/src/main/java/fixture/FixtureMod.java", """
+                package fixture;
+
+                import net.neoforged.fml.common.Mod;
+
+                @Mod("fixturemod")
+                public final class FixtureMod {
+                }
+                """);
+        write("neoforge/src/gametest/java/fixture/FixtureGameTests.java", """
+                package fixture;
+
+                import java.util.function.Consumer;
+                import net.minecraft.core.registries.BuiltInRegistries;
+                import net.minecraft.gametest.framework.GameTestHelper;
+                import net.minecraft.resources.Identifier;
+                import net.neoforged.bus.api.SubscribeEvent;
+                import net.neoforged.fml.common.EventBusSubscriber;
+                import net.neoforged.neoforge.registries.RegisterEvent;
+
+                @EventBusSubscriber(modid = "fixturemod")
+                public final class FixtureGameTests {
+                    @SubscribeEvent
+                    public static void register(RegisterEvent event) {
+                        register(event, "passes", GameTestHelper::succeed);
+                        register(event, "fails", helper -> helper.fail("deliberately broken"));
+                    }
+
+                    private static void register(RegisterEvent event, String name, Consumer<GameTestHelper> test) {
+                        event.register(BuiltInRegistries.TEST_FUNCTION.key(),
+                                Identifier.fromNamespaceAndPath("fixturemod", name), () -> test);
+                    }
+                }
+                """);
+        for (String name : new String[] {"passes", "fails"}) {
+            write("neoforge/src/gametest/resources/data/fixturemod/test_instance/" + name + ".json", """
+                    {
+                      "type": "minecraft:function",
+                      "environment": "minecraft:default",
+                      "structure": "fabricmoddingconventions:empty",
+                      "max_ticks": 20,
+                      "function": "fixturemod:%s"
+                    }
+                    """.formatted(name));
+        }
+    }
+
+    private void write(String path, String content) throws IOException {
+        Path file = projectDir.resolve(path);
+        Files.createDirectories(file.getParent());
+        Files.writeString(file, content);
     }
 
     /** NBT bytes of the structure's {@code size} int list: [8, 8, 8]. */

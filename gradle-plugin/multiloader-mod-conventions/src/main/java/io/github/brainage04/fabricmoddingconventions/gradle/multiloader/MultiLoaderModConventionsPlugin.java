@@ -19,7 +19,7 @@ import org.gradle.api.artifacts.ProjectDependency;
 import org.gradle.api.artifacts.dsl.RepositoryHandler;
 import org.gradle.api.plugins.BasePluginExtension;
 import org.gradle.api.plugins.JavaPluginExtension;
-import org.gradle.api.tasks.JavaExec;
+import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.Sync;
@@ -28,6 +28,8 @@ import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.api.tasks.testing.Test;
 import org.gradle.jvm.toolchain.JavaLanguageVersion;
+import org.gradle.jvm.toolchain.JavaLauncher;
+import org.gradle.jvm.toolchain.JavaToolchainService;
 import org.gradle.language.jvm.tasks.ProcessResources;
 
 import java.io.File;
@@ -57,6 +59,8 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
             "https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1";
     private static final String NEOFORGE_GAMETEST_TASK = "runGameTest";
     private static final String PRODUCTION_CLIENT_GAMETEST_TASK = "runProductionClientGameTest";
+    private static final String PRODUCTION_SERVER_GAMETEST_TASK = "runProductionServerGameTest";
+    private static final String PRODUCTION_GAMETEST_JAR_TASK = "productionGameTestJar";
 
     @Override
     public void apply(Project root) {
@@ -149,22 +153,8 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
         configureAccessWidener(root, loom);
         // Loom gives every project default client and server runs, but common has no loader
         // metadata, so its game is plain Minecraft without the mod. Removing the runs drops
-        // their IDE run configurations. Loom registers runClient, runServer and
-        // runClientRenderDoc while it is applied and Gradle cannot remove tasks, so they stay
-        // listed: every task that launches a JVM is disabled and stops the build before
-        // anything runs, pointing at the loader projects instead.
+        // their IDE run configurations; Loom's run tasks stay listed and are left as Loom makes them.
         loom.getRuns().clear();
-        common.getTasks().withType(JavaExec.class).configureEach(task -> {
-            task.setEnabled(false);
-            task.setDescription("Does nothing: common has no loader. Use " + loaderTaskPaths(task.getName()) + ".");
-        });
-        common.getGradle().getTaskGraph().whenReady(graph -> graph.getAllTasks().stream()
-                .filter(task -> task instanceof JavaExec && task.getProject().getPath().equals(common.getPath()))
-                .findFirst()
-                .ifPresent(task -> {
-                    throw new GradleException(task.getPath() + " does nothing: common has no loader. Run "
-                            + loaderTaskPaths(task.getName()) + " instead.");
-                }));
 
         SourceSet commonMain = sourceSets(common).getByName(SourceSet.MAIN_SOURCE_SET_NAME);
         File generatedResources = common.file("src/main/generated");
@@ -447,6 +437,89 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
         );
         neoForge.getTasks().matching(task -> task.getName().equals(NEOFORGE_GAMETEST_TASK))
                 .configureEach(task -> task.onlyIf(spec -> fleetExtension.getNeoForgeGameTests().get()));
+        configureNeoForgeProductionGameTests(root, neoForge, gameTest, fleetExtension);
+    }
+
+    /**
+     * Registers {@code productionGameTestJar}, {@code installProductionServer} and
+     * {@code runProductionServerGameTest}: the release JAR and the GameTest JAR on a NeoForge dedicated server
+     * installed with the official installer, the NeoForge counterpart of Loom's Fabric production server run.
+     */
+    private static void configureNeoForgeProductionGameTests(
+            Project root,
+            Project neoForge,
+            SourceSet gameTest,
+            MultiLoaderModConventionsExtension fleetExtension
+    ) {
+        String modId = requiredProperty(root, "mod_id");
+        String neoForgeVersion = requiredProperty(root, "neoforge_version");
+        TaskProvider<GenerateProductionGameTestTickerTask> ticker = neoForge.getTasks().register(
+                "generateProductionGameTestTicker",
+                GenerateProductionGameTestTickerTask.class,
+                task -> {
+                    task.getModId().set(modId);
+                    task.getOutputDirectory().convention(
+                            neoForge.getLayout().getBuildDirectory().dir("generated/fabricmoddingconventions/gametest-java")
+                    );
+                }
+        );
+        gameTest.getJava().srcDir(ticker.flatMap(GenerateProductionGameTestTickerTask::getOutputDirectory));
+
+        TaskProvider<Jar> gameTestJar = neoForge.getTasks().register(PRODUCTION_GAMETEST_JAR_TASK, Jar.class, task -> {
+            task.setGroup("build");
+            task.setDescription("Packages the NeoForge GameTest source set for the production server run.");
+            task.getArchiveClassifier().set("production-gametest");
+            task.from(gameTest.getOutput());
+        });
+
+        Configuration installer = neoForge.getConfigurations().create("productionServerInstaller", configuration -> {
+            configuration.setDescription("The official NeoForge installer used to install the production GameTest server.");
+            configuration.setCanBeConsumed(false);
+            configuration.setCanBeResolved(true);
+            configuration.setTransitive(false);
+        });
+        neoForge.getDependencies().add(installer.getName(), "net.neoforged:neoforge:" + neoForgeVersion + ":installer");
+        Provider<JavaLauncher> javaLauncher = neoForge.getExtensions().getByType(JavaToolchainService.class)
+                .launcherFor(neoForge.getExtensions().getByType(JavaPluginExtension.class).getToolchain());
+        Provider<Boolean> enabled = fleetExtension.getNeoForgeGameTests();
+
+        TaskProvider<InstallNeoForgeServerTask> install = neoForge.getTasks().register(
+                "installProductionServer",
+                InstallNeoForgeServerTask.class,
+                task -> {
+                    task.setGroup("verification");
+                    task.setDescription("Installs the NeoForge " + neoForgeVersion
+                            + " dedicated server for runProductionServerGameTest.");
+                    task.getInstaller().from(installer);
+                    task.getNeoForgeVersion().set(neoForgeVersion);
+                    task.getJavaLauncher().set(javaLauncher);
+                    task.getServerDirectory().convention(neoForge.getLayout().getBuildDirectory()
+                            .dir("fabricmoddingconventions/neoforge-server/" + neoForgeVersion));
+                    task.onlyIf("NeoForge GameTests are enabled", spec -> enabled.get());
+                }
+        );
+        neoForge.getTasks().register(
+                PRODUCTION_SERVER_GAMETEST_TASK,
+                NeoForgeServerGameTestProductionRunTask.class,
+                task -> {
+                    task.setGroup("verification");
+                    task.setDescription("Runs the NeoForge server GameTests against the release JAR on a production"
+                            + " NeoForge server.");
+                    task.getServerDirectory().set(install.flatMap(InstallNeoForgeServerTask::getServerDirectory));
+                    task.getNeoForgeVersion().set(neoForgeVersion);
+                    task.getModId().set(modId);
+                    task.getModJar().set(neoForge.getTasks().named("jar", Jar.class).flatMap(Jar::getArchiveFile));
+                    task.getGameTestJar().set(gameTestJar.flatMap(Jar::getArchiveFile));
+                    task.getRuntimeMods().from(neoForge.getConfigurations().named("productionRuntimeMods"));
+                    task.getJavaLauncher().set(javaLauncher);
+                    task.getRunDir().convention(
+                            neoForge.getLayout().getBuildDirectory().dir("run/productionServerGameTest")
+                    );
+                    task.getReportFile().convention(neoForge.getLayout().getBuildDirectory()
+                            .file("test-results/" + PRODUCTION_SERVER_GAMETEST_TASK + "/TEST-gametest.xml"));
+                    task.onlyIf("NeoForge GameTests are enabled", spec -> enabled.get());
+                }
+        );
     }
 
     private static void configureMergedOutputs(Project common, Project loader) {
@@ -555,13 +628,16 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
 
     private static void configureRootTasks(Project root, Project fabric, Project neoForge) {
         // Only tasks that span both loaders live at the root; single-loader tasks are run as
-        // :fabric:<task> or :neoforge:<task>.
+        // :fabric:<task> or :neoforge:<task>. Like the Fabric side, the aggregate runs only the production
+        // runs: :neoforge:runProductionServerGameTest runs the same test instances as :neoforge:runGameTest,
+        // against the release JAR on an installed NeoForge server.
         root.getTasks().register("runAllGameTests", task -> {
             task.setGroup("verification");
-            task.setDescription("Runs the Fabric production server and client GameTests and the NeoForge GameTests.");
+            task.setDescription("Runs the Fabric production server and client GameTests and the NeoForge production"
+                    + " server GameTests.");
             task.dependsOn(fabric.getTasks().withType(ServerGameTestProductionRunTask.class));
             task.dependsOn(fabric.getTasks().withType(ClientGameTestProductionRunTask.class));
-            task.dependsOn(neoForge.getTasks().named(NEOFORGE_GAMETEST_TASK));
+            task.dependsOn(neoForge.getTasks().named(PRODUCTION_SERVER_GAMETEST_TASK));
         });
 
         TaskProvider<Jar> fabricJar = fabric.getTasks().named("jar", Jar.class);
@@ -578,10 +654,6 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
             root.getSubprojects().forEach(project -> task.dependsOn(project.getTasks().named("build")));
             task.dependsOn(collect);
         });
-    }
-
-    private static String loaderTaskPaths(String taskName) {
-        return ":fabric:" + taskName + " or :neoforge:" + taskName;
     }
 
     private static SourceSetContainer sourceSets(Project project) {
