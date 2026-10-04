@@ -22,6 +22,8 @@ The `run*` and `record*` tasks a multi-loader mod gets from `io.github.brainage0
 
 There is no NeoForge client GameTest task: NeoForge has no client GameTest framework.
 
+Production GameTest runs are never up to date: every invocation starts the game, so a changed environment (such as a test filter in `JAVA_TOOL_OPTIONS`) or a rerun after a flaky failure always runs the tests.
+
 ## Root
 
 | Task | What it runs |

@@ -8,6 +8,12 @@ import org.gradle.work.DisableCachingByDefault;
 /** Production server GameTest task with an explicit non-mod runtime library classpath. */
 @DisableCachingByDefault(because = "Runs a production Minecraft server process.")
 public abstract class ServerGameTestProductionRunTask extends ServerProductionRunTask {
+    public ServerGameTestProductionRunTask() {
+        // A GameTest run checks the environment as well as its declared inputs (for example a test filter
+        // passed through JAVA_TOOL_OPTIONS), so every invocation must start the server.
+        getOutputs().upToDateWhen(task -> false);
+    }
+
     @Classpath
     public abstract ConfigurableFileCollection getRuntimeLibraries();
 
