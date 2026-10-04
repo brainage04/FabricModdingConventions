@@ -52,6 +52,12 @@ public final class FabricModConventionsPlugin implements Plugin<Project> {
         configureStandardDependencies(project);
         configureSourceLayout(project, modSide);
         configureUnitTests(project, modSide);
+        LoomGradleExtensionAPI loom = project.getExtensions().getByType(LoomGradleExtensionAPI.class);
+        // Read the run configuration at execution time so custom GameTest run directories are respected.
+        project.getTasks().matching(task -> task.getName().equals("runGameTest"))
+                .configureEach(task -> task.doFirst("resetGameTestWorld", _ ->
+                        project.delete(project.file(loom.getRuns().getByName("gameTest").getRunDir())
+                                .toPath().resolve("world"))));
 
         configureRepositoriesBeforeResolution(project, extension);
         project.afterEvaluate(_ -> configureConventions(project, extension));

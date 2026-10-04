@@ -150,6 +150,8 @@ public final class ProductionGameTestsPlugin implements Plugin<Project> {
                     task.setGroup("verification");
                     task.setDescription("Runs Fabric server GameTests in Loom's production server environment.");
                     task.getRunDir().convention(extension.getServerRunDir());
+                    // Register after construction so this precedes Loom's inherited @TaskAction methods.
+                    task.doFirst("resetGameTestWorld", _ -> task.resetWorld());
                     task.dependsOn(gameTestJar);
                     task.dependsOn(prepareRuns);
                     task.getMods().from(gameTestJar.flatMap(Jar::getArchiveFile));

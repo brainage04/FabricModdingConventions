@@ -137,6 +137,58 @@ class MultiLoaderModConventionsTest {
     }
 
     @Test
+    void fabricServerGameTestsDeleteOnlyTheirConfiguredWorldBeforeLaunch() throws IOException {
+        writeFixture("server", """
+                gradle.projectsEvaluated {
+                    def fabric = project(':fabric')
+                    fabric.loom.runs.gameTest.runDir = 'custom/development'
+                    fabric.tasks.named('runProductionServerGameTest').get().runDir
+                            .set(fabric.layout.projectDirectory.dir('custom/production'))
+                    tasks.register('verifyFreshFabricGameTestWorlds') {
+                        doLast {
+                            ['runGameTest': 'development', 'runProductionServerGameTest': 'production'].each { name, dir ->
+                                def runTask = fabric.tasks.named(name).get()
+                                def world = fabric.file("custom/$dir/world")
+                                assert new File(world, 'entities/stale.marker').isFile()
+                                2.times {
+                                    // Exercise the named reset only; inherited task actions can launch Minecraft.
+                                    runTask.actions.findAll { it.displayName.endsWith('resetGameTestWorld') }.each { action ->
+                                        assert action == runTask.actions.first() : 'World reset must precede server launch'
+                                        action.execute(runTask)
+                                    }
+                                    assert !world.exists() : "Saved world survived ${runTask.path}"
+                                    if (it == 0) {
+                                        new File(world, 'entities').mkdirs()
+                                        new File(world, 'entities/stale.marker').text = 'interrupted rerun'
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                """);
+        for (String dir : new String[] {"development", "production"}) {
+            write("fabric/custom/" + dir + "/world/entities/stale.marker", "interrupted run");
+            for (String path : new String[] {"logs/keep.log", "options.txt", "eula.txt", "server.properties"}) {
+                write("fabric/custom/" + dir + "/" + path, "keep " + path);
+            }
+        }
+        write("fabric/run/world/keep.marker", "ordinary server world");
+
+        BuildResult result = runGradle("verifyFreshFabricGameTestWorlds");
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":verifyFreshFabricGameTestWorlds").getOutcome());
+        for (String dir : new String[] {"development", "production"}) {
+            Path runDir = projectDir.resolve("fabric/custom/" + dir);
+            assertFalse(Files.exists(runDir.resolve("world")));
+            for (String path : new String[] {"logs/keep.log", "options.txt", "eula.txt", "server.properties"}) {
+                assertEquals("keep " + path, Files.readString(runDir.resolve(path)));
+            }
+        }
+        assertEquals("ordinary server world", Files.readString(projectDir.resolve("fabric/run/world/keep.marker")));
+    }
+
+    @Test
     void neoForgeProductionServerRunsTheGameTestsAgainstTheReleaseJarAndFailsOnAFailedTest() throws IOException {
         writeFixture("server", "");
         writeNeoForgeMod();

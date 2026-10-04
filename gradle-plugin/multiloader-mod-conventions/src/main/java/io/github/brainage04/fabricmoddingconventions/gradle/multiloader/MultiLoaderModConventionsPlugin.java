@@ -203,6 +203,11 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
             loom.getMods().getByName("main").sourceSet(fabricClient);
         }
         configureDefaultRunDirectories(loom);
+        // Fabric reuses its dedicated-server world; NeoForge's GameTest entrypoint already replaces its test world.
+        fabric.getTasks().matching(task -> task.getName().equals(DEVELOPMENT_GAMETEST_TASK))
+                .configureEach(task -> task.doFirst("resetGameTestWorld", _ ->
+                        fabric.delete(fabric.file(loom.getRuns().getByName("gameTest").getRunDir())
+                                .toPath().resolve("world"))));
         configureAccessWidener(root, loom);
         SourceSet fabricGameTest = sourceSets(fabric).findByName("gametest");
         if (fabricGameTest != null) {

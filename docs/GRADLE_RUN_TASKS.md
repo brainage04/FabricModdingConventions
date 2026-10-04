@@ -24,6 +24,8 @@ There is no NeoForge client GameTest task: NeoForge has no client GameTest frame
 
 Production GameTest runs are never up to date: every invocation starts the game, so a changed environment (such as a test filter in `JAVA_TOOL_OPTIONS`) or a rerun after a flaky failure always runs the tests.
 
+Fabric server GameTests start with a fresh world on every invocation: `runGameTest` and `runProductionServerGameTest` delete only `<runDir>/world` before launching, including with a custom run directory. This applies to both single-loader Fabric mods and multi-loader mods; logs, options, EULA files and other run-directory contents are preserved. NeoForge's development and production GameTest entrypoint already replaces its test world through vanilla's GameTest main, so it needs no additional reset.
+
 ## Root
 
 | Task | What it runs |

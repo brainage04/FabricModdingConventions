@@ -5,6 +5,8 @@ import org.gradle.testkit.runner.GradleRunner;
 import org.gradle.testkit.runner.TaskOutcome;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -13,6 +15,7 @@ import java.nio.file.Path;
 import java.util.jar.JarFile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class PluginComponentIsolationTest {
     private static final String BASE_PLUGIN_ID = "io.github.brainage04.fabric-mod-conventions";
@@ -135,6 +138,70 @@ class PluginComponentIsolationTest {
                 );
             }
         }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"runGameTest", "runProductionServerGameTest"})
+    void fabricServerGameTestsDeleteOnlyTheirConfiguredWorldBeforeLaunch(String taskName) throws IOException {
+        boolean production = taskName.equals("runProductionServerGameTest");
+        String plugins = production ? BASE_PLUGIN_ID + "'\n    id '" + PRODUCTION_PLUGIN_ID : BASE_PLUGIN_ID;
+        String gameTests = production ? """
+                productionGameTests { includeFabricApiDependency = false }
+                """ : """
+                fabricApi.configureTests {
+                    createSourceSet = true
+                    modId = 'fixturemod-gametest'
+                    enableGameTests = true
+                    enableClientGameTests = false
+                }
+                """;
+        writeLoomFixture(plugins, gameTests + """
+                gradle.projectsEvaluated {
+                    def runTask = tasks.named('%s').get()
+                    %s
+                    tasks.register('verifyFreshGameTestWorld') {
+                        doLast {
+                            def world = file('custom/gameTest/world')
+                            assert new File(world, 'entities/stale.marker').isFile()
+                            2.times {
+                                // Exercise the named reset only; inherited task actions can launch Minecraft.
+                                runTask.actions.findAll { it.displayName.endsWith('resetGameTestWorld') }.each { action ->
+                                    assert action == runTask.actions.first() : 'World reset must precede server launch'
+                                    action.execute(runTask)
+                                }
+                                assert !world.exists() : "Saved world survived ${runTask.path}"
+                                if (it == 0) {
+                                    new File(world, 'entities').mkdirs()
+                                    new File(world, 'entities/stale.marker').text = 'interrupted rerun'
+                                }
+                            }
+                        }
+                    }
+                }
+                """.formatted(taskName, production
+                ? "runTask.runDir.set(layout.projectDirectory.dir('custom/gameTest'))"
+                : "loom.runs.gameTest.runDir = 'custom/gameTest'"));
+
+        Path runDir = projectDir.resolve("custom/gameTest");
+        Files.createDirectories(runDir.resolve("world/entities"));
+        Files.writeString(runDir.resolve("world/entities/stale.marker"), "interrupted run");
+        for (String path : new String[] {"logs/keep.log", "options.txt", "eula.txt", "server.properties"}) {
+            Path file = runDir.resolve(path);
+            Files.createDirectories(file.getParent());
+            Files.writeString(file, "keep " + path);
+        }
+        Path otherWorld = projectDir.resolve("run/world/keep.marker");
+        Files.createDirectories(otherWorld.getParent());
+        Files.writeString(otherWorld, "ordinary server world");
+
+        BuildResult result = runGradle("verifyFreshGameTestWorld");
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":verifyFreshGameTestWorld").getOutcome());
+        assertFalse(Files.exists(runDir.resolve("world")));
+        for (String path : new String[] {"logs/keep.log", "options.txt", "eula.txt", "server.properties"}) {
+            assertEquals("keep " + path, Files.readString(runDir.resolve(path)));
+        }
+        assertEquals("ordinary server world", Files.readString(otherWorld));
     }
 
 
