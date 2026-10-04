@@ -19,7 +19,7 @@ signing.gnupg.executable=gpg
 signing.gnupg.keyName=<long-signing-key-id>
 ```
 
-The owner workstation provides `unlock-central-publishing`, `with-central-publishing`, and `lock-central-publishing` helpers. Unlock once to create a mode-`0600` Bitwarden CLI session under `$XDG_RUNTIME_DIR`; each `with-central-publishing` invocation retrieves the Portal token, exposes it only to the child command, and leaves that session available for subsequent publishing commands. Run `lock-central-publishing` when the publishing session is finished.
+The maintainer's workstation provides `unlock-central-publishing`, `with-central-publishing`, and `lock-central-publishing` helpers. Unlock once to create a mode-`0600` Bitwarden CLI session under `$XDG_RUNTIME_DIR`; each `with-central-publishing` invocation retrieves the Portal token, exposes it only to the child command, and leaves that session available for subsequent publishing commands. Run `lock-central-publishing` when the publishing session is finished.
 
 Prime `gpg-agent` once before running Gradle so parallel signing tasks do not open competing pinentry prompts. On a remote terminal without access to the desktop pinentry, use loopback mode; GPG reads the passphrase as hidden terminal input and caches the unlocked key in the normal per-user agent:
 
@@ -46,7 +46,7 @@ The build uses in-memory PGP signing when the signing environment variables are 
 
 ## Publish
 
-On the owner workstation, unlock once and then run as many publishing commands as needed:
+On a workstation with these helpers installed, unlock once and then run as many publishing commands as needed:
 
 ```bash
 unlock-central-publishing

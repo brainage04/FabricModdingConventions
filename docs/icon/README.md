@@ -11,8 +11,8 @@
 Blender render (Blender **5.1.1**, headless CLI, **Cycles on CPU**, 32 samples, 2 render
 threads, 1024x1024, orthographic camera; 2.15 s).
 
-The scene is the approved "modern conventions hub" template scene with seven real vanilla
-block models placed in the owner-specified layout:
+The scene is the selected "modern conventions hub" template scene with seven real vanilla
+block models placed in the chosen layout:
 
 | slot | block |
 |---|---|
@@ -59,7 +59,7 @@ camera is preserved exactly:
 | file | what it is |
 |---|---|
 | `conventions2-selected-owner-layout.py` | entrypoint for this icon: `scene.render(1)` |
-| `scene.py` | author script: rebuilds the hub from the reference scene, asserts the owner layout, renders, saves `.blend`, writes metadata + verification |
+| `scene.py` | author script: rebuilds the hub from the reference scene, asserts the chosen layout, renders, saves `.blend`, writes metadata + verification |
 | `run-blender.py` | serializing headless Blender CLI runner (cgroup/affinity/lock policy) |
 | `prepare-assets.py` | extracts the byte-identical vanilla model/texture/blockstate assets and writes `asset-provenance.json` + `selected-blockstates.json` |
 | `inspect-references.py` | measures the reference scenes (writes `evidence/reference-measurements.json`) |
