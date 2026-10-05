@@ -318,8 +318,13 @@ class MultiLoaderModConventionsTest {
                             forRepository { maven { url = uri('%s') } }
                             filter { includeGroup('example') }
                         }
+                        // The GameTest runtime of the version under test, which Maven Central may not have yet.
+                        exclusiveContent {
+                            forRepository { maven { url = uri('%s') } }
+                            filter { includeModule('io.github.brainage04', 'fabricmoddingconventions') }
+                        }
                     }
-                    """.formatted(maven.toUri()));
+                    """.formatted(maven.toUri(), Path.of(System.getProperty("pluginTestRepository")).toUri()));
             write(loader + "/src/compat/java/fixture/" + loader + "/LoaderCompat.java", """
                     package fixture.%s;
 
