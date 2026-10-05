@@ -24,6 +24,7 @@ dependencies {
 	implementation project(':gradle-plugin:client-gametest-recorder')
 	implementation project(':gradle-plugin:java-quality-conventions')
 	implementation project(':gradle-plugin:production-gametests')
+	implementation project(':gradle-plugin:integration-gametests')
 	implementation project(':gradle-plugin:workspace-dependencies')
 	implementation project(':gradle-plugin:mod-publishing')
 }

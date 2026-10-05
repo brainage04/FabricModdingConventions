@@ -1,14 +1,16 @@
 package io.github.brainage04.fabricmoddingconventions.gradle.multiloader;
 
+import io.github.brainage04.fabricmoddingconventions.gradle.integration.IntegrationGameTestSuite;
+import io.github.brainage04.fabricmoddingconventions.gradle.integration.IntegrationGameTestsPlugin;
 import io.github.brainage04.fabricmoddingconventions.gradle.modpublishing.ModPublishingExtension;
 import io.github.brainage04.fabricmoddingconventions.gradle.production.ClientGameTestProductionRunTask;
 import io.github.brainage04.fabricmoddingconventions.gradle.production.ProductionGameTestExtension;
 import io.github.brainage04.fabricmoddingconventions.gradle.production.ProductionGameTestsPlugin;
-import io.github.brainage04.fabricmoddingconventions.gradle.production.ServerGameTestProductionRunTask;
 import io.github.brainage04.fabricmoddingconventions.gradle.recorder.ClientGameTestRecorderExtension;
 import io.github.brainage04.fabricmoddingconventions.gradle.recorder.RecordClientGameTestTask;
 import io.github.brainage04.fabricmoddingconventions.gradle.workspace.WorkspaceDependenciesExtension;
 import net.fabricmc.loom.api.LoomGradleExtensionAPI;
+import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.file.DuplicatesStrategy;
 import org.gradle.api.GradleException;
 import org.gradle.api.JavaVersion;
@@ -18,6 +20,7 @@ import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ProjectDependency;
 import org.gradle.api.artifacts.dsl.RepositoryHandler;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.plugins.BasePluginExtension;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.provider.Provider;
@@ -189,6 +192,7 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
         fabric.getExtensions().getExtraProperties()
                 .set(ProductionGameTestsPlugin.AGGREGATE_TASK_PROPERTY, false);
         fabric.getPluginManager().apply(PRODUCTION_GAMETESTS_PLUGIN);
+        configureIntegrationGameTests(common, fabric, fleetExtension, false);
         fabric.getPluginManager().apply(WORKSPACE_DEPENDENCIES_PLUGIN);
         fabric.getPluginManager().apply(MOD_PUBLISHING_PLUGIN);
         fabric.getExtensions().getByType(BasePluginExtension.class).getArchivesName()
@@ -259,6 +263,32 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
                 )
         );
         gameTest.getResources().srcDir(sharedStructures.flatMap(GenerateSharedGameTestResourcesTask::getOutputDirectory));
+    }
+
+    /**
+     * Gives the loader every integration GameTest suite declared at the root: sources from {@code common/src/<name>}
+     * (plus the loader's own {@code src/<name>}) and that loader's extra mods.
+     */
+    private static void configureIntegrationGameTests(
+            Project common,
+            Project loader,
+            MultiLoaderModConventionsExtension fleetExtension,
+            boolean neoForge
+    ) {
+        loader.getPluginManager().apply(IntegrationGameTestsPlugin.PLUGIN_ID);
+        NamedDomainObjectContainer<IntegrationGameTestSuite> suites = integrationGameTestSuites(loader);
+        fleetExtension.getIntegrationGameTests().all(shared -> suites.create(shared.getName(), suite -> {
+            suite.getFilter().set(shared.getFilter());
+            suite.getMods().set(neoForge ? shared.getNeoForgeMods() : shared.getFabricMods());
+            suite.getGitMods().set(shared.getGitMods());
+            suite.getSourceRoots().from(common.file("src/" + shared.getName()));
+        }));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static NamedDomainObjectContainer<IntegrationGameTestSuite> integrationGameTestSuites(Project loader) {
+        return (NamedDomainObjectContainer<IntegrationGameTestSuite>) loader.getExtensions()
+                .getByName(IntegrationGameTestsPlugin.EXTENSION_NAME);
     }
 
     /**
@@ -392,6 +422,7 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
         neoForge.getPluginManager().apply(ARCHITECTURY_LOOM_NO_REMAP);
         neoForge.getPluginManager().apply(ARCHITECTURY_LOOM);
         neoForge.getPluginManager().apply(WORKSPACE_DEPENDENCIES_PLUGIN);
+        configureIntegrationGameTests(common, neoForge, fleetExtension, true);
         neoForge.getPluginManager().apply(MOD_PUBLISHING_PLUGIN);
         neoForge.getExtensions().getByType(BasePluginExtension.class).getArchivesName()
                 .set(requiredProperty(root, "archives_base_name") + "-neoforge");
@@ -445,6 +476,9 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
         );
         neoForge.getTasks().matching(task -> task.getName().equals(DEVELOPMENT_GAMETEST_TASK))
                 .configureEach(task -> task.onlyIf(spec -> fleetExtension.getNeoForgeGameTests().get()));
+        neoForge.afterEvaluate(_ -> integrationGameTestSuites(neoForge).forEach(suite -> neoForge.getTasks()
+                .named(suite.getRunTaskName())
+                .configure(task -> task.onlyIf(spec -> fleetExtension.getNeoForgeGameTests().get()))));
         configureNeoForgeProductionGameTests(root, neoForge, gameTest, fleetExtension);
     }
 
@@ -452,6 +486,7 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
      * Registers {@code productionGameTestJar}, {@code installProductionServer} and
      * {@code runProductionServerGameTest}: the release JAR and the GameTest JAR on a NeoForge dedicated server
      * installed with the official installer, the NeoForge counterpart of Loom's Fabric production server run.
+     * Each integration GameTest suite gets the same run with its extra mods as {@code runProduction<Name>GameTest}.
      */
     private static void configureNeoForgeProductionGameTests(
             Project root,
@@ -506,28 +541,48 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
                     task.onlyIf("NeoForge GameTests are enabled", spec -> enabled.get());
                 }
         );
-        neoForge.getTasks().register(
-                PRODUCTION_SERVER_GAMETEST_TASK,
-                NeoForgeServerGameTestProductionRunTask.class,
-                task -> {
-                    task.setGroup("verification");
-                    task.setDescription("Runs the NeoForge server GameTests against the release JAR on a production"
-                            + " NeoForge server.");
-                    task.getServerDirectory().set(install.flatMap(InstallNeoForgeServerTask::getServerDirectory));
-                    task.getNeoForgeVersion().set(neoForgeVersion);
-                    task.getModId().set(modId);
-                    task.getModJar().set(neoForge.getTasks().named("jar", Jar.class).flatMap(Jar::getArchiveFile));
-                    task.getGameTestJar().set(gameTestJar.flatMap(Jar::getArchiveFile));
-                    task.getRuntimeMods().from(neoForge.getConfigurations().named("productionRuntimeMods"));
-                    task.getJavaLauncher().set(javaLauncher);
-                    task.getRunDir().convention(
-                            neoForge.getLayout().getBuildDirectory().dir("run/productionServerGameTest")
-                    );
-                    task.getReportFile().convention(neoForge.getLayout().getBuildDirectory()
-                            .file("test-results/" + PRODUCTION_SERVER_GAMETEST_TASK + "/TEST-gametest.xml"));
-                    task.onlyIf("NeoForge GameTests are enabled", spec -> enabled.get());
-                }
-        );
+        NeoForgeProductionRun run = new NeoForgeProductionRun(neoForge, modId, neoForgeVersion, install, gameTestJar,
+                javaLauncher, enabled);
+        run.register(PRODUCTION_SERVER_GAMETEST_TASK, "Runs the NeoForge server GameTests against the release JAR on a"
+                + " production NeoForge server.", neoForge.files(), List.of());
+        // The integration plugin creates each suite's JAR and mods configuration in an earlier afterEvaluate.
+        neoForge.afterEvaluate(_ -> integrationGameTestSuites(neoForge).forEach(suite -> {
+            String filter = IntegrationGameTestsPlugin.filter(suite);
+            run.register(suite.getProductionRunTaskName(), "Runs the " + suite.getName() + " integration GameTests ("
+                            + filter + ") with their extra mods against the release JAR on a production NeoForge server.",
+                    IntegrationGameTestsPlugin.suiteMods(neoForge, suite), List.of("--tests", filter));
+        }));
+    }
+
+    /** The settings every NeoForge production server GameTest run shares. */
+    private record NeoForgeProductionRun(
+            Project neoForge,
+            String modId,
+            String neoForgeVersion,
+            TaskProvider<InstallNeoForgeServerTask> install,
+            TaskProvider<Jar> gameTestJar,
+            Provider<JavaLauncher> javaLauncher,
+            Provider<Boolean> enabled
+    ) {
+        void register(String taskName, String description, FileCollection extraMods, List<String> programArgs) {
+            neoForge.getTasks().register(taskName, NeoForgeServerGameTestProductionRunTask.class, task -> {
+                task.setGroup("verification");
+                task.setDescription(description);
+                task.getServerDirectory().set(install.flatMap(InstallNeoForgeServerTask::getServerDirectory));
+                task.getNeoForgeVersion().set(neoForgeVersion);
+                task.getModId().set(modId);
+                task.getModJar().set(neoForge.getTasks().named("jar", Jar.class).flatMap(Jar::getArchiveFile));
+                task.getGameTestJar().set(gameTestJar.flatMap(Jar::getArchiveFile));
+                task.getRuntimeMods().from(neoForge.getConfigurations().named("productionRuntimeMods"), extraMods);
+                task.getProgramArgs().addAll(programArgs);
+                task.getJavaLauncher().set(javaLauncher);
+                String runName = Character.toLowerCase(taskName.charAt("run".length())) + taskName.substring("run".length() + 1);
+                task.getRunDir().convention(neoForge.getLayout().getBuildDirectory().dir("run/" + runName));
+                task.getReportFile().convention(neoForge.getLayout().getBuildDirectory()
+                        .file("test-results/" + taskName + "/TEST-gametest.xml"));
+                task.onlyIf("NeoForge GameTests are enabled", spec -> enabled.get());
+            });
+        }
     }
 
     private static void configureMergedOutputs(Project common, Project loader) {
@@ -644,8 +699,9 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
         // :fabric:<task> or :neoforge:<task>.
         TaskProvider<Task> runAllGameTests = root.getTasks().register("runAllGameTests", task -> {
             task.setGroup("verification");
-            task.setDescription("Runs every GameTest: the Fabric and NeoForge development server GameTests, then the"
-                    + " Fabric production server and client GameTests and the NeoForge production server GameTests.");
+            task.setDescription("Runs every GameTest: the Fabric and NeoForge development server GameTests and"
+                    + " integration GameTest suites, then the Fabric production server and client GameTests, the"
+                    + " NeoForge production server GameTests and the suites' production server runs.");
         });
         // The Fabric production runs are registered in :fabric's afterEvaluate and the extension is final only
         // once every build script ran, so the runs are collected when all projects are evaluated.
@@ -664,27 +720,38 @@ public final class MultiLoaderModConventionsPlugin implements Plugin<Project> {
     }
 
     /**
-     * The GameTest runs of {@code runAllGameTests}, in run order. {@code :fabric:runGameTest} exists only when
-     * Fabric API's server GameTests are on (not for {@code mod_side=client}), and is left out with
-     * {@code fabricServerGameTests = false} like the production server run. Both NeoForge runs are always
-     * included: with {@code neoForgeGameTests = false} they are skipped.
+     * The GameTest runs of {@code runAllGameTests}, in run order: development runs, each integration GameTest suite's
+     * development runs, the ordinary production runs, then each suite's production runs. {@code :fabric:runGameTest}
+     * exists only when Fabric API's server GameTests are on (not for {@code mod_side=client}), and is left out with
+     * {@code fabricServerGameTests = false} like the production server run and every Fabric suite run. Every
+     * NeoForge run is always included: with {@code neoForgeGameTests = false} they are skipped.
      */
     private static List<TaskProvider<? extends Task>> gameTestRuns(
             Project fabric,
             Project neoForge,
             MultiLoaderModConventionsExtension fleetExtension
     ) {
+        boolean fabricServer = fleetExtension.getFabricServerGameTests().get()
+                && fabric.getTasks().getNames().contains(DEVELOPMENT_GAMETEST_TASK);
+        List<IntegrationGameTestSuite> fabricSuites = fabricServer ? List.copyOf(integrationGameTestSuites(fabric)) : List.of();
+        List<IntegrationGameTestSuite> neoForgeSuites = List.copyOf(integrationGameTestSuites(neoForge));
+        List<String> fabricRuns = new ArrayList<>();
         List<TaskProvider<? extends Task>> runs = new ArrayList<>();
-        if (fleetExtension.getFabricServerGameTests().get()
-                && fabric.getTasks().getNames().contains(DEVELOPMENT_GAMETEST_TASK)) {
+        if (fabricServer) {
             runs.add(fabric.getTasks().named(DEVELOPMENT_GAMETEST_TASK));
         }
         runs.add(neoForge.getTasks().named(DEVELOPMENT_GAMETEST_TASK));
-        fabric.getTasks().withType(ServerGameTestProductionRunTask.class).getNames()
-                .forEach(name -> runs.add(fabric.getTasks().named(name)));
+        fabricSuites.forEach(suite -> runs.add(fabric.getTasks().named(suite.getRunTaskName())));
+        neoForgeSuites.forEach(suite -> runs.add(neoForge.getTasks().named(suite.getRunTaskName())));
+        if (fabric.getTasks().getNames().contains(PRODUCTION_SERVER_GAMETEST_TASK)) {
+            runs.add(fabric.getTasks().named(PRODUCTION_SERVER_GAMETEST_TASK));
+            fabricSuites.forEach(suite -> fabricRuns.add(suite.getProductionRunTaskName()));
+        }
         fabric.getTasks().withType(ClientGameTestProductionRunTask.class).getNames()
                 .forEach(name -> runs.add(fabric.getTasks().named(name)));
         runs.add(neoForge.getTasks().named(PRODUCTION_SERVER_GAMETEST_TASK));
+        fabricRuns.forEach(name -> runs.add(fabric.getTasks().named(name)));
+        neoForgeSuites.forEach(suite -> runs.add(neoForge.getTasks().named(suite.getProductionRunTaskName())));
         return runs;
     }
 

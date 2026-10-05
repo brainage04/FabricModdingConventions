@@ -1,5 +1,7 @@
 package io.github.brainage04.fabricmoddingconventions.gradle.multiloader;
 
+import org.gradle.api.Action;
+import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
 
@@ -11,6 +13,7 @@ public abstract class MultiLoaderModConventionsExtension {
     private final Property<Boolean> neoForgeGameTests;
     private final Property<Boolean> publishing;
     private final Property<Boolean> devAuth;
+    private final NamedDomainObjectContainer<MultiLoaderIntegrationGameTestSuite> integrationGameTests;
 
     @Inject
     public MultiLoaderModConventionsExtension(ObjectFactory objects) {
@@ -19,6 +22,7 @@ public abstract class MultiLoaderModConventionsExtension {
         neoForgeGameTests = objects.property(Boolean.class).convention(true);
         publishing = objects.property(Boolean.class).convention(true);
         devAuth = objects.property(Boolean.class);
+        integrationGameTests = objects.domainObjectContainer(MultiLoaderIntegrationGameTestSuite.class);
     }
 
     public Property<Boolean> getFabricClientGameTests() {
@@ -40,5 +44,14 @@ public abstract class MultiLoaderModConventionsExtension {
     /** Adds DevAuth to the Fabric and NeoForge development runtime; defaults to true unless {@code mod_side=server}. */
     public Property<Boolean> getDevAuth() {
         return devAuth;
+    }
+
+    /** Named GameTest suites that run on both loaders with extra mods loaded; see the README. */
+    public NamedDomainObjectContainer<MultiLoaderIntegrationGameTestSuite> getIntegrationGameTests() {
+        return integrationGameTests;
+    }
+
+    public void integrationGameTests(Action<? super NamedDomainObjectContainer<MultiLoaderIntegrationGameTestSuite>> action) {
+        action.execute(integrationGameTests);
     }
 }

@@ -8,6 +8,15 @@ Fleet-wide work for the conventions plugins and every Fabric/NeoForge mod that u
 
 ActionAssist keeps its own multi-version layout (owner decision, 2026-10-01); the conformance checklist gives it a separate section.
 
+### Integration GameTests
+
+`integration-gametests` covers server GameTest suites on unobfuscated Minecraft; Modrinth and CurseMaven mods already work as Maven coordinates once the mod declares their repository. ActionAssist's hand-written NeoForge 1.21.1 `modpack` client GameTest needs these before it can move onto it:
+
+- [ ] Client suites: a suite run based on a client GameTest run (`clientGameTest`) rather than the `gameTest` server run, with its own filtering or entry point instead of Fabric API's server filter / `--tests`.
+- [ ] Remapped targets: on an obfuscated Minecraft, extra mods must go through a Loom remap configuration (`loom.addRemapConfiguration`, runtime only) instead of the plain `<name>Mods` configuration.
+- [ ] Run-directory fixtures: copy a suite's config and world fixtures into its run directory before each run and clear the saved state it writes (ActionAssist's `prepareModpackClientGameTest`/`clearModpackClientGameTestWorld`).
+- [ ] Jar-in-jar libraries: put the `META-INF/jarjar` libraries of an extra mod (KubeJS) on the run's runtime library classpath (`forgeRuntimeLibrary` on NeoForge).
+
 ### Platform contracts
 
 Common holds the gameplay code; loader modules only adapt it. No mod's `common` imports Fabric, NeoForge or Architectury packages. Remaining gaps (NPCAddons is left out because it is being rewritten; TwitchPlaysMinecraft and HudRendererLib gaps are in their own `todo.md`):

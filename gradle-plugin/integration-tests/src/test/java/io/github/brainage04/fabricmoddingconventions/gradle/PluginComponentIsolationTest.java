@@ -16,11 +16,13 @@ import java.util.jar.JarFile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PluginComponentIsolationTest {
     private static final String BASE_PLUGIN_ID = "io.github.brainage04.fabric-mod-conventions";
     private static final String RECORDER_PLUGIN_ID = "io.github.brainage04.client-gametest-recorder";
     private static final String PRODUCTION_PLUGIN_ID = "io.github.brainage04.production-gametests";
+    private static final String INTEGRATION_PLUGIN_ID = "io.github.brainage04.integration-gametests";
     private static final String WORKSPACE_PLUGIN_ID = "io.github.brainage04.workspace-dependencies";
     private static final String QUALITY_PLUGIN_ID = "io.github.brainage04.java-quality-conventions";
 
@@ -202,6 +204,58 @@ class PluginComponentIsolationTest {
             assertEquals("keep " + path, Files.readString(runDir.resolve(path)));
         }
         assertEquals("ordinary server world", Files.readString(otherWorld));
+    }
+
+    @Test
+    void integrationPluginAddsSuiteRunsToASingleLoaderFabricProject() throws IOException {
+        // Applied before production-gametests: the suite's production run still sees the ordinary one and joins
+        // the single-loader aggregate.
+        writeLoomFixture(BASE_PLUGIN_ID + "'\n    id '" + INTEGRATION_PLUGIN_ID + "'\n    id '" + PRODUCTION_PLUGIN_ID, """
+                productionGameTests { includeFabricApiDependency = false }
+
+                integrationGameTests {
+                    compat {
+                        filter = 'fixturemod:compat_*'
+                    }
+                }
+
+                tasks.register('verifyStandaloneIntegrationGameTests') {
+                    doLast {
+                        assert sourceSets.compat.java.srcDirs.contains(file('src/compat/java'))
+                        assert configurations.compatMods.transitive == false
+                        // Fabric Loom keeps run properties as JVM arguments; Architectury Loom as system properties.
+                        assert loom.runs.compatGameTest.vmArgs.contains('-Dfabric-api.gametest.filter=fixturemod:compat_*')
+                        assert tasks.runCompatGameTest.actions.first().displayName.endsWith('resetGameTestWorld')
+                        def production = tasks.runProductionCompatGameTest
+                        assert production.jvmArgs.get().contains('-Dfabric-api.gametest.filter=fixturemod:compat_*')
+                        assert production.runDir.get().asFile == file('build/run/productionCompatGameTest')
+                        assert production.mods.files*.name.containsAll(
+                                ['fixturemod-1.2.3-compat-gametest.jar', 'fixturemod-1.2.3-production-gametest.jar'])
+                        assert !tasks.runProductionServerGameTest.mods.files*.name.contains('fixturemod-1.2.3-compat-gametest.jar')
+                        assert tasks.runAllProductionGameTests.taskDependencies.getDependencies(null)*.name
+                                .containsAll(['runProductionServerGameTest', 'runProductionCompatGameTest'])
+                    }
+                }
+                """);
+
+        assertEquals(TaskOutcome.SUCCESS, runGradle("verifyStandaloneIntegrationGameTests")
+                .task(":verifyStandaloneIntegrationGameTests").getOutcome());
+    }
+
+    @Test
+    void integrationGameTestSuiteWithoutAFilterFailsConfiguration() throws IOException {
+        writeLoomFixture(BASE_PLUGIN_ID + "'\n    id '" + PRODUCTION_PLUGIN_ID + "'\n    id '" + INTEGRATION_PLUGIN_ID, """
+                productionGameTests { includeFabricApiDependency = false }
+                integrationGameTests { compat }
+                """);
+
+        String output = GradleRunner.create()
+                .withProjectDir(projectDir.toFile())
+                .withPluginClasspath()
+                .withArguments("help")
+                .buildAndFail()
+                .getOutput();
+        assertTrue(output.contains("integrationGameTests.compat.filter is required"), output);
     }
 
 

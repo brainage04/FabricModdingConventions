@@ -14,6 +14,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
 import java.util.zip.GZIPInputStream;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -24,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class MultiLoaderModConventionsTest {
     private static final String STRUCTURE = "data/fabricmoddingconventions/structure/empty.nbt";
     private static final String VERSION = System.getProperty("pluginTestVersion");
+    private static final String EXTRA_MOD_COMMIT = "0c9e3de15d13f7a084b40a21e01f924eef16c507";
 
     @TempDir
     Path projectDir;
@@ -248,6 +251,161 @@ class MultiLoaderModConventionsTest {
                         ":neoforge:runProductionServerGameTest"),
                 plannedGameTestRuns()
         );
+    }
+
+    @Test
+    void integrationGameTestSuitesLoadTheirExtraModsOnlyInTheirOwnRunsAndStayOutOfTheOrdinaryBuild() throws Exception {
+        String extraModRepository = cloneExtraModFixture();
+        Path maven = projectDir.resolve("maven");
+        for (String artifact : new String[] {"fabric-only", "neoforge-only"}) {
+            writeMavenJar(maven, artifact);
+        }
+        writeFixture("server", """
+                multiLoaderModConventions {
+                    fabricClientGameTests = false
+                    integrationGameTests {
+                        compat {
+                            filter = 'fixturemod:compat_*'
+                            fabricMods.add('example:fabric-only:1.0')
+                            neoForgeMods.add('example:neoforge-only:1.0')
+                            gitMod('%s', '%s')
+                        }
+                    }
+                }
+
+                tasks.register('verifyIntegrationGameTests') {
+                    dependsOn ':fabric:compatGameTestJar', ':neoforge:compatGameTestJar'
+                    doLast {
+                        def names = { files -> files.collect { it.name } }
+                        def loaders = [
+                                fabric  : [extra: 'fabric-only-1.0.jar', other: 'neoforge-only-1.0.jar', git: 'extramod-1.0.0.jar',
+                                           suite: 'fixturemod-1.2.3-compat-gametest.jar', productionMods: 'mods'],
+                                neoforge: [extra: 'neoforge-only-1.0.jar', other: 'fabric-only-1.0.jar', git: 'extramod-neoforge-1.0.0.jar',
+                                           suite: 'fixturemod-neoforge-1.2.3-compat-gametest.jar', productionMods: 'runtimeMods'],
+                        ]
+                        def isExtra = { String name -> name.contains('-only-') || name.startsWith('extramod') || name.contains('-compat-') }
+                        loaders.each { path, expected ->
+                            def loader = project(':' + path)
+                            def compat = loader.sourceSets.compat
+                            assert compat.java.srcDirs.contains(file('common/src/compat/java'))
+                            assert compat.java.srcDirs.contains(loader.file('src/compat/java'))
+                            def suiteRuntime = names(compat.runtimeClasspath.files)
+                            assert suiteRuntime.containsAll([expected.extra, expected.git, expected.suite])
+                            assert !suiteRuntime.contains(expected.other)
+                            assert !names(loader.sourceSets.gametest.runtimeClasspath.files).any(isExtra)
+                            assert !names(loader.sourceSets.gametest.compileClasspath.files).any(isExtra)
+                            assert !loader.sourceSets.gametest.runtimeClasspath.files.any { compat.output.classesDirs.contains(it) }
+                            assert loader.tasks.checkstyleCompat.classpath.isEmpty()
+                            def productionMods = names(loader.tasks.runProductionCompatGameTest."${expected.productionMods}".files)
+                            assert productionMods.containsAll([expected.extra, expected.git, expected.suite])
+                            assert !names(loader.tasks.runProductionServerGameTest."${expected.productionMods}".files).any(isExtra)
+                        }
+                        def fabricRun = project(':fabric').loom.runs.compatGameTest
+                        assert fabricRun.systemProperties.get()['fabric-api.gametest.filter'] == 'fixturemod:compat_*'
+                        assert fabricRun.runDir == 'build/run/compatGameTest'
+                        def neoForgeRun = project(':neoforge').loom.runs.compatGameTest
+                        assert neoForgeRun.programArgs.containsAll(['--tests', 'fixturemod:compat_*'])
+                        assert project(':fabric').tasks.runProductionCompatGameTest.jvmArgs.get()
+                                .contains('-Dfabric-api.gametest.filter=fixturemod:compat_*')
+                        assert project(':neoforge').tasks.runProductionCompatGameTest.programArgs.get() == ['--tests', 'fixturemod:compat_*']
+                    }
+                }
+                """.formatted(extraModRepository, EXTRA_MOD_COMMIT));
+        for (String loader : new String[] {"fabric", "neoforge"}) {
+            write(loader + "/build.gradle", """
+                    repositories {
+                        exclusiveContent {
+                            forRepository { maven { url = uri('%s') } }
+                            filter { includeGroup('example') }
+                        }
+                    }
+                    """.formatted(maven.toUri()));
+            write(loader + "/src/compat/java/fixture/" + loader + "/LoaderCompat.java", """
+                    package fixture.%s;
+
+                    final class LoaderCompat {
+                        // Compiles only against this loader's JAR of the Git mod.
+                        static final Class<?> EXTRA = extramod.%s.Extra.class;
+                    }
+                    """.formatted(loader, loader));
+        }
+        write("common/src/gametest/java/fixture/SharedGameTests.java", """
+                package fixture;
+
+                public final class SharedGameTests {
+                }
+                """);
+        write("common/src/compat/java/fixture/CompatGameTests.java", """
+                package fixture;
+
+                final class CompatGameTests {
+                    // Suites compile against the ordinary GameTest sources.
+                    static final Class<?> SHARED = SharedGameTests.class;
+                }
+                """);
+
+        List<String> ordinaryBuild = runGradle("build", "--dry-run").getOutput().lines().map(line -> line.split(" ")[0]).toList();
+        assertTrue(ordinaryBuild.contains(":fabric:checkstyleCompat"), String.join("\n", ordinaryBuild));
+        assertFalse(ordinaryBuild.stream().anyMatch(task -> task.contains("GitMod") || task.contains("compileCompat")
+                || task.contains("CompatGameTest")), String.join("\n", ordinaryBuild));
+        assertEquals(
+                List.of(":fabric:runGameTest", ":neoforge:runGameTest", ":fabric:runCompatGameTest",
+                        ":neoforge:runCompatGameTest", ":fabric:runProductionServerGameTest",
+                        ":neoforge:runProductionServerGameTest", ":fabric:runProductionCompatGameTest",
+                        ":neoforge:runProductionCompatGameTest"),
+                plannedGameTestRuns()
+        );
+
+        BuildResult result = runGradle(":fabric:compatGameTestJar", ":neoforge:compatGameTestJar",
+                "verifyIntegrationGameTests");
+
+        String buildGitMod = ":buildGitModExtramod" + EXTRA_MOD_COMMIT.substring(0, 7);
+        assertEquals(TaskOutcome.SUCCESS, result.task(buildGitMod).getOutcome());
+        assertEquals(TaskOutcome.SUCCESS, result.task(":verifyIntegrationGameTests").getOutcome());
+        Path checkout = projectDir.resolve(".gradle/fabricmoddingconventions/git-mods/extramod/" + EXTRA_MOD_COMMIT);
+        assertEquals("--no-daemon --console=plain collectReleaseArtifacts\n",
+                Files.readString(checkout.resolve("invocation.txt")));
+        for (String loader : new String[] {"fabric", "neoforge"}) {
+            String suffix = loader.equals("fabric") ? "" : "-neoforge";
+            assertTrue(Files.isRegularFile(projectDir.resolve(
+                    loader + "/build/libs/fixturemod" + suffix + "-1.2.3-compat-gametest.jar")));
+        }
+        assertEquals(TaskOutcome.UP_TO_DATE, runGradle(":fabric:compileCompatJava").task(buildGitMod).getOutcome());
+    }
+
+    /**
+     * A bare clone of {@code extramod.bundle}: one commit of a stand-in multi-loader mod whose {@code gradlew} records
+     * its arguments and compiles {@code extramod.fabric.Extra} into {@code build/libs/extramod-1.0.0.jar} and
+     * {@code extramod.neoforge.Extra} into {@code build/libs/extramod-neoforge-1.0.0.jar}.
+     */
+    private String cloneExtraModFixture() throws Exception {
+        Path bundle = projectDir.resolve("extramod.bundle");
+        try (InputStream input = getClass().getResourceAsStream("/extramod.bundle")) {
+            Files.copy(input, bundle);
+        }
+        Path repository = projectDir.resolve("extramod.git");
+        Process clone = new ProcessBuilder("git", "clone", "--quiet", "--bare", bundle.toString(), repository.toString())
+                .inheritIO()
+                .start();
+        assertEquals(0, clone.waitFor());
+        return repository.toUri().toString();
+    }
+
+    private static void writeMavenJar(Path repository, String artifact) throws IOException {
+        Path directory = repository.resolve("example/" + artifact + "/1.0");
+        Files.createDirectories(directory);
+        Files.writeString(directory.resolve(artifact + "-1.0.pom"), """
+                <project xmlns="http://maven.apache.org/POM/4.0.0">
+                  <modelVersion>4.0.0</modelVersion>
+                  <groupId>example</groupId>
+                  <artifactId>%s</artifactId>
+                  <version>1.0</version>
+                </project>
+                """.formatted(artifact));
+        try (JarOutputStream jar = new JarOutputStream(Files.newOutputStream(directory.resolve(artifact + "-1.0.jar")))) {
+            jar.putNextEntry(new JarEntry("META-INF/" + artifact + ".txt"));
+            jar.closeEntry();
+        }
     }
 
     /** A NeoForge mod whose GameTest source set registers one passing and one failing test. */

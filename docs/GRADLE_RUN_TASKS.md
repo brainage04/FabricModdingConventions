@@ -10,6 +10,7 @@ The `run*` and `record*` tasks a multi-loader mod gets from `io.github.brainage0
 | `:fabric:runServer` / `:neoforge:runServer` | Dev dedicated server |
 | `:fabric:runGameTest` | Fabric server GameTests in the dev environment |
 | `:neoforge:runGameTest` | NeoForge server GameTests in the dev environment |
+| `:fabric:run<Name>GameTest` / `:neoforge:run<Name>GameTest` | One [integration GameTest suite](../README.md#integration-gametests) in the dev environment, with its extra mods; only its filtered GameTests run |
 
 ## Release jar (production environment)
 
@@ -19,20 +20,21 @@ The `run*` and `record*` tasks a multi-loader mod gets from `io.github.brainage0
 | `:fabric:runProductionClientGameTest` | Fabric client GameTests in a production Fabric client under Xvfb; does nothing when `fabricClientGameTests = false` |
 | `:fabric:recordClientGameTest` | The same client GameTests, recorded to video (Xvfb, PipeWire, ffmpeg); skipped when client GameTests are off |
 | `:neoforge:runProductionServerGameTest` | NeoForge server GameTests on a real NeoForge server installed with the official installer, against the release jar; skipped when `neoForgeGameTests = false` |
+| `:fabric:runProduction<Name>GameTest` / `:neoforge:runProduction<Name>GameTest` | One integration GameTest suite on the same production servers as `runProductionServerGameTest`, with the suite's JAR and its extra mods added |
 
 There is no NeoForge client GameTest task: NeoForge has no client GameTest framework.
 
-Production GameTest runs are never up to date: every invocation starts the game, so a changed environment (such as a test filter in `JAVA_TOOL_OPTIONS`) or a rerun after a flaky failure always runs the tests.
+Production GameTest runs and integration GameTest suite runs are never up to date: every invocation starts the game, so a changed environment (such as a test filter in `JAVA_TOOL_OPTIONS`) or a rerun after a flaky failure always runs the tests.
 
-Fabric server GameTests start with a fresh world on every invocation: `runGameTest` and `runProductionServerGameTest` delete only `<runDir>/world` before launching, including with a custom run directory. This applies to both single-loader Fabric mods and multi-loader mods; logs, options, EULA files and other run-directory contents are preserved. NeoForge's development and production GameTest entrypoint already replaces its test world through vanilla's GameTest main, so it needs no additional reset.
+Fabric server GameTests start with a fresh world on every invocation: `runGameTest` and `runProductionServerGameTest` delete only `<runDir>/world` before launching, including with a custom run directory. This applies to both single-loader Fabric mods and multi-loader mods; logs, options, EULA files and other run-directory contents are preserved. NeoForge's development and production GameTest entrypoint already replaces its test world through vanilla's GameTest main, so it needs no additional reset. Integration GameTest suite runs delete `<runDir>/world` on both loaders.
 
 ## Root
 
 | Task | What it runs |
 |---|---|
-| `runAllGameTests` | Every GameTest run, one at a time even with `--parallel`: `:fabric:runGameTest`, `:neoforge:runGameTest`, `:fabric:runProductionServerGameTest`, `:fabric:runProductionClientGameTest` (when enabled) and `:neoforge:runProductionServerGameTest`. The Fabric server runs are left out for `mod_side=client` and with `fabricServerGameTests = false`; the NeoForge runs are skipped with `neoForgeGameTests = false`. |
+| `runAllGameTests` | Every GameTest run, one at a time even with `--parallel`: `:fabric:runGameTest`, `:neoforge:runGameTest`, each integration GameTest suite's `:fabric:run<Name>GameTest` and `:neoforge:run<Name>GameTest`, `:fabric:runProductionServerGameTest`, `:fabric:runProductionClientGameTest` (when enabled), `:neoforge:runProductionServerGameTest`, then each suite's `:fabric:runProduction<Name>GameTest` and `:neoforge:runProduction<Name>GameTest`. The Fabric server runs, including the suites' Fabric runs, are left out for `mod_side=client` and with `fabricServerGameTests = false`; the NeoForge runs, including the suites', are skipped with `neoForgeGameTests = false`. |
 
-Each run has its own run directory: `fabric/build/run/gameTest`, `neoforge/run/gametest`, `fabric/build/run/productionServerGameTest`, `fabric/build/run/clientGameTest` and `neoforge/build/run/productionServerGameTest`.
+Each run has its own run directory: `fabric/build/run/gameTest`, `neoforge/run/gametest`, `fabric/build/run/productionServerGameTest`, `fabric/build/run/clientGameTest` and `neoforge/build/run/productionServerGameTest`; a suite's runs use `<loader>/build/run/<name>GameTest` and `<loader>/build/run/production<Name>GameTest`.
 
 ## Tasks that do nothing
 

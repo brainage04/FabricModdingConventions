@@ -21,6 +21,7 @@ dependencies {
 	implementation project(":gradle-plugin:java-quality-conventions")
 	implementation project(":gradle-plugin:multiloader-mod-conventions")
 	implementation project(":gradle-plugin:production-gametests")
+	implementation project(":gradle-plugin:integration-gametests")
 	implementation project(":gradle-plugin:workspace-dependencies")
 
 	testImplementation "org.junit.jupiter:junit-jupiter:5.10.0"
@@ -41,6 +42,7 @@ test {
 			":gradle-plugin:java-quality-conventions:publishAllPublicationsToLocalRepository",
 			":gradle-plugin:multiloader-mod-conventions:publishAllPublicationsToLocalRepository",
 			":gradle-plugin:production-gametests:publishAllPublicationsToLocalRepository",
+			":gradle-plugin:integration-gametests:publishAllPublicationsToLocalRepository",
 			":gradle-plugin:workspace-dependencies:publishAllPublicationsToLocalRepository",
 			":gradle-plugin:maven-central-publishing:publishAllPublicationsToLocalRepository",
 			":gradle-plugin:mod-publishing:publishAllPublicationsToLocalRepository",

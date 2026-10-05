@@ -20,6 +20,7 @@ include(
 		"gradle-plugin:multiloader-mod-conventions",
 		"gradle-plugin:java-quality-conventions",
 		"gradle-plugin:production-gametests",
+		"gradle-plugin:integration-gametests",
 		"gradle-plugin:workspace-dependencies",
 		"gradle-plugin:maven-central-publishing",
 		"gradle-plugin:mod-publishing",

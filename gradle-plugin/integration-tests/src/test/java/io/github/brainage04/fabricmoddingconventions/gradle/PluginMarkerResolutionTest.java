@@ -21,6 +21,7 @@ class PluginMarkerResolutionTest {
             new PluginCoordinate("io.github.brainage04.fabric-mod-conventions", "fabric-mod-conventions-gradle"),
             new PluginCoordinate("io.github.brainage04.client-gametest-recorder", "client-gametest-recorder-gradle"),
             new PluginCoordinate("io.github.brainage04.production-gametests", "production-gametests-gradle"),
+            new PluginCoordinate("io.github.brainage04.integration-gametests", "integration-gametests-gradle"),
             new PluginCoordinate("io.github.brainage04.workspace-dependencies", "workspace-dependencies-gradle"),
             new PluginCoordinate("io.github.brainage04.maven-central-publishing", "maven-central-publishing-gradle"),
             new PluginCoordinate("io.github.brainage04.mod-publishing", "mod-publishing-gradle"),

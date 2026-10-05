@@ -1,0 +1,25 @@
+plugins {
+	id 'java-gradle-plugin'
+	id 'io.github.brainage04.maven-central-publishing' version "${maven_central_publishing_version}"
+}
+
+ext {
+	componentArchivesName = "integration-gametests-gradle"
+	componentPluginId = "io.github.brainage04.integration-gametests"
+	componentImplementationClass = "io.github.brainage04.fabricmoddingconventions.gradle.integration.IntegrationGameTestsPlugin"
+	componentDisplayName = "Integration GameTests Gradle plugin"
+	componentDescription = "Runs named GameTest suites with extra mods loaded beside the mod under test."
+}
+
+apply from: rootProject.file("gradle/plugin-component.gradle")
+
+repositories {
+	maven { url = uri("https://maven.architectury.dev/") }
+	maven { url = uri("https://libraries.minecraft.net") }
+	maven { url = uri("https://maven.fabricmc.net/") }
+}
+
+dependencies {
+	compileOnly "dev.architectury:architectury-loom:${rootProject.architectury_loom_version}"
+	implementation project(':gradle-plugin:production-gametests')
+}
