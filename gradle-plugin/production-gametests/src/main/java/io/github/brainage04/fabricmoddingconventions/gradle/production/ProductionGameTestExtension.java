@@ -19,6 +19,7 @@ public abstract class ProductionGameTestExtension {
     private final DirectoryProperty clientRunDir;
     private final DirectoryProperty serverRunDir;
     private final Property<Boolean> clientUseXvfb;
+    private final Property<Boolean> clientSilenceAudio;
     private final Property<Boolean> disableClientNetworkSynchronizer;
     private final ListProperty<String> clientJvmArgs;
     private final ListProperty<String> clientProgramArgs;
@@ -37,6 +38,7 @@ public abstract class ProductionGameTestExtension {
         clientRunDir = objects.directoryProperty().convention(layout.getBuildDirectory().dir("run/productionClientGameTest"));
         serverRunDir = objects.directoryProperty().convention(layout.getBuildDirectory().dir("run/productionServerGameTest"));
         clientUseXvfb = objects.property(Boolean.class).convention(true);
+        clientSilenceAudio = objects.property(Boolean.class).convention(true);
         disableClientNetworkSynchronizer = objects.property(Boolean.class).convention(true);
         clientJvmArgs = objects.listProperty(String.class).convention(List.of());
         clientProgramArgs = objects.listProperty(String.class).convention(List.of());
@@ -80,6 +82,11 @@ public abstract class ProductionGameTestExtension {
 
     public Property<Boolean> getClientUseXvfb() {
         return clientUseXvfb;
+    }
+
+    /** Forces OpenAL's null driver for the production client; a recorder that routes audio turns it off. */
+    public Property<Boolean> getClientSilenceAudio() {
+        return clientSilenceAudio;
     }
 
     public Property<Boolean> getDisableClientNetworkSynchronizer() {

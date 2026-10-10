@@ -2,7 +2,9 @@ package io.github.brainage04.fabricmoddingconventions.gradle.production;
 
 import net.fabricmc.loom.task.prod.ClientProductionRunTask;
 import org.gradle.api.file.ConfigurableFileCollection;
+import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Classpath;
+import org.gradle.api.tasks.Input;
 import org.gradle.work.DisableCachingByDefault;
 import org.gradle.process.ExecSpec;
 
@@ -18,6 +20,9 @@ public abstract class ClientGameTestProductionRunTask extends ClientProductionRu
     @Classpath
     public abstract ConfigurableFileCollection getRuntimeLibraries();
 
+    @Input
+    public abstract Property<Boolean> getSilenceAudio();
+
     public final void includeRuntimeLibrariesInClasspath() {
         getClasspath().from(getRuntimeLibraries());
     }
@@ -25,6 +30,8 @@ public abstract class ClientGameTestProductionRunTask extends ClientProductionRu
     @Override
     protected void configureCommand(ExecSpec exec) {
         super.configureCommand(exec);
-        exec.environment("ALSOFT_DRIVERS", "null");
+        if (getSilenceAudio().get()) {
+            exec.environment("ALSOFT_DRIVERS", "null");
+        }
     }
 }

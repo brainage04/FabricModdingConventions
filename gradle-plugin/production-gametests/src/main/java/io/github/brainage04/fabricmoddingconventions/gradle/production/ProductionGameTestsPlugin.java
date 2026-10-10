@@ -123,6 +123,7 @@ public final class ProductionGameTestsPlugin implements Plugin<Project> {
                     task.getRuntimeLibraries().from(runtimeLibraries);
                     task.includeRuntimeLibrariesInClasspath();
                     task.getUseXVFB().convention(productionExtension.getClientUseXvfb());
+                    task.getSilenceAudio().convention(productionExtension.getClientSilenceAudio());
                     task.getJvmArgs().add("-Dfabric.client.gametest");
                     if (productionExtension.getDisableClientNetworkSynchronizer().get()) {
                         task.getJvmArgs().add("-Dfabric.client.gametest.disableNetworkSynchronizer=true");
