@@ -28,6 +28,15 @@ on:
         required: false
         default: ''
         type: string
+      git_ssh_repositories:
+        description: Space-separated brainage04 repositories whose HTTPS clone URL, https://github.com/brainage04/<name>.git, is cloned over SSH with the git_ssh_key secret during this job; required with git_ssh_key
+        required: false
+        default: ''
+        type: string
+    secrets:
+      git_ssh_key:
+        description: Optional read-only SSH deploy key for private repositories the build clones, such as gitMod repositories
+        required: false
 
 permissions:
   contents: read
@@ -47,6 +56,43 @@ jobs:
           # ../FabricModdingConventions would be picked up by settings.gradle's includeBuild.
           checkout="$(basename "${GITHUB_WORKSPACE}")"
           find "${GITHUB_WORKSPACE}/.." -mindepth 1 -maxdepth 1 ! -name "${checkout}" -exec rm -rf -- {} +
+
+      - name: configure git SSH access
+        shell: bash
+        env:
+          GIT_SSH_KEY: ${{ secrets.git_ssh_key }}
+          GIT_SSH_REPOSITORIES: ${{ inputs.git_ssh_repositories }}
+        run: |
+          # Self-hosted runners keep their home directory between jobs, so the key lives in the job's temp
+          # directory and git is configured only through environment variables exported to the later steps
+          # (Gradle's gitMod clones from inside Gradle); nothing goes into global git config or ~/.ssh.
+          if [ -z "${GIT_SSH_KEY}" ]; then
+            exit 0
+          fi
+          if [ -z "${GIT_SSH_REPOSITORIES}" ]; then
+            echo "git_ssh_key needs git_ssh_repositories"
+            exit 1
+          fi
+          for name in ${GIT_SSH_REPOSITORIES}; do
+            if [[ ! "${name}" =~ ^[A-Za-z0-9._-]+$ ]]; then
+              echo "Invalid git SSH repository name: ${name}"
+              exit 1
+            fi
+          done
+          dir="${RUNNER_TEMP}/git-ssh"
+          rm -rf "${dir}"
+          (umask 077 && mkdir -p "${dir}" && printf '%s\n' "${GIT_SSH_KEY%$'\n'}" > "${dir}/id")
+          chmod 600 "${dir}/id"
+          count=0
+          {
+            echo "GIT_SSH_COMMAND=ssh -i \"${dir}/id\" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=\"${dir}/known_hosts\""
+            for name in ${GIT_SSH_REPOSITORIES}; do
+              echo "GIT_CONFIG_KEY_${count}=url.git@github.com:brainage04/${name}.git.insteadOf"
+              echo "GIT_CONFIG_VALUE_${count}=https://github.com/brainage04/${name}.git"
+              count=$((count + 1))
+            done
+            echo "GIT_CONFIG_COUNT=${count}"
+          } >> "${GITHUB_ENV}"
 
       - name: validate gradle wrapper
         uses: gradle/actions/wrapper-validation@v5
@@ -107,3 +153,8 @@ jobs:
             **/build/test-results/
             **/build/run/*/logs/
             **/run/gametest/logs/
+
+      - name: remove git SSH key
+        if: always()
+        shell: bash
+        run: rm -rf "${RUNNER_TEMP}/git-ssh"
