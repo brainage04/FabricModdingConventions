@@ -87,6 +87,11 @@ on:
         required: false
         default: ''
         type: string
+      git_ssh_repositories:
+        description: Space-separated brainage04 repositories whose HTTPS clone URL, https://github.com/brainage04/<name>.git, is cloned over SSH with the git_ssh_key secret during each Gradle build; required with git_ssh_key
+        required: false
+        default: ''
+        type: string
     secrets:
       release_token:
         description: GitHub token with contents write permission
@@ -96,6 +101,9 @@ on:
         required: false
       curseforge_token:
         description: CurseForge API token
+        required: false
+      git_ssh_key:
+        description: Optional read-only SSH deploy key for private repositories the build clones, such as gitMod repositories
         required: false
     outputs:
       artifact_file:
@@ -121,10 +129,12 @@ jobs:
       prepare_baritone: ${{ inputs.prepare_baritone }}
       java_version: ${{ inputs.java_version }}
       prepare_siblings: ${{ inputs.prepare_siblings }}
+      git_ssh_repositories: ${{ inputs.git_ssh_repositories }}
       additional_artifact_pattern: ${{ inputs.additional_artifact_pattern }}
       resolve_release_notes_with_gradle: false
     secrets:
       release_token: ${{ secrets.release_token }}
+      git_ssh_key: ${{ secrets.git_ssh_key }}
 
   github:
     needs: prepare
@@ -156,12 +166,14 @@ jobs:
       release_body: ${{ needs.prepare.outputs.release_body }}
       java_version: ${{ inputs.java_version }}
       prepare_siblings: ${{ inputs.prepare_siblings }}
+      git_ssh_repositories: ${{ inputs.git_ssh_repositories }}
       project_id: ${{ inputs.modrinth_project_id }}
       gradle_task: ${{ inputs.fabric_modrinth_task }}
       sync_gradle_task: ${{ inputs.fabric_modrinth_sync_task }}
       sync_state_file: ${{ inputs.fabric_modrinth_state_file }}
     secrets:
       modrinth_token: ${{ secrets.modrinth_token }}
+      git_ssh_key: ${{ secrets.git_ssh_key }}
 
   modrinth-neoforge:
     needs:
@@ -178,11 +190,13 @@ jobs:
       release_body: ${{ needs.prepare.outputs.release_body }}
       java_version: ${{ inputs.java_version }}
       prepare_siblings: ${{ inputs.prepare_siblings }}
+      git_ssh_repositories: ${{ inputs.git_ssh_repositories }}
       project_id: ${{ needs.modrinth-fabric.outputs.project_id }}
       gradle_task: ${{ inputs.neoforge_modrinth_task }}
       sync_project: false
     secrets:
       modrinth_token: ${{ secrets.modrinth_token }}
+      git_ssh_key: ${{ secrets.git_ssh_key }}
 
   curseforge-fabric:
     needs: prepare
@@ -197,11 +211,13 @@ jobs:
       release_body: ${{ needs.prepare.outputs.release_body }}
       java_version: ${{ inputs.java_version }}
       prepare_siblings: ${{ inputs.prepare_siblings }}
+      git_ssh_repositories: ${{ inputs.git_ssh_repositories }}
       project_id: ${{ inputs.curseforge_project_id }}
       project_slug: ${{ inputs.curseforge_project_slug }}
       gradle_task: ${{ inputs.fabric_curseforge_task }}
     secrets:
       curseforge_token: ${{ secrets.curseforge_token }}
+      git_ssh_key: ${{ secrets.git_ssh_key }}
 
   curseforge-neoforge:
     needs:
@@ -218,8 +234,10 @@ jobs:
       release_body: ${{ needs.prepare.outputs.release_body }}
       java_version: ${{ inputs.java_version }}
       prepare_siblings: ${{ inputs.prepare_siblings }}
+      git_ssh_repositories: ${{ inputs.git_ssh_repositories }}
       project_id: ${{ inputs.curseforge_project_id }}
       project_slug: ${{ inputs.curseforge_project_slug }}
       gradle_task: ${{ inputs.neoforge_curseforge_task }}
     secrets:
       curseforge_token: ${{ secrets.curseforge_token }}
+      git_ssh_key: ${{ secrets.git_ssh_key }}
