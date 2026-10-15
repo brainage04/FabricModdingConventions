@@ -60,12 +60,42 @@ public final class ClientGameTestServers {
             String serverName,
             Consumer<TestDedicatedServerContext> test
     ) {
+        withDedicatedServer(context, serverProperties, serverName, _ -> {
+        }, test);
+    }
+
+    public static void withDedicatedServer(
+            ClientGameTestContext context,
+            String serverName,
+            Consumer<TestDedicatedServerContext> beforeJoin,
+            Consumer<TestDedicatedServerContext> test
+    ) {
+        withDedicatedServer(context, flatServerProperties(), serverName, beforeJoin, test);
+    }
+
+    /**
+     * Runs {@code test} on a fresh dedicated server with the client connected.
+     *
+     * <p>{@code beforeJoin} runs after the server has started and before the client connects, so the
+     * world can be prepared (blocks, entities, game rules, teams, the world spawn the client player
+     * joins at) without any of it appearing in a recording, which starts at the first rendered world
+     * frame. It may wait for server-side work with the context's tick methods.
+     */
+    public static void withDedicatedServer(
+            ClientGameTestContext context,
+            Properties serverProperties,
+            String serverName,
+            Consumer<TestDedicatedServerContext> beforeJoin,
+            Consumer<TestDedicatedServerContext> test
+    ) {
         Objects.requireNonNull(context, "context");
         Objects.requireNonNull(serverProperties, "serverProperties");
+        Objects.requireNonNull(beforeJoin, "beforeJoin");
         Objects.requireNonNull(test, "test");
 
         ClientGameTestRecorder.startRecording(context);
         try (TestDedicatedServerContext server = context.worldBuilder().createServer(serverProperties)) {
+            beforeJoin.accept(server);
             try {
                 connectToDedicatedServer(context, server, serverName);
                 assertClientWorldAndPlayerAvailable(context);

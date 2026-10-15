@@ -189,7 +189,7 @@ clientGameTestRecorder {
 ```
 
 - These settings only apply to recording runs; the five `disable…` options default to `true`.
-- `GTR_RECORDING_PROFILE=showcase` shows a title card instead of the diagnostic overlay.
+- The recording HUD panel sits in the top-right corner, clear of chat in the bottom-left. `GTR_RECORDING_PROFILE=showcase` shows a title card there instead of the diagnostic overlay.
 - `GTR_RECORDING_PRE_PADDING_SECONDS` / `GTR_RECORDING_POST_PADDING_SECONDS`: `0`–`60`, default `0.5`.
 - Each recording writes metadata with tick and frame boundaries, effective padding and any capture gaps. A run fails if game audio is not routed to the recorder's sink or cannot be decoded.
 
@@ -200,9 +200,15 @@ ClientGameTestServers.withDedicatedServer(context, "Example GameTest", server ->
     server.runOnServer(ExampleClientGameTest::prepare);
     // Exercise and assert the connected client.
 });
+
+ClientGameTestServers.withDedicatedServer(context, "Example GameTest",
+        server -> server.runOnServer(ExampleClientGameTest::buildStage), // before the client joins
+        server -> {
+            // The client is in the world, already on the stage.
+        });
 ```
 
-The harness starts the server, connects the client, and always disconnects, finishes the recording and stops the server, even when the callback fails. Java helpers live in `io.github.brainage04.fabricmoddingconventions`.
+The harness starts the server, connects the client, and always disconnects, finishes the recording and stops the server, even when the callback fails. The optional `beforeJoin` callback (also with a `Properties` argument) runs after the server has started and before the client connects; a recording is trimmed to start 0.5 s (`GTR_RECORDING_PRE_PADDING_SECONDS`) before the first world tick, so setup done there (blocks, entities, game rules, teams) never shows. To place the client player, set the world spawn there: `minecraftServer.setRespawnData(LevelData.RespawnData.of(Level.OVERWORLD, pos, yaw, pitch))` plus `GameRules.RESPAWN_RADIUS` set to `0` puts a new player on that block, facing that way. A player that joins in `beforeJoin` (a Carpet fake player) takes a slot, so raise `max-players` in the properties for it. Java helpers live in `io.github.brainage04.fabricmoddingconventions`.
 
 ## Production GameTests
 

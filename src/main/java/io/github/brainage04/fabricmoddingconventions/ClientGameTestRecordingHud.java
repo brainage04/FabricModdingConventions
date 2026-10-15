@@ -108,7 +108,7 @@ public final class ClientGameTestRecordingHud {
         int panelWidth = width + PANEL_PADDING * 2;
         int panelHeight = lines.size() * lineHeight + PANEL_PADDING * 2 - LINE_GAP;
         int panelX = client.getWindow().getGuiScaledWidth() - panelWidth - SCREEN_MARGIN;
-        int panelY = client.getWindow().getGuiScaledHeight() - panelHeight - SCREEN_MARGIN;
+        int panelY = SCREEN_MARGIN;
         graphics.fill(
                 panelX, panelY, panelX + panelWidth, panelY + panelHeight, BACKGROUND_COLOR);
 
