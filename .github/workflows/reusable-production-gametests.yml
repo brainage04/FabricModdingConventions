@@ -18,6 +18,11 @@ on:
         required: false
         default: runAllGameTests
         type: string
+      timeout_minutes:
+        description: Job time limit in minutes
+        required: false
+        default: 20
+        type: number
       client_gametest_profile:
         description: Optional client GameTest profile exposed to production runs
         required: false
@@ -49,7 +54,7 @@ permissions:
 jobs:
   production-gametests:
     runs-on: ${{ fromJSON(inputs.runner) }}
-    timeout-minutes: 20
+    timeout-minutes: ${{ inputs.timeout_minutes }}
     steps:
       - name: checkout repository
         uses: actions/checkout@v5
@@ -149,7 +154,7 @@ jobs:
           if [ -n "${REQUESTED_CLIENT_GAMETEST_PROFILE}" ]; then
             export CLIENT_GAMETEST_PROFILE="${REQUESTED_CLIENT_GAMETEST_PROFILE}"
           fi
-          ./gradlew --no-daemon --refresh-dependencies ${{ inputs.gradle_task }}
+          ./gradlew --no-daemon ${{ inputs.gradle_task }}
 
       - name: store production GameTest reports
         if: failure()

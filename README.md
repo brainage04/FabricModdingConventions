@@ -241,11 +241,11 @@ modPublishing {
 
 Consumer workflows call these and only supply triggers, profiles, artifact patterns and project IDs:
 
-- `reusable-mod-build.yml` — build
-- `reusable-client-gametests.yml` — Fabric client GameTests and recordings (`:fabric:runProductionClientGameTest`, `:fabric:recordClientGameTest`)
-- `reusable-production-gametests.yml` — `runAllGameTests`, every development and production GameTest run, including integration GameTest suites, which fetch and build their extra mods in Gradle (`gradle_task` overrides it)
-- `reusable-neoforge-gametests.yml` — `:neoforge:runProductionServerGameTest` alone (`gradle_task` overrides it, for example with `:neoforge:runGameTest`)
-- `reusable-multiloader-release.yml` — GitHub, Modrinth and CurseForge release of both loader JARs
+- `reusable-mod-build.yml` – `build` (`gradle_task` overrides it; a multi-loader mod that also calls `reusable-production-gametests.yml` passes `build -x :fabric:runGameTest`, since Loom's `check` runs that suite and `runAllGameTests` runs it again)
+- `reusable-client-gametests.yml` – Fabric client GameTests and recordings (`:fabric:runProductionClientGameTest`, `:fabric:recordClientGameTest`)
+- `reusable-production-gametests.yml` – `runAllGameTests`, every development and production GameTest run, including integration GameTest suites, which fetch and build their extra mods in Gradle (`gradle_task` overrides it)
+- `reusable-neoforge-gametests.yml` – `:neoforge:runProductionServerGameTest` alone (`gradle_task` overrides it, for example with `:neoforge:runGameTest`)
+- `reusable-multiloader-release.yml` – GitHub, Modrinth and CurseForge release of both loader JARs
 
 Every reusable workflow takes a `runner` input, a JSON `runs-on` value defaulting to `"ubuntu-24.04"`; private mods pass their self-hosted runner labels:
 
@@ -253,6 +253,8 @@ Every reusable workflow takes a `runner` input, a JSON `runs-on` value defaultin
     with:
       runner: '["self-hosted","minecraft"]'
 ```
+
+The build and GameTest workflows take `timeout_minutes`, the job's time limit (default 20, client GameTests 40); a mod whose `runAllGameTests` takes longer passes its own. None of them passes `--refresh-dependencies`: it made every job re-check every dependency against the remote repositories, and a network hiccup failed the build.
 
 A mod that depends on an owned library that is not on Maven Central (BrainageLib) passes `prepare_siblings`, a space-separated list of brainage04 repositories, to `reusable-mod-build.yml`, the three GameTest workflows and `reusable-multiloader-release.yml`. Each one is cloned (default branch) into `../<name>` and published with `publishAllPublicationsToLocalRepository`, so its `siblingMaven(...)` declaration resolves from `../<name>/build/local-repo`:
 

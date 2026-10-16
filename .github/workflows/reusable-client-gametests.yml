@@ -38,6 +38,11 @@ on:
         required: false
         default: false
         type: boolean
+      timeout_minutes:
+        description: Job time limit in minutes
+        required: false
+        default: 40
+        type: number
       prepare_baritone:
         description: Build the required local Baritone fork before the consumer
         required: false
@@ -64,7 +69,7 @@ permissions:
 jobs:
   client-gametests:
     runs-on: ${{ fromJSON(inputs.runner) }}
-    timeout-minutes: 40
+    timeout-minutes: ${{ inputs.timeout_minutes }}
     steps:
       - name: checkout repository
         uses: actions/checkout@v5
@@ -216,7 +221,7 @@ jobs:
           if [ -n "$REQUESTED_CLIENT_GAMETEST_PROFILE" ]; then
             export CLIENT_GAMETEST_PROFILE="$REQUESTED_CLIENT_GAMETEST_PROFILE"
           fi
-          xvfb-run -a --server-args="-screen 0 1280x720x24" ./gradlew --no-daemon --refresh-dependencies "${GRADLE_TASK}"
+          xvfb-run -a --server-args="-screen 0 1280x720x24" ./gradlew --no-daemon "${GRADLE_TASK}"
 
       - name: record client GameTests
         if: steps.client-test-support.outputs.present == 'true' && inputs.record_client_gametests

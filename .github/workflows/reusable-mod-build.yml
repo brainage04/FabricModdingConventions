@@ -13,6 +13,16 @@ on:
         required: false
         default: '25'
         type: string
+      gradle_task:
+        description: Gradle tasks and arguments of the build step; multi-loader builds whose production GameTest job runs :fabric:runGameTest pass 'build -x :fabric:runGameTest' so the build job does not run that suite again
+        required: false
+        default: build
+        type: string
+      timeout_minutes:
+        description: Job time limit in minutes
+        required: false
+        default: 20
+        type: number
       check_scripts:
         description: Run shellcheck and shfmt against repository scripts
         required: false
@@ -49,7 +59,7 @@ permissions:
 jobs:
   build:
     runs-on: ${{ fromJSON(inputs.runner) }}
-    timeout-minutes: 20
+    timeout-minutes: ${{ inputs.timeout_minutes }}
     steps:
       - name: checkout repository
         uses: actions/checkout@v5
@@ -173,7 +183,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: build
-        run: ./gradlew --no-daemon --refresh-dependencies build
+        run: ./gradlew --no-daemon ${{ inputs.gradle_task }}
 
       - name: prepare template smoke dependencies
         if: inputs.run_template_smoke
