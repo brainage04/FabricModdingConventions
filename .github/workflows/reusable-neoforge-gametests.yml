@@ -19,7 +19,7 @@ on:
         default: :neoforge:runProductionServerGameTest
         type: string
       timeout_minutes:
-        description: Job time limit in minutes
+        description: Time limit in minutes of each step that runs Gradle
         required: false
         default: 20
         type: number
@@ -49,7 +49,9 @@ permissions:
 jobs:
   neoforge-gametests:
     runs-on: ${{ fromJSON(inputs.runner) }}
-    timeout-minutes: ${{ inputs.timeout_minutes }}
+    # The job's own limit also covers the time a self-hosted runner holds the job before it runs anything, for example
+    # waiting for capacity in a job-started hook; the steps that run Gradle have timeout_minutes each.
+    timeout-minutes: 360
     steps:
       - name: checkout repository
         uses: actions/checkout@v5
@@ -112,6 +114,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v5
 
       - name: prepare required local Baritone fork
+        timeout-minutes: ${{ inputs.timeout_minutes }}
         if: inputs.prepare_baritone
         run: |
           MINECRAFT_VERSION="$(sed -n 's/^minecraft_version=//p' gradle.properties)"
@@ -124,6 +127,7 @@ jobs:
             publishAllPublicationsToLocalBaritoneRepository
 
       - name: prepare sibling libraries
+        timeout-minutes: ${{ inputs.timeout_minutes }}
         if: inputs.prepare_siblings != ''
         env:
           PREPARE_SIBLINGS: ${{ inputs.prepare_siblings }}
@@ -143,6 +147,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: run NeoForge GameTests
+        timeout-minutes: ${{ inputs.timeout_minutes }}
         env:
           GRADLE_TASK: ${{ inputs.gradle_task }}
         run: ./gradlew --no-daemon "${GRADLE_TASK}"

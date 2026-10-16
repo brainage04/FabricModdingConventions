@@ -39,7 +39,7 @@ on:
         default: false
         type: boolean
       timeout_minutes:
-        description: Job time limit in minutes
+        description: Time limit in minutes of each step that runs Gradle
         required: false
         default: 40
         type: number
@@ -69,7 +69,9 @@ permissions:
 jobs:
   client-gametests:
     runs-on: ${{ fromJSON(inputs.runner) }}
-    timeout-minutes: ${{ inputs.timeout_minutes }}
+    # The job's own limit also covers the time a self-hosted runner holds the job before it runs anything, for example
+    # waiting for capacity in a job-started hook; the steps that run Gradle have timeout_minutes each.
+    timeout-minutes: 360
     steps:
       - name: checkout repository
         uses: actions/checkout@v5
@@ -179,6 +181,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v5
 
       - name: prepare required local Baritone fork
+        timeout-minutes: ${{ inputs.timeout_minutes }}
         if: steps.client-test-support.outputs.present == 'true' && inputs.prepare_baritone
         run: |
           MINECRAFT_VERSION="$(sed -n 's/^minecraft_version=//p' gradle.properties)"
@@ -191,6 +194,7 @@ jobs:
             publishAllPublicationsToLocalBaritoneRepository
 
       - name: prepare sibling libraries
+        timeout-minutes: ${{ inputs.timeout_minutes }}
         if: steps.client-test-support.outputs.present == 'true' && inputs.prepare_siblings != ''
         env:
           PREPARE_SIBLINGS: ${{ inputs.prepare_siblings }}
@@ -211,6 +215,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: run client GameTests
+        timeout-minutes: ${{ inputs.timeout_minutes }}
         if: steps.client-test-support.outputs.present == 'true' && inputs.run_client_gametests
         env:
           ALSOFT_DRIVERS: 'null'
@@ -224,6 +229,7 @@ jobs:
           xvfb-run -a --server-args="-screen 0 1280x720x24" ./gradlew --no-daemon "${GRADLE_TASK}"
 
       - name: record client GameTests
+        timeout-minutes: ${{ inputs.timeout_minutes }}
         if: steps.client-test-support.outputs.present == 'true' && inputs.record_client_gametests
         env:
           ALSOFT_DRIVERS: 'null'
